@@ -15,7 +15,7 @@ A custom osu! ruleset with unique mods and local PP tracking.
 - **ModRandomV2** — randomizes hit object positions with configurable patterns
 - **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
 - Mod presets with import/export
-- Chat mod sharing via encoded links (`osu://preset/...`)
+- Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
 - Local user profile with performance graphs and ranked scores
 
 ## Install
