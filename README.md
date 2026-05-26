@@ -14,7 +14,8 @@ A custom osu! ruleset with unique mods and local PP tracking.
 - **Skip breaks** — button to skip break sections
 - **ModRandomV2** — randomizes hit object positions with configurable patterns
 - **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
-- Mod presets with import/export
+- Mod preset import/export — share presets via JSON files
+- Collection import/export — back up and share beatmap collections
 - Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
 - Local user profile with performance graphs and ranked scores
 
@@ -26,7 +27,7 @@ A custom osu! ruleset with unique mods and local PP tracking.
 
 ### Download
 
-Get the latest `.dll` from the [Releases](https://github.com/p2d0/mosusu/releases) page.
+Get the latest `.dll` from the [Releases](https://github.com/p2d0/mosu/releases) page.
 
 ## Build
 
