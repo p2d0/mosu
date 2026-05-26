@@ -15,7 +15,7 @@ using osu.Game.Rulesets.MOsu.Database; // Ensure this namespace matches your Bea
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Mods;
-using osu.Game.Tests.Visual.SongSelectV2;
+using osu.Game.Tests.Visual.SongSelect;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Tests
