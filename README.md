@@ -10,7 +10,10 @@ A custom osu! ruleset with unique mods and local PP tracking.
 
 ## Features
 
-- Local PP calculation and statistics
+- **Local PP** — calculates and tracks performance points locally
+- **Skip breaks** — button to skip break sections
+- **ModRandomV2** — randomizes hit object positions with configurable patterns
+- **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
 - Mod presets with import/export
 - Chat mod sharing via encoded links (`osu://preset/...`)
 - Local user profile with performance graphs and ranked scores
