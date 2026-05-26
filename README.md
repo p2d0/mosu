@@ -4,26 +4,15 @@ A custom osu! ruleset with unique mods and local PP tracking.
 
 ## Mods
 
-- **Autopilot** — cursor movement is automated, only clicking required
-- **Classic** — osu! classic mod with old-style mechanics
-- **Freeze Frame** — freeze on miss for recovery practice
-- **Hidden** — fading approach circles
 - **No Sliding** — disables sliding on sliders
-- **Random V2** — randomizes hit object positions
-- **Relax** — aim assist, only tapping required
-- **Spacing Adjust** — adjust approach rate and circle size
-- **Square** — replaces patterns with square-based formations
-- **Strict Tracking** — enforces strict cursor tracking
-- **Target Practice** — generated target practice maps
-- **Traceable** — visible cursor trails and path indicators
+- **Random V2** — randomizes hit object positions with configurable patterns
+- **Spacing Adjust** — adjust approach rate and circle size with extended limits
 
 ## Features
 
 - Local PP calculation and statistics
 - Mod presets with import/export
-- Per-beatmap mod presets (BeatmapModPreset)
 - Chat mod sharing via encoded links (`osu://preset/...`)
-- Built-in preset collection
 - Local user profile with performance graphs and ranked scores
 
 ## Install
