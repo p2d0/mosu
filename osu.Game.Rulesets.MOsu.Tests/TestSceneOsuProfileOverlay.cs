@@ -9,8 +9,6 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
-using osu.Game.Rulesets.Taiko;
-using osu.Game.Tests.Resources;
 using osu.Game.Tests.Visual;
 using osu.Game.Users;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
@@ -229,7 +227,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             Username = @"Somebody",
             Id = -1,
             CountryCode = CountryCode.JP,
-            CoverUrl = TestResources.COVER_IMAGE_1,
+            CoverUrl = "https://assets.ppy.sh/user-cover-presets/1/df28696b58541a9e67f6755918951d542d93bdf1da41720fcca2fd2c1ea8cf51.jpeg",
             JoinDate = DateTimeOffset.Now.AddDays(-1),
             LastVisit = DateTimeOffset.Now,
             Groups = new[]
