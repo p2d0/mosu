@@ -35,7 +35,3 @@ dotnet build osu.Game.Rulesets.MOsu/osu.Game.Rulesets.MOsu.csproj -c Release
 ```
 
 Requires .NET 8.0 SDK.
-
-## Development
-
-The test project (`osu.Game.Rulesets.MOsu.Tests`) requires the full [osu](https://github.com/ppy/osu) source tree available at `../../osu/` to compile. See [LOCAL.md](LOCAL.md) for paths.

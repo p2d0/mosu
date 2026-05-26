@@ -15,13 +15,13 @@ using osu.Game.Rulesets.MOsu.Database; // Ensure this namespace matches your Bea
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Mods;
-using osu.Game.Tests.Visual.SongSelect;
+using osu.Game.Tests.Visual;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
     [TestFixture]
-    public partial class TestSceneBeatmapModPresetWedge : SongSelectComponentsTestScene
+    public partial class TestSceneBeatmapModPresetWedge : OsuManualInputManagerTestScene
     {
         private BeatmapModPresetWedge wedge = null!;
         protected MOsuRealmAccess MOsuRealm { get; set; } = null!;
