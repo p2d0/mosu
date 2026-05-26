@@ -1,0 +1,117 @@
+using System.Collections.Generic;
+using NUnit.Framework;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.MOsu.Objects;
+using osuTK;
+using osu.Game.Tests.Visual;
+
+namespace osu.Game.Rulesets.MOsu.Tests.Mods
+{
+    public partial class BreakTest : TestSceneOsuPlayer
+    {
+        // [TestCase(1)]
+        // [TestCase(7)]
+        // [TestCase(10)]
+        // public void TestDefaultBeatmap(float angleSharpness) => CreateModTest(new ModTestData
+        // {
+        //     Mod = new OsuModRandomV2
+        //     {
+        //         AngleSharpness = { Value = angleSharpness },
+        //         AimDistanceMultiplier = { Value = 10.0f }
+        //     },
+        //     Autoplay = true,
+        //     PassCondition = () => true
+        // });
+        protected override TestPlayer CreatePlayer(Ruleset ruleset) => new TestPlayer(true, false, true);
+        // protected override bool Autoplay => true;
+
+        private void addSeekStep(double time)
+        {
+            AddStep($"seek to {time}", () => Player.GameplayClockContainer.Seek(time));
+            AddUntilStep("wait for seek to finish", () => Player.DrawableRuleset.FrameStableClock.CurrentTime, () => Is.EqualTo(time).Within(100));
+        }
+
+
+        [Test]
+        public void TestBreak() {
+            var break_start_time = 70000;
+            addSeekStep(break_start_time);
+        }
+
+        // [TestCase(1)]
+        // [TestCase(7)]
+        // [TestCase(10)]
+        // public void TestJumpBeatmap(float angleSharpness) => CreateModTest(new ModTestData
+        // {
+        //     Mod = new OsuModRandom
+        //     {
+        //         AngleSharpness = { Value = angleSharpness }
+        //     },
+        //     CreateBeatmap = jumpBeatmap,
+        //     Autoplay = true,
+        //     PassCondition = () => true
+        // });
+
+        // [TestCase(1)]
+        // [TestCase(7)]
+        // [TestCase(10)]
+        // public void TestStreamBeatmap(float angleSharpness) => CreateModTest(new ModTestData
+        // {
+        //     Mod = new OsuModRandom
+        //     {
+        //         AngleSharpness = { Value = angleSharpness }
+        //     },
+        //     CreateBeatmap = streamBeatmap,
+        //     Autoplay = true,
+        //     PassCondition = () => true
+        // });
+
+        private OsuBeatmap jumpBeatmap() =>
+            createHitCircleBeatmap(new[] { 100, 200, 300, 400 }, 8, 300, 2 * 300);
+
+        private OsuBeatmap streamBeatmap() =>
+            createHitCircleBeatmap(new[] { 10, 20, 30, 40, 50, 60, 70, 80 }, 16, 150, 4 * 150);
+
+        private OsuBeatmap createHitCircleBeatmap(IEnumerable<int> spacings, int objectsPerSpacing, int interval, int beatLength)
+        {
+            var controlPointInfo = new ControlPointInfo();
+            controlPointInfo.Add(0, new TimingControlPoint
+            {
+                Time = 0,
+                BeatLength = beatLength
+            });
+
+            var beatmap = new OsuBeatmap
+            {
+                BeatmapInfo = new BeatmapInfo
+                {
+                    Difficulty = new BeatmapDifficulty
+                    {
+                        ApproachRate = 8.5f
+                    }
+                },
+                StackLeniency = 0,
+                ControlPointInfo = controlPointInfo
+            };
+
+            foreach (int spacing in spacings)
+            {
+                for (int i = 0; i < objectsPerSpacing; i++)
+                {
+                    beatmap.HitObjects.Add(new HitCircle
+                    {
+                        StartTime = interval * beatmap.HitObjects.Count,
+                        Position = beatmap.HitObjects.Count % 2 == 0 ? Vector2.Zero : new Vector2(spacing, 0),
+                        NewCombo = i == 0
+                    });
+                }
+            }
+
+            return beatmap;
+        }
+    }
+}
