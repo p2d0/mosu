@@ -1,0 +1,70 @@
+name: MOsu Release
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to release (e.g. 1.0.10)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create MOsu Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET 8.0.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build MOsu
+        run: dotnet build osu.Game.Rulesets.MOsu/osu.Game.Rulesets.MOsu.csproj -c Release
+
+      - name: Generate changelog
+        run: |
+          tag_name="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
+          prev_tag=$(git tag --sort=-creatordate | grep -v "^$tag_name$" | head -1)
+          {
+            echo "[How to install](https://rulesets.info/install/rulesets)"
+            echo
+            echo "## Install"
+            echo "### 1. Navigate to osu! data directory"
+            echo 'In osu!lazer, open Settings → General → **Open osu! folder**.'
+            echo "On Windows the default rulesets path is ``%AppData%/osu!/rulesets``."
+            echo "On macOS the default location is inside the application itself."
+            echo "### 2. Install the ruleset"
+            echo "Copy the downloaded `.dll` file into the `rulesets` directory."
+            echo "Overwrite any duplicate copies of the ruleset if prompted."
+            echo "### 3. Have fun!"
+            echo "Restart osu!lazer if it is already open. The ruleset appears alongside the standard rulesets."
+            echo
+            echo "## Changes"
+            if [ -n "$prev_tag" ]; then
+              git log "$prev_tag..$tag_name" --oneline --no-merges
+            else
+              git log --oneline --no-merges
+            fi
+          } > /tmp/changelog.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MOsu ${{ github.ref_name || github.event.inputs.tag }}"
+          tag_name: ${{ github.ref_name || github.event.inputs.tag }}
+          body_path: /tmp/changelog.md
+          files: osu.Game.Rulesets.MOsu/bin/Release/net8.0/osu.Game.Rulesets.MOsu.dll
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
