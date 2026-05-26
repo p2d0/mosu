@@ -1,0 +1,5 @@
+<Directives>
+	<Application>
+		<Assembly Name="RealmAot1" Dynamic="Required All" />
+	</Application>
+</Directives>

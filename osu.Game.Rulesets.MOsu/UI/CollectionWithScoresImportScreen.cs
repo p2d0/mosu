@@ -1,0 +1,389 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Logging;
+using osu.Framework.Screens;
+using osu.Game.Beatmaps;
+using osu.Game.Collections;
+using osu.Game.Configuration;
+using osu.Game.Database;
+using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Models;
+using osu.Game.Online.API;
+using osu.Game.Online.API.Requests;
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets.Scoring;
+using osu.Game.Scoring;
+using osu.Game.Screens;
+using osuTK;
+using Realms;
+
+namespace osu.Game.Rulesets.MOsu.UI
+{
+    public partial class CollectionWithScoresImportScreen : OsuScreen
+    {
+        public override bool HideOverlaysOnEnter => true;
+        public override bool DisallowExternalBeatmapRulesetChanges => true;
+
+        private OsuFileSelector fileSelector;
+        private Container contentContainer;
+        private TextFlowContainer currentFileText;
+        private RoundedButton importButton;
+
+        private const float duration = 300;
+        private const float button_height = 50;
+        private const float button_vertical_margin = 15;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
+
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapModelDownloader downloader { get; set; } = null!;
+
+        [Cached]
+        private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
+
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            InternalChild = contentContainer = new Container
+            {
+                Masking = true,
+                CornerRadius = 10,
+                RelativeSizeAxes = Axes.Both,
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                Size = new Vector2(0.9f, 0.8f),
+                Children = new Drawable[]
+                {
+                    fileSelector = new OsuFileSelector(validFileExtensions: new[] { ".json" })
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Width = 0.65f
+                    },
+                    new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Width = 0.35f,
+                        Anchor = Anchor.TopRight,
+                        Origin = Anchor.TopRight,
+                        Children = new Drawable[]
+                        {
+                            new Box
+                            {
+                                Colour = colourProvider.Background4,
+                                RelativeSizeAxes = Axes.Both
+                            },
+                            new Container
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Padding = new MarginPadding { Bottom = button_height + button_vertical_margin * 3 },
+                                Child = new OsuScrollContainer
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Anchor = Anchor.TopCentre,
+                                    Origin = Anchor.TopCentre,
+                                    Child = currentFileText = new TextFlowContainer(t => t.Font = OsuFont.Default.With(size: 30))
+                                    {
+                                        AutoSizeAxes = Axes.Y,
+                                        RelativeSizeAxes = Axes.X,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                        TextAnchor = Anchor.Centre,
+                                        Padding = new MarginPadding(20)
+                                    },
+                                    ScrollContent =
+                                    {
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                    }
+                                },
+                            },
+                            importButton = new RoundedButton
+                            {
+                                Text = "Import Collections & Scores",
+                                Anchor = Anchor.BottomCentre,
+                                Origin = Anchor.BottomCentre,
+                                RelativeSizeAxes = Axes.X,
+                                Height = button_height,
+                                Width = 0.9f,
+                                Margin = new MarginPadding { Bottom = button_vertical_margin },
+                                Action = () => importFile(fileSelector.CurrentFile.Value?.FullName),
+                                Enabled = { Value = false }
+                            }
+                        }
+                    }
+                }
+            };
+
+            fileSelector.CurrentFile.BindValueChanged(fileChanged, true);
+        }
+
+        public override void OnEntering(ScreenTransitionEvent e)
+        {
+            base.OnEntering(e);
+            contentContainer.ScaleTo(0.95f).ScaleTo(1, duration, Easing.OutQuint);
+            this.FadeInFromZero(duration);
+        }
+
+        public override bool OnExiting(ScreenExitEvent e)
+        {
+            contentContainer.ScaleTo(0.95f, duration, Easing.OutQuint);
+            this.FadeOut(duration, Easing.OutQuint);
+            return base.OnExiting(e);
+        }
+
+        private void fileChanged(ValueChangedEvent<FileInfo> selectedFile)
+        {
+            importButton.Enabled.Value = selectedFile.NewValue != null;
+            currentFileText.Text = selectedFile.NewValue?.Name ?? "Select a .json file";
+        }
+
+        private void importFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            importButton.Enabled.Value = false;
+            currentFileText.Text = "Reading and importing...";
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    string json = File.ReadAllText(path);
+                    var transferObjects = JsonConvert.DeserializeObject<List<OsuSettingsSubsection.CollectionWithScoresTransferObject>>(json);
+
+                    if (transferObjects == null || transferObjects.Count == 0)
+                    {
+                        Schedule(() =>
+                        {
+                            notifications?.Post(new SimpleErrorNotification { Text = "No valid data found in file." });
+                            importButton.Enabled.Value = true;
+                            currentFileText.Text = "Import failed.";
+                        });
+                        return;
+                    }
+
+                    HashSet<string> allImportedHashes = new HashSet<string>();
+                    int importedCollections = 0;
+                    int importedScores = 0;
+
+                    realm.Write(r =>
+                    {
+                        // We do not lookup RealmUser because it is an EmbeddedObject.
+                        // Instead, we assign the current API User to each new score, which creates a new embedded RealmUser.
+
+                        foreach (var dto in transferObjects)
+                        {
+                            // 1. Collections
+                            var collection = r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == dto.Name);
+                            if (collection == null)
+                            {
+                                collection = new BeatmapCollection(dto.Name);
+                                r.Add(collection);
+                                importedCollections++;
+                            }
+
+                            foreach (var hash in dto.BeatmapMD5Hashes)
+                            {
+                                if (!collection.BeatmapMD5Hashes.Contains(hash))
+                                    collection.BeatmapMD5Hashes.Add(hash);
+
+                                allImportedHashes.Add(hash);
+                            }
+
+                            // 2. Scores
+                            foreach (var sDto in dto.Scores)
+                            {
+                                var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == sDto.BeatmapHash);
+                                var rulesetInfo = r.All<RulesetInfo>().FirstOrDefault(ru => ru.ShortName == sDto.RulesetShortName);
+
+                                // If map missing, we skip score import for now (map needs to exist for ScoreInfo)
+                                if (beatmap == null || rulesetInfo == null) continue;
+
+                                // Fix: Use .Filter() instead of LINQ for nested property check (BeatmapInfo.MD5Hash)
+                                // to avoid Realm LINQ provider limitations.
+                                bool scoreExists = r.All<ScoreInfo>()
+                                    .Filter("BeatmapInfo.MD5Hash == $0 && TotalScore == $1 && Date == $2",
+                                        sDto.BeatmapHash, sDto.TotalScore, sDto.Date)
+                                    .Count() > 0;
+
+                                if (scoreExists) continue;
+
+                                var rulesetInstance = rulesetInfo.CreateInstance();
+                                var mods = sDto.Mods.Select(m => m.ToMod(rulesetInstance)).ToArray();
+
+                                // Construct ScoreInfo.
+                                // Note: We don't pass a RealmUser here. We set the User property afterwards to ensure
+                                // the embedded RealmUser is created correctly for this specific score instance.
+                                var score = new ScoreInfo(beatmap, rulesetInfo)
+                                {
+                                    TotalScore = sDto.TotalScore,
+                                    Accuracy = sDto.Accuracy,
+                                    MaxCombo = sDto.MaxCombo,
+                                    Rank = Enum.TryParse<ScoreRank>(sDto.Rank, out var rank) ? rank : ScoreRank.F,
+                                    Date = sDto.Date,
+                                    Mods = mods,
+                                };
+
+                                // Assign the current API user. The setter in ScoreInfo will create a new embedded RealmUser.
+                                score.User = new APIUser() {Username = @"ImportedGuest", Id = -123};
+
+                                foreach (var stat in sDto.Statistics)
+                                {
+                                    if (Enum.TryParse<HitResult>(stat.Key, out var result))
+                                        score.Statistics[result] = stat.Value;
+                                }
+
+                                // IMPORTANT: Manually serialize statistics to JSON for Realm persistence
+                                score.StatisticsJson = JsonConvert.SerializeObject(score.Statistics);
+
+                                r.Add(score);
+                                importedScores++;
+                            }
+                        }
+                    });
+
+                    // Identify missing maps for download
+                    var missingHashes = realm.Run(r =>
+                    {
+                        var localBeatmaps = r.All<BeatmapInfo>()
+                            .Filter("BeatmapSet.DeletePending == false")
+                            .ToList();
+                        var localHashSet = new HashSet<string>(localBeatmaps.Select(b => b.MD5Hash));
+                        return allImportedHashes.Where(h => !localHashSet.Contains(h)).ToList();
+                    });
+
+                    Schedule(() =>
+                    {
+                        notifications?.Post(new SimpleNotification
+                        {
+                            Text = $"Imported {importedCollections} collections and {importedScores} scores."
+                        });
+
+                        if (missingHashes.Count > 0)
+                        {
+                            startBackgroundDownload(missingHashes);
+                        }
+
+                        this.Exit();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Schedule(() =>
+                    {
+                        notifications?.Post(new SimpleErrorNotification { Text = $"Import failed: {ex.Message}" });
+                        importButton.Enabled.Value = true;
+                    });
+                }
+            });
+        }
+
+        private void startBackgroundDownload(List<string> missingHashes)
+        {
+            var notification = new ProgressNotification
+            {
+                State = ProgressNotificationState.Active,
+                Text = "Starting collection download...",
+                CompletionText = "Missing maps have been queued.",
+            };
+
+            notifications.Post(notification);
+
+            Task.Factory.StartNew(() =>
+            {
+                int processedCount = 0;
+                int failedCount = 0;
+                var processedSets = new HashSet<int>();
+
+                foreach (var hash in missingHashes)
+                {
+                    if (notification.State == ProgressNotificationState.Cancelled)
+                        break;
+
+                    updateNotificationProgress(notification, processedCount, missingHashes.Count);
+
+                    try
+                    {
+                        var req = new GetBeatmapRequest(new BeatmapInfo { MD5Hash = hash });
+                        req.AttachAPI(api);
+                        req.Perform();
+
+                        var onlineSet = req.Response?.BeatmapSet;
+
+                        if (onlineSet != null)
+                        {
+                            if (!processedSets.Contains(onlineSet.OnlineID))
+                            {
+                                processedSets.Add(onlineSet.OnlineID);
+                                if (downloader.GetExistingDownload(onlineSet) == null)
+                                    downloader.Download(onlineSet);
+                            }
+                        }
+                        else
+                        {
+                            failedCount++;
+                        }
+                        Thread.Sleep(100);
+                    }
+                    catch
+                    {
+                        failedCount++;
+                    }
+                    finally
+                    {
+                        processedCount++;
+                    }
+                }
+
+                completeNotification(notification, processedCount, missingHashes.Count, failedCount);
+
+            }, TaskCreationOptions.LongRunning);
+        }
+
+        private void updateNotificationProgress(ProgressNotification notification, int processedCount, int totalCount)
+        {
+            notification.Text = $"Checking map {processedCount} of {totalCount} online...";
+            notification.Progress = (float)processedCount / totalCount;
+        }
+
+        private void completeNotification(ProgressNotification notification, int processedCount, int totalCount, int failedCount)
+        {
+            if (processedCount == totalCount)
+            {
+                notification.CompletionText = "Download queueing finished.";
+                if (failedCount > 0)
+                    notification.CompletionText += $" ({failedCount} maps unavailable)";
+
+                notification.Progress = 1;
+                notification.State = ProgressNotificationState.Completed;
+            }
+            else
+            {
+                notification.State = ProgressNotificationState.Cancelled;
+            }
+        }
+    }
+}
