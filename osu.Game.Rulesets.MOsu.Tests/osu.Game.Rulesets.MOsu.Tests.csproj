@@ -12,12 +12,13 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="NUnit" Version="4.5.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
-    <PackageReference Include="ppy.osu.Game" Version="2026.429.0.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="2026.429.0.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Taiko" Version="2026.429.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\osu.Game.Rulesets.MOsu\osu.Game.Rulesets.MOsu.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="Exists('..\..\osu\osu.Game.Tests\osu.Game.Tests.csproj')">
+    <ProjectReference Include="..\..\osu\osu.Game.Tests\osu.Game.Tests.csproj" />
+    <ProjectReference Include="..\..\osu\osu.Game.Rulesets.Taiko\osu.Game.Rulesets.Taiko.csproj" />
   </ItemGroup>
   <PropertyGroup Label="Project">
     <OutputType>WinExe</OutputType>
