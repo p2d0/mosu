@@ -13,6 +13,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [STAThread]
         public static int Main(string[] args)
         {
+            Environment.SetEnvironmentVariable("SENTRY_DSN", "https://dummy@sentry.local/1");
+
             using (DesktopGameHost host = Host.GetSuitableDesktopHost(@"osu"))
             {
                 host.Run(new OsuTestBrowser());
