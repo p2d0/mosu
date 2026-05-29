@@ -11,5 +11,6 @@ namespace osu.Game.Rulesets.MOsu.Models
         public Guid ID { get; set; } = Guid.NewGuid();
 
         public bool Imported { get; set; }
+        public bool CollectionsImported { get; set; }
     }
 }

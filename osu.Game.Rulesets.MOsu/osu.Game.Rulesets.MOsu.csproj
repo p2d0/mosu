@@ -27,5 +27,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="osu_mod_presets.json" />
+    <EmbeddedResource Include="example_collections.json" />
   </ItemGroup>
 </Project>

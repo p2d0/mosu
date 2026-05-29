@@ -112,7 +112,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     Schedule(() => notifications.Post(new SimpleNotification
                     {
-                        Text = $"Imported {importedCount} MOsu presets!"
+                        Text = $"MOsu example mod presets imported! ({importedCount} presets)"
                     }));
                 }
                 catch (Exception ex)

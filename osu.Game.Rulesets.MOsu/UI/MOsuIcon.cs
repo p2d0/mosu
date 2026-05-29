@@ -133,6 +133,14 @@ namespace osu.Game.Rulesets.MOsu.UI
                 game.Add(presetImporter);
             }
 
+            // --- 1.6 Setup Background Collection Import ---
+            if (host.Dependencies.Get<BackgroundCollectionImportProcessor>() == null)
+            {
+                var collectionImporter = new BackgroundCollectionImportProcessor();
+                host.Dependencies.Cache(collectionImporter);
+                game.Add(collectionImporter);
+            }
+
             // --- 2. Setup Overlay ---
             // Check if it already exists in the container to prevent duplicates
             var existingOverlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
