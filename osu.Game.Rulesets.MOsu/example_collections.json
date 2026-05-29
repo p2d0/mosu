@@ -14,13 +14,13 @@
     ],
     "Scores": [
       {
-        "BeatmapHash": "04a8c84dc9f5217a3713f9fadfc969a1",
+        "BeatmapHash": "836c7c2972556d0d317ecbed7fe16961",
         "RulesetShortName": "mosususu",
-        "TotalScore": 207040,
-        "Accuracy": 0.9111384111384111,
-        "MaxCombo": 69,
-        "Rank": "A",
-        "Date": "2026-05-26T10:12:28.2592653+00:00",
+        "TotalScore": 167174,
+        "Accuracy": 0.8723743300014486,
+        "MaxCombo": 102,
+        "Rank": "B",
+        "Date": "2026-05-26T10:08:01.877097+00:00",
         "Mods": [
           {
             "acronym": "HD"
@@ -28,7 +28,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.0,
+              "approach_rate": 10.5,
               "drain_rate": 6.0,
               "extended_limits": true
             }
@@ -39,7 +39,7 @@
               "aim_distance_multiplier": 7.25,
               "power_jumps": true,
               "divisor": 3,
-              "seed": 287545666
+              "seed": 1094452087
             }
           },
           {
@@ -51,19 +51,19 @@
         ],
         "Statistics": {
           "None": 0,
-          "Miss": 61,
-          "Meh": 0,
-          "Ok": 17,
+          "Miss": 89,
+          "Meh": 12,
+          "Ok": 292,
           "Good": 0,
-          "Great": 736,
+          "Great": 1908,
           "Perfect": 0,
           "SmallTickMiss": 0,
           "SmallTickHit": 0,
           "LargeTickMiss": 0,
           "LargeTickHit": 0,
-          "SmallBonus": 50,
-          "LargeBonus": 21,
-          "IgnoreMiss": 39,
+          "SmallBonus": 156,
+          "LargeBonus": 18,
+          "IgnoreMiss": 121,
           "IgnoreHit": 0,
           "ComboBreak": 0,
           "SliderTailHit": 0
@@ -84,7 +84,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.0,
+              "approach_rate": 10.5,
               "drain_rate": 6.0,
               "extended_limits": true
             }
@@ -126,13 +126,13 @@
         }
       },
       {
-        "BeatmapHash": "836c7c2972556d0d317ecbed7fe16961",
+        "BeatmapHash": "63daf4d00fbb75ecb43805eac4dc6b61",
         "RulesetShortName": "mosususu",
-        "TotalScore": 11481,
-        "Accuracy": 0.8027397260273973,
-        "MaxCombo": 32,
-        "Rank": "F",
-        "Date": "2025-10-13T12:11:10.5454226+00:00",
+        "TotalScore": 221993,
+        "Accuracy": 0.930166912125675,
+        "MaxCombo": 105,
+        "Rank": "A",
+        "Date": "2026-05-26T09:39:30.1711751+00:00",
         "Mods": [
           {
             "acronym": "HD"
@@ -140,118 +140,17 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.0,
+              "approach_rate": 10.5,
               "extended_limits": true
             }
           },
           {
             "acronym": "RDV2",
             "settings": {
+              "aim_distance_multiplier": 5.96,
               "power_jumps": true,
-              "stream_distance_multiplier": 6.0,
-              "power_streams": true,
-              "seed": 1221807823
-            }
-          },
-          {
-            "acronym": "NL"
-          }
-        ],
-        "Statistics": {
-          "None": 0,
-          "Miss": 44,
-          "Meh": 0,
-          "Ok": 42,
-          "Good": 0,
-          "Great": 279,
-          "Perfect": 0,
-          "SmallTickMiss": 0,
-          "SmallTickHit": 0,
-          "LargeTickMiss": 0,
-          "LargeTickHit": 0,
-          "SmallBonus": 11,
-          "LargeBonus": 2,
-          "IgnoreMiss": 7,
-          "IgnoreHit": 0,
-          "ComboBreak": 0,
-          "SliderTailHit": 0
-        }
-      },
-      {
-        "BeatmapHash": "63daf4d00fbb75ecb43805eac4dc6b61",
-        "RulesetShortName": "mosususu",
-        "TotalScore": 106722,
-        "Accuracy": 0.9111050328227571,
-        "MaxCombo": 185,
-        "Rank": "A",
-        "Date": "2025-09-07T07:56:56.5698042+00:00",
-        "Mods": [
-          {
-            "acronym": "NF"
-          },
-          {
-            "acronym": "HD"
-          },
-          {
-            "acronym": "DA",
-            "settings": {
-              "approach_rate": 10.0,
-              "overall_difficulty": 7.0
-            }
-          },
-          {
-            "acronym": "NL"
-          }
-        ],
-        "Statistics": {
-          "None": 0,
-          "Miss": 46,
-          "Meh": 27,
-          "Ok": 141,
-          "Good": 0,
-          "Great": 1614,
-          "Perfect": 0,
-          "SmallTickMiss": 0,
-          "SmallTickHit": 0,
-          "LargeTickMiss": 0,
-          "LargeTickHit": 0,
-          "SmallBonus": 12,
-          "LargeBonus": 3,
-          "IgnoreMiss": 8,
-          "IgnoreHit": 0,
-          "ComboBreak": 0,
-          "SliderTailHit": 0
-        }
-      },
-      {
-        "BeatmapHash": "651aec29cde607d8dae81a3cc285737b",
-        "RulesetShortName": "mosususu",
-        "TotalScore": 80276,
-        "Accuracy": 0.8602150537634409,
-        "MaxCombo": 41,
-        "Rank": "B",
-        "Date": "2025-09-11T12:36:59.9591643+00:00",
-        "Mods": [
-          {
-            "acronym": "NF"
-          },
-          {
-            "acronym": "HD"
-          },
-          {
-            "acronym": "DA",
-            "settings": {
-              "approach_rate": 10.0,
-              "overall_difficulty": 7.0
-            }
-          },
-          {
-            "acronym": "RDV2",
-            "settings": {
-              "aim_distance_multiplier": 4.97,
-              "power_jumps": true,
-              "stream_distance_multiplier": 10.0,
-              "seed": 303710747
+              "divisor": 3,
+              "seed": 1565552528
             }
           },
           {
@@ -263,32 +162,90 @@
         ],
         "Statistics": {
           "None": 0,
-          "Miss": 65,
-          "Meh": 0,
-          "Ok": 39,
+          "Miss": 82,
+          "Meh": 1,
+          "Ok": 18,
           "Good": 0,
-          "Great": 547,
+          "Great": 1257,
           "Perfect": 0,
           "SmallTickMiss": 0,
           "SmallTickHit": 0,
           "LargeTickMiss": 0,
           "LargeTickHit": 0,
-          "SmallBonus": 46,
-          "LargeBonus": 3,
+          "SmallBonus": 12,
+          "LargeBonus": 2,
+          "IgnoreMiss": 9,
+          "IgnoreHit": 0,
+          "ComboBreak": 0,
+          "SliderTailHit": 0
+        }
+      },
+
+      {
+        "BeatmapHash": "651aec29cde607d8dae81a3cc285737b",
+        "RulesetShortName": "mosususu",
+        "TotalScore": 77339,
+        "Accuracy": 0.8561187916026626,
+        "MaxCombo": 40,
+        "Rank": "B",
+        "Date": "2026-05-26T07:59:18.6113384+00:00",
+        "Mods": [
+          {
+            "acronym": "NF"
+          },
+          {
+            "acronym": "HD"
+          },
+          {
+            "acronym": "DA",
+            "settings": {
+              "approach_rate": 10.5,
+              "extended_limits": true
+            }
+          },
+          {
+            "acronym": "RDV2",
+            "settings": {
+              "aim_distance_multiplier": 6.42,
+              "seed": 1029294438
+            }
+          },
+          {
+            "acronym": "NL",
+            "settings": {
+              "beat_divisor": 2
+            }
+          }
+        ],
+        "Statistics": {
+          "None": 0,
+          "Miss": 79,
+          "Meh": 0,
+          "Ok": 22,
+          "Good": 0,
+          "Great": 550,
+          "Perfect": 0,
+          "SmallTickMiss": 0,
+          "SmallTickHit": 0,
+          "LargeTickMiss": 0,
+          "LargeTickHit": 0,
+          "SmallBonus": 47,
+          "LargeBonus": 4,
           "IgnoreMiss": 29,
           "IgnoreHit": 0,
           "ComboBreak": 0,
           "SliderTailHit": 0
         }
       },
+
       {
         "BeatmapHash": "a0221207b4dc4bdabe796d225de0ded0",
-        "RulesetShortName": "osu",
-        "TotalScore": 84662,
-        "Accuracy": 0.9158957106812448,
-        "MaxCombo": 75,
-        "Rank": "F",
-        "Date": "2025-04-20T12:10:50.8582966+00:00",
+        "RulesetShortName": "mosususu",
+        "TotalScore": 142854,
+        "Accuracy": 0.8414403355327094,
+        "MaxCombo": 42,
+        "Rank": "B",
+        "Date": "2026-05-26T07:51:59.8685446+00:00",
         "Mods": [
           {
             "acronym": "HD"
@@ -296,36 +253,39 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.0
+              "approach_rate": 10.5,
+              "extended_limits": true
             }
           },
           {
-            "acronym": "RD",
+            "acronym": "RDV2",
             "settings": {
-              "seed": 79569499
+              "aim_distance_multiplier": 4.15,
+              "seed": 1073449839
             }
           }
         ],
         "Statistics": {
           "None": 0,
-          "Miss": 20,
-          "Meh": 0,
-          "Ok": 0,
+          "Miss": 87,
+          "Meh": 2,
+          "Ok": 22,
           "Good": 0,
-          "Great": 187,
+          "Great": 488,
           "Perfect": 0,
           "SmallTickMiss": 0,
           "SmallTickHit": 0,
           "LargeTickMiss": 0,
-          "LargeTickHit": 13,
-          "SmallBonus": 0,
-          "LargeBonus": 0,
-          "IgnoreMiss": 0,
-          "IgnoreHit": 59,
+          "LargeTickHit": 22,
+          "SmallBonus": 11,
+          "LargeBonus": 1,
+          "IgnoreMiss": 7,
+          "IgnoreHit": 101,
           "ComboBreak": 0,
-          "SliderTailHit": 59
+          "SliderTailHit": 101
         }
       },
+
       {
         "BeatmapHash": "357d1685e7932b45837954f3f36900fb",
         "RulesetShortName": "mosususu",
@@ -341,7 +301,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10,
+              "approach_rate": 10.3,
               "extended_limits": true
             }
           },
@@ -376,6 +336,63 @@
           "SmallBonus": 0,
           "LargeBonus": 0,
           "IgnoreMiss": 0,
+          "IgnoreHit": 0,
+          "ComboBreak": 0,
+          "SliderTailHit": 0
+        }
+      },
+
+      {
+        "BeatmapHash": "04a8c84dc9f5217a3713f9fadfc969a1",
+        "RulesetShortName": "mosususu",
+        "TotalScore": 207040,
+        "Accuracy": 0.9111384111384111,
+        "MaxCombo": 69,
+        "Rank": "A",
+        "Date": "2026-05-26T10:12:28.2592653+00:00",
+        "Mods": [
+          {
+            "acronym": "HD"
+          },
+          {
+            "acronym": "DA",
+            "settings": {
+              "approach_rate": 10.5,
+              "drain_rate": 6.0,
+              "extended_limits": true
+            }
+          },
+          {
+            "acronym": "RDV2",
+            "settings": {
+              "aim_distance_multiplier": 7.25,
+              "power_jumps": true,
+              "divisor": 3,
+              "seed": 287545666
+            }
+          },
+          {
+            "acronym": "NL",
+            "settings": {
+              "beat_divisor": 2
+            }
+          }
+        ],
+        "Statistics": {
+          "None": 0,
+          "Miss": 61,
+          "Meh": 0,
+          "Ok": 17,
+          "Good": 0,
+          "Great": 736,
+          "Perfect": 0,
+          "SmallTickMiss": 0,
+          "SmallTickHit": 0,
+          "LargeTickMiss": 0,
+          "LargeTickHit": 0,
+          "SmallBonus": 50,
+          "LargeBonus": 21,
+          "IgnoreMiss": 39,
           "IgnoreHit": 0,
           "ComboBreak": 0,
           "SliderTailHit": 0
