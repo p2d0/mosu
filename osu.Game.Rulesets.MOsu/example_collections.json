@@ -28,7 +28,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.5,
+              "approach_rate": 10.0,
               "drain_rate": 6.0,
               "extended_limits": true
             }
@@ -84,7 +84,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.5,
+              "approach_rate": 10.0,
               "drain_rate": 6.0,
               "extended_limits": true
             }
@@ -140,7 +140,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.3,
+              "approach_rate": 10.0,
               "extended_limits": true
             }
           },
@@ -341,7 +341,7 @@
           {
             "acronym": "DA",
             "settings": {
-              "approach_rate": 10.3,
+              "approach_rate": 10,
               "extended_limits": true
             }
           },
