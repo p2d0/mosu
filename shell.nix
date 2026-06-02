@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {config.allowUnfree = true;} }:
+{ pkgs ? import <nixpkgs> { config.allowUnfree = true; } }:
 
 with pkgs;
 
@@ -30,7 +30,7 @@ mkShell {
   OSU_EXTERNAL_UPDATE_PROVIDER = 1;
 
   buildInputs = [
-    pkgs.dotnetCorePackages.sdk_8_0_3xx
+    pkgs.dotnetCorePackages.sdk_10_0
     pkgs.netcoredbg
     pkgs.csharp-ls
     # pkgs.omnisharp-roslyn
