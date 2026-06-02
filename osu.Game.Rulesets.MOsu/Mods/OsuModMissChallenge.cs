@@ -78,7 +78,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // Get the mod types active on this player (excluding Miss Challenge itself)
             var activeModTypes = player.Mods.Value
                 .Select(m => m.GetType())
-                .Where(t => t != typeof(OsuModMissChallenge))
+                .Where(t => t != typeof(OsuModMissChallenge) && t != typeof(ModNoFail))
                 .OrderBy(t => t.Name)
                 .ToList();
 
@@ -88,7 +88,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 {
                     var scoreModTypes = s.Mods
                         .Select(m => m.GetType())
-                        .Where(t => t != typeof(OsuModMissChallenge))
+                        .Where(t => t != typeof(OsuModMissChallenge) && t != typeof(ModNoFail))
                         .OrderBy(t => t.Name)
                         .ToList();
                     return scoreModTypes.SequenceEqual(activeModTypes);
