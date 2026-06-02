@@ -183,6 +183,7 @@ namespace osu.Game.Rulesets.MOsu
                         new MultiMod(new OsuModFlashlight(), new OsuModBlinds()),
                         new OsuModStrictTracking(),
                         new OsuModAccuracyChallenge(),
+                        new OsuModMissChallenge(),
                     };
 
                 case ModType.Conversion:
