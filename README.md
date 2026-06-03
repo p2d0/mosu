@@ -2,6 +2,8 @@
 
 A custom osu! ruleset with unique mods and local PP tracking.
 
+<video src="https://raw.githubusercontent.com/p2d0/mosu/master/demo.mp4" controls></video>
+
 ## Mods
 
 - **Miss Challenge** — fail if your miss count exceeds a configurable limit (1–100). Option to auto-set from your best local score for the beatmap, matching by active mods (DT rate, AR/CS).
