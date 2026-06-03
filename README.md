@@ -2,7 +2,7 @@
 
 A custom osu! ruleset with unique mods and local PP tracking.
 
-![demo](demo.gif)
+<img src="demo.gif" width="100%" />
 
 ## Mods
 
