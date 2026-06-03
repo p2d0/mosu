@@ -2,7 +2,7 @@
 
 A custom osu! ruleset with unique mods and local PP tracking.
 
-https://raw.githubusercontent.com/p2d0/mosu/master/demo.mp4
+<video src="https://raw.githubusercontent.com/p2d0/mosu/master/demo.mp4" width="352" height="720"></video>
 
 ## Mods
 
