@@ -9,6 +9,7 @@ using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Overlays.Settings;
 using osu.Game.Scoring;
@@ -75,23 +76,39 @@ namespace osu.Game.Rulesets.MOsu.Mods
             var ruleset = player.Ruleset.Value;
             var beatmapHash = player.Beatmap.Value.BeatmapInfo.Hash;
 
-            // Get the mod types active on this player (excluding Miss Challenge itself)
-            var activeModTypes = player.Mods.Value
-                .Select(m => m.GetType())
-                .Where(t => t != typeof(OsuModMissChallenge) && t != typeof(ModNoFail))
-                .OrderBy(t => t.Name)
+            // Build a comparable key for each mod: type name + relevant settings
+            static string modKey(Mod m)
+            {
+                if (m is ModRateAdjust ra)
+                    return $"{m.GetType().Name}:{ra.SpeedChange.Value:F2}";
+
+                if (m is OsuModDifficultyAdjust da)
+                {
+                    var parts = new List<string> { m.GetType().Name };
+                    if (!da.CircleSize.IsDefault) parts.Add($"CS:{da.CircleSize.Value:F1}");
+                    if (!da.ApproachRate.IsDefault) parts.Add($"AR:{da.ApproachRate.Value:F1}");
+                    return string.Join(",", parts);
+                }
+
+                return m.GetType().Name;
+            }
+
+            var activeModKeys = player.Mods.Value
+                .Where(m => !(m is OsuModMissChallenge) && !(m is ModNoFail))
+                .Select(modKey)
+                .OrderBy(k => k)
                 .ToList();
 
             var allScores = localUserManager.GetLocalScores(ruleset)
                 .Where(s => s.BeatmapHash == beatmapHash)
                 .Where(s =>
                 {
-                    var scoreModTypes = s.Mods
-                        .Select(m => m.GetType())
-                        .Where(t => t != typeof(OsuModMissChallenge) && t != typeof(ModNoFail))
-                        .OrderBy(t => t.Name)
+                    var scoreModKeys = s.Mods
+                        .Where(m => !(m is OsuModMissChallenge) && !(m is ModNoFail))
+                        .Select(modKey)
+                        .OrderBy(k => k)
                         .ToList();
-                    return scoreModTypes.SequenceEqual(activeModTypes);
+                    return scoreModKeys.SequenceEqual(activeModKeys);
                 })
                 .ToList();
 
