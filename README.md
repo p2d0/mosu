@@ -4,6 +4,7 @@ A custom osu! ruleset with unique mods and local PP tracking.
 
 ## Mods
 
+- **Miss Challenge** — fail if your miss count exceeds a configurable limit (1–100). Option to auto-set from your best local score for the beatmap, matching by active mods (DT rate, AR/CS).
 - **No Sliding** — disables sliding on sliders
 - **Random V2** — randomizes hit object positions with configurable patterns
 - **Spacing Adjust** — adjust approach rate and circle size with extended limits
