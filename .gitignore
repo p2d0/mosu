@@ -6,3 +6,8 @@ obj/
 bin/
 .cache/
 LOCAL.md
+.pi-lens/
+result-bin
+result-man
+scores_to_keep.txt
+/*.json
