@@ -14,6 +14,7 @@ using osu.Game.Users;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Framework.Allocation;
 using osu.Game.Database;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Online;
 
 namespace osu.Game.Rulesets.MOsu.Tests
@@ -26,12 +27,15 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private LocalUserProfileOverlay profile = null!;
         private OsuRuleset ruleset = null!;
         private LocalUserManager localUserManager = null!;
+        private MOsuRealmAccess mosuRealm = null!;
 
         [BackgroundDependencyLoader]
         private void load(RealmAccess realm,IAPIProvider api)
         {
             ruleset = new OsuRuleset();
-            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, api));
+            mosuRealm = new MOsuRealmAccess(LocalStorage);
+            Dependencies.Cache(mosuRealm);
+            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, mosuRealm, api));
 
         }
 

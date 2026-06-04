@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Scoring;
 using osu.Framework.Allocation;
 using osu.Game.Database;
@@ -20,17 +22,84 @@ namespace osu.Game.Rulesets.MOsu
     public partial class LocalUserManager : Component
     {
         private readonly RealmAccess realm;
+        private readonly osu.Game.Rulesets.MOsu.Database.MOsuRealmAccess mosuRealm;
         private readonly IAPIProvider api;
         // NOTE all in one for now
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
+
+        private string cacheKey(RulesetInfo ruleset)
+        {
+            return $"{ruleset.ShortName}:{ActiveProfile.Value}";
+        }
         private readonly OsuRuleset ruleset;
+
+        private readonly Bindable<string> activeProfileBindable = new Bindable<string>();
+        public Bindable<string> ActiveProfile => activeProfileBindable;
+
+        public event Action<string>? ProfileChanged;
+
+        public void SetActiveProfile(string name)
+        {
+            if (activeProfileBindable.Value == name) return;
+            activeProfileBindable.Value = name;
+            ProfileChanged?.Invoke(name);
+        }
+
+        public List<LocalProfile> GetProfiles()
+        {
+            return mosuRealm.Run(r => r.All<LocalProfile>().OrderBy(p => p.Name).ToList().Detach());
+        }
+
+        public void EnsureDefaultProfile()
+        {
+            mosuRealm.Write(r =>
+            {
+                if (r.All<LocalProfile>().Count() == 0 && api.LocalUser.Value?.Username is string username && !string.IsNullOrEmpty(username))
+                {
+                    r.Add(new LocalProfile { Name = username });
+                    SetActiveProfile(username);
+                }
+                else if (ActiveProfile.Value == null || ActiveProfile.Value == "")
+                {
+                    var first = r.All<LocalProfile>().First();
+                    SetActiveProfile(first?.Name ?? "");
+                }
+            });
+        }
+
+        public void AddProfile(string name)
+        {
+            mosuRealm.Write(r =>
+            {
+                if (r.All<LocalProfile>().Any(p => p.Name == name))
+                    return;
+                r.Add(new LocalProfile { Name = name });
+            });
+        }
+
+        public void RemoveProfile(string name)
+        {
+            mosuRealm.Write(r =>
+            {
+                var profile = r.All<LocalProfile>().First(p => p.Name == name);
+                if (profile != null && r.All<LocalProfile>().Count() > 1)
+                {
+                    if (ActiveProfile.Value == name)
+                    {
+                        var fallback = r.All<LocalProfile>().First(p => p.Name != name);
+                        SetActiveProfile(fallback?.Name ?? "");
+                    }
+                    r.Remove(profile);
+                }
+            });
+        }
 
         /// <summary>
         /// Returns the <see cref="UserStatistics"/> currently available for the given ruleset.
         /// This may return null if the requested statistics has not been fetched before yet.
         /// </summary>
         /// <param name="ruleset">The ruleset to return the corresponding <see cref="UserStatistics"/> for.</param>
-        public UserStatistics? GetStatisticsFor(RulesetInfo ruleset) => statisticsCache.GetValueOrDefault(ruleset.ShortName);
+        public UserStatistics? GetStatisticsFor(RulesetInfo ruleset) => statisticsCache.GetValueOrDefault(cacheKey(ruleset));
 
         private async void initialiseStatistics()
         {
@@ -48,12 +117,18 @@ namespace osu.Game.Rulesets.MOsu
             UpdateStatistics(user.Statistics, ruleset, callback);
         }
 
+        public async Task RefreshStatisticsAsync(RulesetInfo ruleset)
+        {
+            await UpdateUserStatisticsAsync(ruleset).ConfigureAwait(false);
+        }
+
         public event Action<UserStatisticsUpdate>? StatisticsUpdated;
 
         public void UpdateStatistics(UserStatistics newStatistics, RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
         {
-            var oldStatistics = statisticsCache.GetValueOrDefault(ruleset.ShortName);
-            statisticsCache[ruleset.ShortName] = newStatistics;
+            var key = cacheKey(ruleset);
+            var oldStatistics = statisticsCache.GetValueOrDefault(key);
+            statisticsCache[key] = newStatistics;
 
             var update = new UserStatisticsUpdate(ruleset, oldStatistics, newStatistics);
             callback?.Invoke(update);
@@ -62,18 +137,22 @@ namespace osu.Game.Rulesets.MOsu
 
 
 
-        public LocalUserManager(OsuRuleset ruleset, RealmAccess realm, IAPIProvider api)
+        public LocalUserManager(OsuRuleset ruleset, RealmAccess realm, osu.Game.Rulesets.MOsu.Database.MOsuRealmAccess mosuRealm, IAPIProvider api)
         {
             this.ruleset = ruleset;
             this.realm = realm;
+            this.mosuRealm = mosuRealm;
             this.api = api;
 
             api.LocalUser.BindValueChanged(_ =>
             {
                 // queuing up requests directly on user change is unsafe, as the API status may have not been updated yet.
                 // schedule a frame to allow the API to be in its correct state sending requests.
+                EnsureDefaultProfile();
                 initialiseStatistics();
             }, true);
+
+
         }
 
         public async Task<APIUser> GetLocalUserWithStatisticsAsync(RulesetInfo ruleset)
@@ -82,7 +161,7 @@ namespace osu.Game.Rulesets.MOsu
                 return new APIUser
                 {
                     Id = api.LocalUser.Value.Id,
-                    Username = api.LocalUser.Value.Username,
+                    Username = ActiveProfile.Value ?? api.LocalUser.Value.Username,
                     CountryCode = api.LocalUser.Value.CountryCode,
                     CoverUrl = api.LocalUser.Value.CoverUrl,
                     Statistics = stats
@@ -133,9 +212,10 @@ namespace osu.Game.Rulesets.MOsu
                 // 1. Get all scores for the user in the specified ruleset using the Extensions.
                 // If Guest, we assume we want all local scores (files on disk).
                 // If Logged in, we want that specific user's best scores.
+                string username = ActiveProfile.Value ?? api.LocalUser.Value.Username;
                 var allScores = api.LocalUser.Value.Username == "Guest"
-                    ? GetLocalScores(ruleset)                     // Was: scoreManager.All(ruleset)
-                    : GetBestScores(api.LocalUser.Value.Username, ruleset); // Was: scoreManager.ByUsername(...)
+                    ? GetLocalScores(ruleset)
+                    : GetBestScores(username, ruleset);
 
                 var scoresWithPP = allScores.Where(s => s.PP.HasValue).ToList();
 
@@ -161,7 +241,7 @@ namespace osu.Game.Rulesets.MOsu
                 return new APIUser
                 {
                     Id = api.LocalUser.Value.Id,
-                    Username = api.LocalUser.Value.Username,
+                    Username = username,
                     CountryCode = api.LocalUser.Value.CountryCode,
                     CoverUrl = api.LocalUser.Value.CoverUrl,
                     Statistics = new UserStatistics

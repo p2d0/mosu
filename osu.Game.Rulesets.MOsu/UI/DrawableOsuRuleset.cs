@@ -133,11 +133,13 @@ namespace osu.Game.Rulesets.MOsu.UI
 
 
                 private ScoreManager scoreManager;
+                private LocalUserManager localUserManager = null!;
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager localUserManager, ScoreManager? scoreManager)
         {
             this.scoreManager = scoreManager!;
+            this.localUserManager = localUserManager;
 
             // Attach dummy replay file to mosu scores that have no files,
             // so the delete button appears in the leaderboard context menu.
@@ -197,10 +199,15 @@ namespace osu.Game.Rulesets.MOsu.UI
                     var pp = await calculatePP(scoreInfo).ConfigureAwait(false);
                     realm.Write(r => {
                         var score = r.Find<ScoreInfo>(scoreInfo.ID);
-                        if(score != null)
+                        if (score != null)
+                        {
                             score.PP = pp;
+                            // Set username to active profile for profile-based score tracking.
+                            string activeProfile = localUserManager.ActiveProfile.Value;
+                            if (!string.IsNullOrEmpty(activeProfile))
+                                score.RealmUser.Username = activeProfile;
                         }
-                    );
+                    });
 
                     await localUserManager.UpdateUserStatisticsAsync(Ruleset.RulesetInfo).ConfigureAwait(false);
                 };

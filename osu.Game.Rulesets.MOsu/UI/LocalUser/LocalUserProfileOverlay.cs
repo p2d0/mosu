@@ -3,6 +3,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
+using osu.Framework.Logging;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
@@ -119,6 +120,18 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         [BackgroundDependencyLoader]
         private void load()
         {
+            localUserManager.ProfileChanged += _ =>
+            {
+                if (IsPresent)
+                    Schedule(() => fetchAndSetContentForLocalUser(new osu.Game.Online.API.Requests.Responses.APIUser { Username = localUserManager.ActiveProfile.Value }, null));
+            };
+
+            // Also refresh when stats are updated (e.g., after gameplay)
+            localUserManager.StatisticsUpdated += _ =>
+            {
+                if (IsPresent)
+                    Schedule(() => fetchAndSetContentForLocalUser(new osu.Game.Online.API.Requests.Responses.APIUser { Username = localUserManager.ActiveProfile.Value }, null));
+            };
         }
 
         protected override LocalProfileHeader CreateHeader() => new LocalProfileHeader();
@@ -152,7 +165,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 tabs.Clear();
                 lastSection = null;
 
-                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? @"osu").AsNonNull();
+                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? @"mosususu").AsNonNull();
 
                 // Async Data Fetch
                 var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset).ConfigureAwait(false);

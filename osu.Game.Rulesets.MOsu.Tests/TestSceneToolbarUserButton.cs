@@ -1,245 +1,92 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Shapes;
 using osu.Framework.Testing;
 using osu.Game.Database;
-using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Overlays.Toolbar;
+using osu.Game.Rulesets.MOsu.Database;
+using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
-using osu.Game.Scoring;
-using osu.Game.Tests.Visual;
 using osu.Game.Users;
-using osuTK;
-using osuTK.Graphics;
+using osu.Game.Tests.Visual;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
     [TestFixture]
-    public partial class TestSceneToolbarUserButton : OsuManualInputManagerTestScene
+    public partial class TestSceneToolbarUserButton : OsuTestScene
     {
-
         private LocalUserManager localUserManager = null!;
         private OsuRuleset ruleset = null!;
-        [Resolved]
-        private IBindable<RulesetInfo> rulesetInfo { get; set; }
+        private ToolbarLocalUserButton toolbarButton = null!;
+        private LocalUserProfileOverlay profileOverlay = null!;
+
         protected override Ruleset CreateRuleset() => new OsuRuleset();
 
         [BackgroundDependencyLoader]
-        private void load(RealmAccess realm,IAPIProvider api)
+        private void load(RealmAccess realm, IAPIProvider api)
         {
             ruleset = new OsuRuleset();
-            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, api));
-
+            var mosuRealm = new MOsuRealmAccess(LocalStorage);
+            Dependencies.Cache(mosuRealm);
+            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, mosuRealm, api));
         }
 
         [SetUpSteps]
         public void SetUp()
         {
-            Container mainContainer;
-            AddStep("SETUP", () => {
-                localUserManager.UpdateStatistics(TestSceneUserProfileOverlay.TEST_USER.Statistics,ruleset.RulesetInfo);
+            AddStep("SETUP", () =>
+            {
+                localUserManager.EnsureDefaultProfile();
+                localUserManager.AddProfile("Alt");
+                localUserManager.SetActiveProfile(TestSceneUserProfileOverlay.TEST_USER.Username);
 
-                Children = new Drawable[]
-                {
-                    mainContainer = new Container
-                    {
-                        Anchor = Anchor.Centre,
-                        Origin = Anchor.Centre,
-                        RelativeSizeAxes = Axes.X,
-                        Height = Toolbar.HEIGHT,
-                        Children = new Drawable[]
-                        {
-                            new Box
-                            {
-                                Colour = Color4.Black,
-                                RelativeSizeAxes = Axes.Both,
-                            },
-                            new FillFlowContainer
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                                RelativeSizeAxes = Axes.Y,
-                                AutoSizeAxes = Axes.X,
-                                Direction = FillDirection.Horizontal,
-                                Children = new Drawable[]
-                                {
-                                    new Box
-                                    {
-                                        Colour = Color4.DarkRed,
-                                        RelativeSizeAxes = Axes.Y,
-                                        Width = 2,
-                                    },
-                                    new ToolbarLocalUserButton(),
-                                    new Box
-                                    {
-                                        Colour = Color4.DarkRed,
-                                        RelativeSizeAxes = Axes.Y,
-                                        Width = 2,
-                                    },
-                                }
-                            },
-                        }
-                    },
-                };
-                AddSliderStep("scale", 0.5, 4, 1, scale => mainContainer.Scale = new Vector2((float)scale));
+                Ruleset.Value = ruleset.RulesetInfo;
 
+                profileOverlay = new LocalUserProfileOverlay();
+                Dependencies.CacheAs<LocalUserProfileOverlay>(profileOverlay);
+
+                toolbarButton = new ToolbarLocalUserButton();
+                Add(toolbarButton);
             });
         }
 
         [Test]
-        public void TestLoginLogout()
+        public void TestToolbarUpdatesOnProfileSwitch()
         {
-            // AddStep("Log out", () => dummyAPI.Logout());
-            // AddStep("Log in", () => dummyAPI.Login("wang", "jang"));
-            // AddStep("Authenticate via second factor", () => dummyAPI.AuthenticateSecondFactor("abcdefgh"));
+            AddAssert("toolbar initial username", () => toolbarButton.usernameText.Text.ToString() == TestSceneUserProfileOverlay.TEST_USER.Username);
+
+            AddStep("set main profile stats", () =>
+            {
+                localUserManager.SetActiveProfile(TestSceneUserProfileOverlay.TEST_USER.Username);
+                localUserManager.UpdateStatistics(new UserStatistics { PP = 100m }, ruleset.RulesetInfo);
+            });
+
+            AddAssert("main has 100 pp", () => localUserManager.GetStatisticsFor(ruleset.RulesetInfo)?.PP == 100m);
+
+            AddStep("set alt profile stats", () =>
+            {
+                localUserManager.SetActiveProfile("Alt");
+                localUserManager.UpdateStatistics(new UserStatistics { PP = 999m }, ruleset.RulesetInfo);
+            });
+
+            AddAssert("alt has 999 pp", () => localUserManager.GetStatisticsFor(ruleset.RulesetInfo)?.PP == 999m);
+
+            AddStep("switch to main", () => localUserManager.SetActiveProfile(TestSceneUserProfileOverlay.TEST_USER.Username));
+            AddAssert("toolbar shows main username", () => toolbarButton.usernameText.Text.ToString() == TestSceneUserProfileOverlay.TEST_USER.Username);
+            AddAssert("toolbar shows main pp", () => toolbarButton.ppText.Text.ToString().Contains("100"));
+
+            AddStep("switch to alt", () => localUserManager.SetActiveProfile("Alt"));
+            AddAssert("toolbar shows alt username", () => toolbarButton.usernameText.Text.ToString() == "Alt");
+            AddAssert("toolbar shows alt pp", () => toolbarButton.ppText.Text.ToString().Contains("999"));
+
+            AddStep("switch back to main", () => localUserManager.SetActiveProfile(TestSceneUserProfileOverlay.TEST_USER.Username));
+            AddAssert("toolbar shows main username again", () => toolbarButton.usernameText.Text.ToString() == TestSceneUserProfileOverlay.TEST_USER.Username);
+            AddAssert("toolbar shows main pp again", () => toolbarButton.ppText.Text.ToString().Contains("100"));
         }
 
-        // [Test]
-        // public void TestStates()
-        // {
-        //     // AddStep("Log in", () => dummyAPI.Login("wang", "jang"));
-        //     // AddStep("Authenticate via second factor", () => dummyAPI.AuthenticateSecondFactor("abcdefgh"));
-
-        //     // foreach (var state in Enum.GetValues<APIState>())
-        //     // {
-        //     //     AddStep($"Change state to {state}", () => dummyAPI.SetState(state));
-        //     // }
-        // }
-
-        // [Test]
-        // public void TestTransientUserStatisticsDisplay()
-        // {
-        //     // AddStep("Log in", () => dummyAPI.Login("wang", "jang"));
-
-        //     AddStep("Gain", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 123_456,
-        //                 PP = 1234
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357
-        //             });
-        //     });
-
-        //     AddStep("Loss", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 123_456,
-        //                 PP = 1234
-        //             });
-        //     });
-
-        //     // Tests flooring logic works as expected.
-        //     AddStep("Tiny increase in PP", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357.6m
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1358.1m
-        //             });
-        //     });
-
-        //     // cross-reference: `TestSceneOverallRanking.TestRoundingTreatment()`.
-        //     AddStep("Test rounding treatment", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 5071.495M
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 5072.99M
-        //             });
-        //     });
-
-        //     AddStep("No change 1", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357m
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357.1m
-        //             });
-        //     });
-
-        //     AddStep("Was null", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = null,
-        //                 PP = null
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357
-        //             });
-        //     });
-
-        //     AddStep("Became null", () =>
-        //     {
-        //         var transientUpdateDisplay = this.ChildrenOfType<TransientUserStatisticsUpdateDisplay>().Single();
-        //         transientUpdateDisplay.LatestUpdate.Value = new ScoreBasedUserStatisticsUpdate(
-        //             new ScoreInfo(),
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = 111_111,
-        //                 PP = 1357
-        //             },
-        //             new UserStatistics
-        //             {
-        //                 GlobalRank = null,
-        //                 PP = null
-        //             });
-        //     });
-        // }
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -19,6 +20,11 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         private CentreHeaderContainer centreHeaderContainer;
         private DetailHeaderContainer detailHeaderContainer;
+        private ProfileCardRow profileCardRow = null!;
+        private FillFlowContainer contentContainer = null!;
+
+        [Resolved]
+        private LocalUserManager localUserManager { get; set; } = null!;
 
         public LocalProfileHeader()
         {
@@ -34,9 +40,22 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             Debug.Assert(detailHeaderContainer != null);
         }
 
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            profileCardRow = new ProfileCardRow(localUserManager.ActiveProfile, localUserManager)
+            {
+                RelativeSizeAxes = Axes.X,
+            };
+            profileCardRow.RequestAddProfile = name => localUserManager.AddProfile("New Profile");
+            profileCardRow.RequestDeleteProfile = name => localUserManager.RemoveProfile(name);
+            contentContainer.Insert(0, profileCardRow);
+            localUserManager.ProfileChanged += _ => profileCardRow.Refresh();
+        }
+
         protected override Drawable CreateBackground() => Empty();
 
-        protected override Drawable CreateContent() => new FillFlowContainer
+        protected override Drawable CreateContent() => contentContainer = new FillFlowContainer
         {
             RelativeSizeAxes = Axes.X,
             AutoSizeAxes = Axes.Y,

@@ -111,18 +111,20 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void InitializeSystem(Container waveContainer, FillFlowContainer toolbarContainer)
         {
+            // --- 1. Setup MOsuRealmAccess first ---
+            var mosuRealm = host.Dependencies.Get<MOsuRealmAccess>();
+            if (mosuRealm == null)
+            {
+                mosuRealm = new MOsuRealmAccess(host.Storage);
+                host.Dependencies.Cache(mosuRealm);
+            }
+
             // --- 1. Setup LocalUserManager (Singleton Logic) ---
             var userManager = host.Dependencies.Get<LocalUserManager>();
             if (userManager == null)
             {
-                userManager = new LocalUserManager(ruleset, realm, api);
+                userManager = new LocalUserManager(ruleset, realm, mosuRealm, api);
                 host.Dependencies.Cache(userManager);
-            }
-            var db = host.Dependencies.Get<MOsuRealmAccess>();
-            if (db == null)
-            {
-                db = new MOsuRealmAccess(host.Storage);
-                host.Dependencies.Cache(db);
             }
 
             // --- 1.5 Setup Background Preset Import ---

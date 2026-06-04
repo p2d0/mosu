@@ -23,8 +23,8 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
     public partial class ToolbarLocalUserButton : ToolbarOverlayToggleButton
     {
         // private UpdateableAvatar avatar;
-        private OsuSpriteText usernameText;
-        private OsuSpriteText ppText;
+        internal OsuSpriteText usernameText;
+        internal OsuSpriteText ppText;
 
         [Resolved]
         private IBindable<RulesetInfo> ruleset { get; set; }
@@ -85,6 +85,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
             var localUser = api.LocalUser.GetBoundCopy();
             localUser.BindValueChanged(u => updateDisplay(u.NewValue), true);
 
+            // Also update when active profile changes
+            statisticsProvider.ProfileChanged += _ => updateDisplay(api.LocalUser.Value!);
+
             ruleset.BindValueChanged(r =>
             {
                 bool isMOsu = r.NewValue.ShortName == "mosususu";
@@ -106,18 +109,13 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
         // 4. Update Logic
         private void onStatisticsUpdated(UserStatisticsUpdate update)
         {
-            if (update.Ruleset.Equals(ruleset.Value))
+            if (update.Ruleset.ShortName == "mosususu")
                 Schedule(updatePP);
         }
 
         private void updateDisplay(APIUser user)
         {
-            // Assuming first child of Flow is Avatar
-            // ((UpdateableAvatar)Flow.Children[0]).User = user;
-            usernameText.Text = user.Username;
-
-            // Simple check: Guests usually have ID <= 1. Only show PP for real users.
-            // ppText.Alpha = 1;
+            usernameText.Text = statisticsProvider.ActiveProfile.Value ?? user.Username;
             updatePP();
         }
 
