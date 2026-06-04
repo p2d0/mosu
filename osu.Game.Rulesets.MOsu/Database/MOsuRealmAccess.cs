@@ -45,7 +45,7 @@ namespace osu.Game.Rulesets.MOsu.Database
         /// 1    Initial MOsu Realm setup.
         /// 2    2025-05-26  Added PresetImportState.
         /// </summary>
-        private const int schema_version = 3;
+        private const int schema_version = 4;
 
         /// <summary>
         /// Lock object which is held during <see cref="BlockAllOperations"/> sections, blocking realm retrieval during blocking periods.

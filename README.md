@@ -21,6 +21,7 @@ A custom osu! ruleset with unique mods and local PP tracking.
 - Collection import/export — back up and share beatmap collections
 - Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
 - Local user profile with performance graphs and ranked scores
+- Local profiles — track PP and scores under different aliases
 
 ## Install
 

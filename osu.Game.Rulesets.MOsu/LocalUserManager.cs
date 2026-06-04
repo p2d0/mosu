@@ -44,6 +44,11 @@ namespace osu.Game.Rulesets.MOsu
         {
             if (activeProfileBindable.Value == name) return;
             activeProfileBindable.Value = name;
+            mosuRealm.Write(r =>
+            {
+                foreach (var p in r.All<LocalProfile>())
+                    p.IsActive = p.Name == name;
+            });
             ProfileChanged?.Invoke(name);
             RefreshStatisticsAsync(ruleset.RulesetInfo);
         }
@@ -59,13 +64,23 @@ namespace osu.Game.Rulesets.MOsu
             {
                 if (r.All<LocalProfile>().Count() == 0 && api.LocalUser.Value?.Username is string username && !string.IsNullOrEmpty(username))
                 {
-                    r.Add(new LocalProfile { Name = username });
+                    r.Add(new LocalProfile { Name = username, IsActive = true });
                     SetActiveProfile(username);
                 }
-                else if (ActiveProfile.Value == null || ActiveProfile.Value == "")
+                else
                 {
-                    var first = r.All<LocalProfile>().FirstOrDefault();
-                    SetActiveProfile(first?.Name ?? "");
+                    var active = r.All<LocalProfile>().FirstOrDefault(p => p.IsActive);
+                    if (active != null)
+                        SetActiveProfile(active.Name);
+                    else
+                    {
+                        var first = r.All<LocalProfile>().FirstOrDefault();
+                        if (first != null)
+                        {
+                            first.IsActive = true;
+                            SetActiveProfile(first.Name);
+                        }
+                    }
                 }
             });
         }
@@ -76,7 +91,7 @@ namespace osu.Game.Rulesets.MOsu
             {
                 if (r.All<LocalProfile>().Any(p => p.Name == name))
                     return;
-                r.Add(new LocalProfile { Name = name });
+                r.Add(new LocalProfile { Name = name, IsActive = false });
             });
             ProfilesChanged?.Invoke();
         }
@@ -94,6 +109,12 @@ namespace osu.Game.Rulesets.MOsu
                         fallbackName = r.All<LocalProfile>().FirstOrDefault(p => p.Name != name)?.Name;
                     }
                     r.Remove(profile);
+
+                    // Remove all scores under this profile for mosusu ruleset only
+                    realm.Write(rm =>
+                    {
+                        rm.RemoveRange(rm.All<ScoreInfo>().Filter("RealmUser.Username == $0 && Ruleset.ShortName == $1", name, ruleset.RulesetInfo.ShortName));
+                    });
                 }
             });
             if (fallbackName != null)
