@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -33,6 +34,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using osu.Game.Database;
 using osu.Game.Rulesets.Scoring;
+using osu.Game.Rulesets.Replays;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -130,9 +132,33 @@ namespace osu.Game.Rulesets.MOsu.UI
         }
 
 
+                private ScoreManager scoreManager;
+
         [BackgroundDependencyLoader]
-        private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager localUserManager)
+        private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager localUserManager, ScoreManager? scoreManager)
         {
+            this.scoreManager = scoreManager!;
+
+            // Attach dummy replay file to mosu scores that have no files,
+            // so the delete button appears in the leaderboard context menu.
+            // Custom rulesets don't get replay files from Player.PrepareScoreForResultsAsync (legacy-only).
+            if (scoreManager != null && player != null)
+            {
+                player.OnShowingResults += () =>
+                {
+                    var scoreInfo = player.Score.ScoreInfo;
+                    if (scoreInfo.Ruleset.ShortName == Ruleset.RulesetInfo.ShortName && scoreInfo.Files.Count == 0)
+                    {
+                        var stream = new MemoryStream(Array.Empty<byte>());
+                        realm.Write(r =>
+                        {
+                            var managed = r.Find<ScoreInfo>(scoreInfo.ID);
+                            if (managed != null)
+                                scoreManager.AddFile(managed, stream, $"replay-{scoreInfo.ID}.osr", r);
+                        });
+                    }
+                };
+            }
             if (replayPlayer != null)
             {
                 ReplayAnalysisOverlay analysisOverlay;
@@ -175,6 +201,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             score.PP = pp;
                         }
                     );
+
                     await localUserManager.UpdateUserStatisticsAsync(Ruleset.RulesetInfo).ConfigureAwait(false);
                 };
                 BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
