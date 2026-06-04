@@ -43,7 +43,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Horizontal,
                 Spacing = new Vector2(8),
-                Padding = new MarginPadding { Top = 8, Bottom = 8 },
+                Padding = new MarginPadding { Top = 12, Bottom = 12, Left = 16, Right = 16 },
             };
         }
 
@@ -63,7 +63,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         private void addCard(LocalProfile profile, OverlayColourProvider colours)
         {
             var card = new ProfilePill(profile, activeProfile, localUserManager, colours, RequestDeleteProfile);
-            cardsContainer.Insert(cardsContainer.Count - 1, card);
+            cardsContainer.Add(card);
         }
 
         public void Refresh()
@@ -83,6 +83,11 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         private void showAddPopover()
         {
+            if (addButton.CurrentPopover?.IsPresent == true)
+            {
+                addButton.HidePopover();
+                return;
+            }
             addButton.CurrentPopover = new AddProfilePopover
             {
                 OnAdd = name =>
@@ -154,7 +159,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         }
 
         // Profile pill: name + PP
-        private partial class ProfilePill : CompositeDrawable
+        private partial class ProfilePill : CompositeDrawable, IHasContextMenu
         {
             private readonly string profileName;
             private readonly Bindable<string> activeProfile;
@@ -194,10 +199,14 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                         {
                             nameText = new OsuSpriteText
                             {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
                                 Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 13),
                             },
                             ppText = new OsuSpriteText
                             {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
                                 Font = OsuFont.GetFont(weight: FontWeight.SemiBold, size: 11),
                             },
                         }
@@ -246,6 +255,19 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 if (localUserManager.GetProfiles().Count > 1)
                     requestDelete?.Invoke(profileName);
                 return true;
+            }
+
+            public MenuItem[]? ContextMenuItems
+            {
+                get
+                {
+                    if (localUserManager.GetProfiles().Count <= 1)
+                        return null;
+                    return new MenuItem[]
+                    {
+                        new MenuItem("Delete profile", () => requestDelete?.Invoke(profileName)),
+                    };
+                }
             }
         }
 

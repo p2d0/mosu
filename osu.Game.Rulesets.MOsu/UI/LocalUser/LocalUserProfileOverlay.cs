@@ -73,17 +73,17 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             base.Content.AddRange(new Drawable[]
             {
                 // The main scrolling/section content
-                new OsuContextMenuContainer
-                {
-                    RelativeSizeAxes = Axes.Both,
-                    Child = sectionsContainer
-                },
-                // The loading layer on top
                 new PopoverContainer
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Child = loadingLayer = new LoadingLayer(true)
-                }
+                    Child = new OsuContextMenuContainer
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Child = sectionsContainer
+                    },
+                },
+                // The loading layer on top
+                loadingLayer = new LoadingLayer(true)
             });
 
             // Hook up tab switching logic immediately
@@ -125,13 +125,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 if (IsPresent)
                     Schedule(() => fetchAndSetContentForLocalUser(new osu.Game.Online.API.Requests.Responses.APIUser { Username = localUserManager.ActiveProfile.Value }, null));
             };
-
-            // Also refresh when stats are updated (e.g., after gameplay)
-            localUserManager.StatisticsUpdated += _ =>
-            {
-                if (IsPresent)
-                    Schedule(() => fetchAndSetContentForLocalUser(new osu.Game.Online.API.Requests.Responses.APIUser { Username = localUserManager.ActiveProfile.Value }, null));
-            };
         }
 
         protected override LocalProfileHeader CreateHeader() => new LocalProfileHeader();
@@ -166,6 +159,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 lastSection = null;
 
                 var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? @"mosususu").AsNonNull();
+
+                // Wait for all profile stats to be loaded
+                await localUserManager.EnsureStatisticsLoadedAsync().ConfigureAwait(false);
 
                 // Async Data Fetch
                 var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset).ConfigureAwait(false);

@@ -3,7 +3,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Cursor;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Overlays;
@@ -54,13 +53,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                     localUserManager.AddProfile(name);
             };
             profileCardRow.RequestDeleteProfile = name => localUserManager.RemoveProfile(name);
-            contentContainer.Insert(0, new PopoverContainer
-            {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
-                Child = profileCardRow,
-            });
-            localUserManager.ProfileChanged += _ => profileCardRow.Refresh();
+            contentContainer.Insert(0, profileCardRow);
+            localUserManager.ProfileChanged += _ => Schedule(() => profileCardRow.Refresh());
+            localUserManager.ProfilesChanged += () => Schedule(() => profileCardRow.Refresh());
         }
 
         protected override Drawable CreateBackground() => Empty();
