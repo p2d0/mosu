@@ -20,7 +20,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         private CentreHeaderContainer centreHeaderContainer;
         private DetailHeaderContainer detailHeaderContainer;
-        private ProfileCardRow profileCardRow = null!;
+        private LocalTopHeaderContainer localTopHeader = null!;
         private FillFlowContainer contentContainer = null!;
 
         [Resolved]
@@ -43,19 +43,14 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         [BackgroundDependencyLoader]
         private void load()
         {
-            profileCardRow = new ProfileCardRow(localUserManager.ActiveProfile, localUserManager)
-            {
-                RelativeSizeAxes = Axes.X,
-            };
-            profileCardRow.RequestAddProfile = name =>
+            localTopHeader.ProfileCardRow.RequestAddProfile = name =>
             {
                 if (!string.IsNullOrWhiteSpace(name))
                     localUserManager.AddProfile(name);
             };
-            profileCardRow.RequestDeleteProfile = name => localUserManager.RemoveProfile(name);
-            contentContainer.Insert(0, profileCardRow);
-            localUserManager.ProfileChanged += _ => Schedule(() => profileCardRow.Refresh());
-            localUserManager.ProfilesChanged += () => Schedule(() => profileCardRow.Refresh());
+            localTopHeader.ProfileCardRow.RequestDeleteProfile = name => localUserManager.RemoveProfile(name);
+            localUserManager.ProfileChanged += _ => Schedule(() => localTopHeader.ProfileCardRow.Refresh());
+            localUserManager.ProfilesChanged += () => Schedule(() => localTopHeader.ProfileCardRow.Refresh());
         }
 
         protected override Drawable CreateBackground() => Empty();
@@ -67,7 +62,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             Direction = FillDirection.Vertical,
             Children = new Drawable[]
             {
-                new TopHeaderContainer
+                localTopHeader = new LocalTopHeaderContainer
                 {
                     RelativeSizeAxes = Axes.X,
                     User = { BindTarget = User },

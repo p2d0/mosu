@@ -21,19 +21,16 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 {
     public partial class ProfileCardRow : CompositeDrawable
     {
-        private readonly Bindable<string> activeProfile;
-        private readonly LocalUserManager localUserManager;
-
         private FillFlowContainer cardsContainer = null!;
 
         public Action<string> RequestAddProfile { get; set; } = null!;
         public Action<string> RequestDeleteProfile { get; set; } = null!;
 
-        public ProfileCardRow(Bindable<string> activeProfile, LocalUserManager localUserManager)
-        {
-            this.activeProfile = activeProfile;
-            this.localUserManager = localUserManager;
+        [Resolved]
+        private LocalUserManager localUserManager { get; set; } = null!;
 
+        public ProfileCardRow()
+        {
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
 
@@ -43,7 +40,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Horizontal,
                 Spacing = new Vector2(8),
-                Padding = new MarginPadding { Top = 12, Bottom = 12, Left = 16, Right = 16 },
+                Padding = new MarginPadding { Top = 8 },
             };
         }
 
@@ -62,7 +59,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         private void addCard(LocalProfile profile, OverlayColourProvider colours)
         {
-            var card = new ProfilePill(profile, activeProfile, localUserManager, colours, RequestDeleteProfile);
+            var card = new ProfilePill(profile, localUserManager, colours, RequestDeleteProfile);
             cardsContainer.Add(card);
         }
 
@@ -162,7 +159,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         private partial class ProfilePill : CompositeDrawable, IHasContextMenu
         {
             private readonly string profileName;
-            private readonly Bindable<string> activeProfile;
             private readonly LocalUserManager localUserManager;
             private readonly OverlayColourProvider colours;
             private readonly Action<string> requestDelete;
@@ -171,10 +167,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             private readonly OsuSpriteText nameText;
             private readonly OsuSpriteText ppText;
 
-            public ProfilePill(LocalProfile profile, Bindable<string> activeProfile, LocalUserManager localUserManager, OverlayColourProvider colours, Action<string> requestDelete)
+            public ProfilePill(LocalProfile profile, LocalUserManager localUserManager, OverlayColourProvider colours, Action<string> requestDelete)
             {
                 profileName = profile.Name;
-                this.activeProfile = activeProfile;
                 this.localUserManager = localUserManager;
                 this.colours = colours;
                 this.requestDelete = requestDelete;
@@ -216,7 +211,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 nameText.Text = profileName;
                 updatePP();
 
-                activeProfile.BindValueChanged(_ => updateActive());
+                localUserManager.ActiveProfile.GetBoundCopy().BindValueChanged(_ => updateActive());
                 localUserManager.ProfileChanged += _ => updateActive();
                 localUserManager.StatisticsUpdated += _ => updatePP();
                 updateActive();
@@ -224,7 +219,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
             private void updateActive()
             {
-                bool isActive = activeProfile.Value == profileName;
+                bool isActive = localUserManager.ActiveProfile.Value == profileName;
                 background.Colour = isActive ? colours.Colour1 : colours.Light3;
                 nameText.Colour = isActive ? colours.Content1 : colours.Content2;
             }
@@ -237,7 +232,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
             protected override bool OnHover(HoverEvent e)
             {
-                if (activeProfile.Value != profileName)
+                if (localUserManager.ActiveProfile.Value != profileName)
                     background.Colour = colours.Light2;
                 return base.OnHover(e);
             }
