@@ -32,6 +32,7 @@ namespace osu.Game.Rulesets.MOsu
             return $"{ruleset.ShortName}:{ActiveProfile.Value}";
         }
         private readonly OsuRuleset ruleset;
+        public RulesetInfo RulesetInfo => ruleset.RulesetInfo;
 
         private readonly Bindable<string> activeProfileBindable = new Bindable<string>();
         public Bindable<string> ActiveProfile => activeProfileBindable;
@@ -43,6 +44,7 @@ namespace osu.Game.Rulesets.MOsu
             if (activeProfileBindable.Value == name) return;
             activeProfileBindable.Value = name;
             ProfileChanged?.Invoke(name);
+            RefreshStatisticsAsync(ruleset.RulesetInfo);
         }
 
         public List<LocalProfile> GetProfiles()
@@ -100,6 +102,12 @@ namespace osu.Game.Rulesets.MOsu
         /// </summary>
         /// <param name="ruleset">The ruleset to return the corresponding <see cref="UserStatistics"/> for.</param>
         public UserStatistics? GetStatisticsFor(RulesetInfo ruleset) => statisticsCache.GetValueOrDefault(cacheKey(ruleset));
+
+        public UserStatistics? GetStatisticsForProfile(string profileName, RulesetInfo ruleset)
+        {
+            var key = $"{ruleset.ShortName}:{profileName}";
+            return statisticsCache.GetValueOrDefault(key);
+        }
 
         private async void initialiseStatistics()
         {

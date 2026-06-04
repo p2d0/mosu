@@ -30,6 +30,7 @@ mkShell {
   OSU_EXTERNAL_UPDATE_PROVIDER = 1;
 
   buildInputs = [
+    pkgs.dotnetCorePackages.sdk_8_0_4xx
     pkgs.dotnetCorePackages.sdk_10_0
     pkgs.netcoredbg
     pkgs.csharp-ls
