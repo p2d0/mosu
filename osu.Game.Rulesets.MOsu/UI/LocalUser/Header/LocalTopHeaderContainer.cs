@@ -16,7 +16,6 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
-using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Header.Components;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Users;
@@ -44,15 +43,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
         private OsuSpriteText usernameText = null!;
         private ExternalLinkButton openUserExternally = null!;
         private OsuSpriteText titleText = null!;
-        private UpdateableFlag userFlag = null!;
-        private OsuHoverContainer userCountryContainer = null!;
-        private OsuSpriteText userCountryText = null!;
-        private UpdateableTeamFlag teamFlag = null!;
-        private OsuSpriteText teamText = null!;
         private GroupBadgeFlow groupBadgeFlow = null!;
         private ToggleCoverButton coverToggle = null!;
-        private FillFlowContainer flagRow = null!;
-
         public ProfileCardRow ProfileCardRow { get; private set; } = null!;
 
         public PreviousUsernamesDisplay PreviousUsernamesDisplay { get; } = new PreviousUsernamesDisplay();
@@ -64,8 +56,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuConfigManager configManager)
         {
-            ProfileCardRow = new ProfileCardRow();
-
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
 
@@ -167,58 +157,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
                                                     Font = OsuFont.GetFont(size: 16, weight: FontWeight.Regular),
                                                     Margin = new MarginPadding { Bottom = 3 },
                                                 },
-                                                flagRow = new FillFlowContainer
-                                                {
-                                                    // Margin = new MarginPadding { Top = 3 },
-                                                    AutoSizeAxes = Axes.Y,
-                                                    Direction = FillDirection.Horizontal,
-                                                    // Spacing = new Vector2(10, 0),
-                                                    Children = new Drawable[]
-                                                    {
-                                                        new FillFlowContainer
-                                                        {
-                                                            AutoSizeAxes = Axes.Both,
-                                                            Direction = FillDirection.Horizontal,
-                                                            Spacing = new Vector2(4, 0),
-                                                            Children = new Drawable[]
-                                                            {
-                                                                userFlag = new UpdateableFlag
-                                                                {
-                                                                    Size = new Vector2(28, 20),
-                                                                },
-                                                                userCountryContainer = new OsuHoverContainer
-                                                                {
-                                                                    AutoSizeAxes = Axes.Both,
-                                                                    Anchor = Anchor.CentreLeft,
-                                                                    Origin = Anchor.CentreLeft,
-                                                                    Child = userCountryText = new OsuSpriteText
-                                                                    {
-                                                                        Font = OsuFont.GetFont(size: 14f, weight: FontWeight.Regular),
-                                                                    },
-                                                                },
-                                                            }
-                                                        },
-                                                        new FillFlowContainer
-                                                        {
-                                                            AutoSizeAxes = Axes.Both,
-                                                            Direction = FillDirection.Horizontal,
-                                                            Spacing = new Vector2(4, 0),
-                                                            Children = new Drawable[]
-                                                            {
-                                                                teamFlag = new UpdateableTeamFlag
-                                                                {
-                                                                    Size = new Vector2(40, 20),
-                                                                },
-                                                                teamText = new OsuSpriteText
-                                                                {
-                                                                    Anchor = Anchor.CentreLeft,
-                                                                    Origin = Anchor.CentreLeft,
-                                                                    Font = OsuFont.GetFont(size: 14f, weight: FontWeight.Regular),
-                                                                },
-                                                            }
-                                                        }
-                                                    }
-                                                },
+                                                ProfileCardRow = new ProfileCardRow(),
                                             }
                                         },
                                     }
@@ -244,9 +183,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
             User.BindValueChanged(user => updateUser(user.NewValue), true);
             coverExpanded.BindValueChanged(_ => updateCoverState(), true);
 
-            flagRow.Clear();
-            flagRow.Add(ProfileCardRow);
-
             FinishTransforms(true);
         }
 
@@ -258,11 +194,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
             avatar.User = user;
             usernameText.Text = user?.Username ?? string.Empty;
             openUserExternally.Link = $@"{api.Endpoints.WebsiteUrl}/users/{user?.Id ?? 0}";
-            userFlag.CountryCode = user?.CountryCode ?? default;
-            userCountryText.Text = (user?.CountryCode ?? default).GetDescription();
-            userCountryContainer.Action = () => rankingsOverlay?.ShowCountry(user?.CountryCode ?? default);
-            teamFlag.Team = user?.Team;
-            teamText.Text = user?.Team?.Name ?? string.Empty;
             supporterTag.SupportLevel = user?.SupportLevel ?? 0;
             titleText.Text = user?.Title ?? string.Empty;
             titleText.Colour = Color4Extensions.FromHex(user?.Colour ?? "fff");
