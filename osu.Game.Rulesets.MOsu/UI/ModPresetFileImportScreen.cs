@@ -167,14 +167,14 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                     realm.Write(r =>
                     {
-                        var osuRulesetInfo = r.Find<RulesetInfo>("mosususu");
+                        var osuRulesetInfo = r.Find<RulesetInfo>("mosu");
                         if (osuRulesetInfo == null) return;
 
                         foreach (var dto in transferObjects)
                         {
                             // Duplicate check
                             bool exists = r.All<ModPreset>()
-                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, "mosususu")
+                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, "mosu")
                                 .Count() > 0;
 
                             if (exists) continue;

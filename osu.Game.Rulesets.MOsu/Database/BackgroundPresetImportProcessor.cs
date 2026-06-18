@@ -67,7 +67,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     realm.Write(r =>
                     {
-                        var osuRulesetInfo = r.Find<RulesetInfo>("mosususu");
+                        var osuRulesetInfo = r.Find<RulesetInfo>("mosu");
                         if (osuRulesetInfo == null)
                         {
                             Logger.Log("MOsu ruleset not found in realm, skipping preset import.");
@@ -77,7 +77,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                         foreach (var dto in transferObjects)
                         {
                             bool exists = r.All<ModPreset>()
-                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, "mosususu")
+                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, "mosu")
                                 .Count() > 0;
 
                             if (exists) continue;
