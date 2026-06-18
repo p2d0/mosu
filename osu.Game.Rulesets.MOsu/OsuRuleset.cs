@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
 
-        public const string SHORT_NAME = "mosususu";
+        public const string SHORT_NAME = "mosu";
 
         public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
 
@@ -383,8 +383,6 @@ namespace osu.Game.Rulesets.MOsu
 
             return null;
         }
-
-        public int LegacyID => 80085;
 
         public ILegacyScoreSimulator CreateLegacyScoreSimulator() => new OsuLegacyScoreSimulator();
 

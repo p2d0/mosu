@@ -209,10 +209,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Increasing?", "3 then 6 then 9 circles ec", SettingControlType = typeof(SquareModBoolSetting))]
         public Bindable<bool> SquareModIncreasing { get; } = new BindableBool(false);
 
-        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
-        public Bindable<bool> Hardcore { get; } = new BindableBool(true);
-
-
         // [SettingSource("Square Distance", "Square distance")]
         // public BindableInt SquareDistance { get; } = new BindableInt(200)
         // {
@@ -348,7 +344,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,Hardcore.Value,ExtendPlayArea.Value,InfinitePlayArea.Value);
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,true,ExtendPlayArea.Value,InfinitePlayArea.Value);
             // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
             // var count = 0;
             // var totalDistanceDifferece =  0f;
