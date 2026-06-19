@@ -87,7 +87,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
 
             ruleset.BindValueChanged(r =>
             {
-                bool isMOsu = r.NewValue.ShortName == "mosu";
+                bool isMOsu = r.NewValue.ShortName == OsuRuleset.SHORT_NAME;
                 this.FadeTo(isMOsu ? 1 : 0, 200);
                 if (isMOsu) updatePP();
             }, true);
