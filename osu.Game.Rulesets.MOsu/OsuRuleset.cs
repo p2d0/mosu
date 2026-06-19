@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
 
-        public const string SHORT_NAME = "mosususu";
+        public const string SHORT_NAME = "mosu";
 
         public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
 
@@ -179,7 +179,7 @@ namespace osu.Game.Rulesets.MOsu
                         new OsuModHardRock(),
                         new MultiMod(new OsuModSuddenDeath(), new OsuModPerfect()),
                         new MultiMod(new OsuModDoubleTime(), new OsuModNightcore()),
-                        new OsuModHidden(),
+                        new MultiMod(new OsuModHidden(), new OsuModTraceable()),
                         new MultiMod(new OsuModFlashlight(), new OsuModBlinds()),
                         new OsuModStrictTracking(),
                         new OsuModAccuracyChallenge(),
@@ -218,7 +218,6 @@ namespace osu.Game.Rulesets.MOsu
                         new OsuModSpinIn(),
                         new MultiMod(new OsuModGrow(), new OsuModDeflate()),
                         new MultiMod(new ModWindUp(), new ModWindDown()),
-                        new OsuModTraceable(),
                         new OsuModBarrelRoll(),
                         new OsuModApproachDifferent(),
                         new OsuModMuted(),
@@ -383,8 +382,6 @@ namespace osu.Game.Rulesets.MOsu
 
             return null;
         }
-
-        public int LegacyID => 80085;
 
         public ILegacyScoreSimulator CreateLegacyScoreSimulator() => new OsuLegacyScoreSimulator();
 

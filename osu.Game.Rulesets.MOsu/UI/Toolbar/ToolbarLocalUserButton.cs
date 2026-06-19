@@ -90,7 +90,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
 
             ruleset.BindValueChanged(r =>
             {
-                bool isMOsu = r.NewValue.ShortName == "mosususu";
+                bool isMOsu = r.NewValue.ShortName == OsuRuleset.SHORT_NAME;
                 this.FadeTo(isMOsu ? 1 : 0, 200);
                 if (isMOsu) updatePP();
             }, true);
@@ -109,7 +109,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
         // 4. Update Logic
         private void onStatisticsUpdated(UserStatisticsUpdate update)
         {
-            if (update.Ruleset.ShortName == "mosususu")
+            if (update.Ruleset.Equals(ruleset.Value))
                 Schedule(updatePP);
         }
 

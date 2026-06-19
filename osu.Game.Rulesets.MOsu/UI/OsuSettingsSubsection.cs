@@ -126,7 +126,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 new SettingsButtonV2
                 {
                     Text = "Export presets to file",
-                    TooltipText = "Saves all mosususu presets to exports/osu_mod_presets.json",
+                    TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
                 },
                 
@@ -188,7 +188,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     notification.Text = "Fetching presets...";
                     var transferObjects = realm.Run(r => r.All<ModPreset>()
-                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", "mosususu")
+                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", OsuRuleset.SHORT_NAME)
                         .ToList()
                         .Select(p => new ModPresetTransferObject
                         {
@@ -200,7 +200,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                     if (transferObjects.Count == 0)
                     {
-                        notification.Text = "No mosususu presets found to export.";
+                        notification.Text = "No mosu presets found to export.";
                         notification.State = ProgressNotificationState.Cancelled;
                         return;
                     }
@@ -485,15 +485,15 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                 realm.Write(r =>
                 {
-                    var osuRulesetInfo = r.Find<RulesetInfo>("mosususu");
+                    var osuRulesetInfo = r.Find<RulesetInfo>(OsuRuleset.SHORT_NAME);
 
                     if (osuRulesetInfo == null)
-                        throw new InvalidOperationException("Could not find mosususu ruleset in database.");
+                        throw new InvalidOperationException("Could not find mosu ruleset in database.");
 
                     foreach (var dto in transferObjects)
                     {
                         bool exists = r.All<ModPreset>()
-                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, "mosususu")
+                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, OsuRuleset.SHORT_NAME)
                             .Count() > 0;
 
                         if (exists) continue;
