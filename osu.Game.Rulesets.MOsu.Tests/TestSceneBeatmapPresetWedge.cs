@@ -23,6 +23,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
     [TestFixture]
     public partial class TestSceneBeatmapModPresetWedge : OsuManualInputManagerTestScene
     {
+        [Resolved]
+        private GameHost gameHost { get; set; } = null!;
+
+        [TearDown]
+        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
         private BeatmapModPresetWedge wedge = null!;
         protected MOsuRealmAccess MOsuRealm { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;

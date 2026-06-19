@@ -4,13 +4,14 @@ This is a standalone ruleset project using NuGet package references to `ppy.osu.
 
 ## Source reference
 
-See [LOCAL.md](LOCAL.md) for paths to the full osu! source tree on this machine.
+See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine.
 
-## Build
+## Release Build
 
 ```sh
 dotnet build osu.Game.Rulesets.MOsu/osu.Game.Rulesets.MOsu.csproj -c Release
 ```
+Dont do dotnet run with -c Release though
 
 ## Key conventions
 

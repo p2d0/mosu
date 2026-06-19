@@ -41,6 +41,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
         private const float performance_background_shear = 0.45f;
 
         protected readonly ScoreInfo Score;
+        private readonly Ruleset rulesetInstance;
 
         [Resolved]
         private OsuColour colours { get; set; } = null!;
@@ -48,18 +49,19 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        public DrawableProfileLocalScore(ScoreInfo score)
+        public DrawableProfileLocalScore(ScoreInfo score, Ruleset rulesetInstance = null)
         {
             Score = score;
+            this.rulesetInstance = rulesetInstance;
 
             RelativeSizeAxes = Axes.X;
             Height = height;
         }
 
         [BackgroundDependencyLoader]
-        private void load(RulesetStore rulesets)
+        private void load()
         {
-            var ruleset = rulesets.GetRuleset(Score.Ruleset.OnlineID)?.CreateInstance() ?? throw new InvalidOperationException($"Ruleset with ID of {Score.Ruleset.OnlineID} not found locally");
+            var ruleset = rulesetInstance ?? throw new InvalidOperationException("Ruleset not provided");
 
             AddInternal(new ProfileItemContainer
             {

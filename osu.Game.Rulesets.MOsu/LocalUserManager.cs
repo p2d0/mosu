@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.MOsu
 
         private string cacheKey(RulesetInfo ruleset)
         {
-            return $"{ruleset.ShortName}:{ActiveProfile.Value}";
+            return $"{ruleset?.ShortName ?? "unknown"}:{ActiveProfile.Value ?? "default"}";
         }
         private readonly OsuRuleset ruleset;
         public RulesetInfo RulesetInfo => ruleset.RulesetInfo;

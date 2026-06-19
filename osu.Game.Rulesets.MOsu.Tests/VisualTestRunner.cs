@@ -1,7 +1,5 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
-// See the LICENCE file in the repository root for full licence text.
-
-using System;
+﻿using System;
+using System.Linq;
 using osu.Framework;
 using osu.Framework.Platform;
 using osu.Game.Tests;
@@ -15,9 +13,14 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             Environment.SetEnvironmentVariable("OSU_DISABLE_ERROR_REPORTING", "1");
 
+            bool auto = args.Contains("--auto");
+
             using (DesktopGameHost host = Host.GetSuitableDesktopHost(@"osu"))
             {
-                host.Run(new OsuTestBrowser());
+                if (auto)
+                    host.Run(new AutomatedVisualTestGame());
+                else
+                    host.Run(new OsuTestBrowser());
                 return 0;
             }
         }

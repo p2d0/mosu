@@ -10,4 +10,5 @@ LOCAL.md
 result-bin
 result-man
 scores_to_keep.txt
+screenshots/
 /*.json

@@ -158,7 +158,13 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 tabs.Clear();
                 lastSection = null;
 
-                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? @"mosususu").AsNonNull();
+                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? OsuRuleset.SHORT_NAME);
+                if (actualRuleset == null)
+                {
+                    Logger.Log("Could not find ruleset for profile overlay.");
+                    loadingLayer.Hide();
+                    return;
+                }
 
                 // Wait for all profile stats to be loaded
                 await localUserManager.EnsureStatisticsLoadedAsync().ConfigureAwait(false);

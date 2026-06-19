@@ -2,20 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
+using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Online.API;
-using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
-using osu.Game.Tests.Visual;
-using osu.Game.Users;
-using osu.Game.Rulesets.MOsu.UI.LocalUser;
-using osu.Framework.Allocation;
-using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Database;
-using osu.Game.Online;
+using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Rulesets.MOsu.UI.LocalUser;
+using osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Scoring;
+using osu.Game.Tests.Visual;
+using osu.Game.Models;
+using osu.Game.Users;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
@@ -28,20 +33,77 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private OsuRuleset ruleset = null!;
         private LocalUserManager localUserManager = null!;
         private MOsuRealmAccess mosuRealm = null!;
+        private RealmAccess realm = null!;
+
+        [Resolved]
+        private GameHost gameHost { get; set; } = null!;
+
+        [TearDown]
+        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
+
+        protected override bool UseFreshStoragePerRun => true;
 
         [BackgroundDependencyLoader]
-        private void load(RealmAccess realm,IAPIProvider api)
+        private void load(RealmAccess r, IAPIProvider api)
         {
+            realm = r;
             ruleset = new OsuRuleset();
             mosuRealm = new MOsuRealmAccess(LocalStorage);
             Dependencies.Cache(mosuRealm);
-            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, mosuRealm, api));
-
+            Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, r, mosuRealm, api));
         }
 
         [SetUpSteps]
         public void SetUp()
         {
+            AddStep("set up dummy API user", () =>
+            {
+                dummyAPI.LocalUser.Value = new APIUser
+                {
+                    Username = "TestUser",
+                    Id = 1,
+                    CountryCode = CountryCode.US,
+                };
+            });
+
+            AddStep("create test profiles", () =>
+            {
+                mosuRealm.Write(r =>
+                {
+                    r.RemoveAll<LocalProfile>();
+                    r.Add(new LocalProfile { Name = "PlayerOne", IsActive = true });
+                    r.Add(new LocalProfile { Name = "PlayerTwo", IsActive = false });
+                });
+            });
+
+            AddStep("seed scores for PlayerOne", () =>
+            {
+                realm.Write(r =>
+                {
+                    r.RemoveAll<ScoreInfo>();
+                    r.RemoveAll<BeatmapInfo>();
+
+                    var rs = r.Find<RulesetInfo>(ruleset.RulesetInfo.ShortName) ?? ruleset.RulesetInfo;
+
+                    r.Add(createScore(r, rs, "PlayerOne", "Difficulty 1", 150.5, ScoreRank.S, DateTimeOffset.Now.AddDays(-1)));
+                    r.Add(createScore(r, rs, "PlayerOne", "Difficulty 2", 120.3, ScoreRank.A, DateTimeOffset.Now.AddDays(-2)));
+                    r.Add(createScore(r, rs, "PlayerOne", "Difficulty 3", 95.0, ScoreRank.A, DateTimeOffset.Now));
+                });
+            });
+
+            AddStep("seed scores for PlayerTwo", () =>
+            {
+                realm.Write(r =>
+                {
+                    var rs = r.Find<RulesetInfo>(ruleset.RulesetInfo.ShortName) ?? ruleset.RulesetInfo;
+
+                    r.Add(createScore(r, rs, "PlayerTwo", "PlayerTwo Map 1", 200.0, ScoreRank.X, DateTimeOffset.Now.AddDays(-3)));
+                    r.Add(createScore(r, rs, "PlayerTwo", "PlayerTwo Map 2", 80.2, ScoreRank.B, DateTimeOffset.Now));
+                });
+            });
+
+            AddStep("ensure default profile", () => localUserManager.EnsureDefaultProfile());
+
             AddStep("create profile overlay", () =>
             {
                 profile = new LocalUserProfileOverlay();
@@ -56,298 +118,66 @@ namespace osu.Game.Rulesets.MOsu.Tests
         }
 
         [Test]
-        public void TestBlank()
+        public void TestPlayerOneProfile()
         {
-            AddStep("show overlay", () => profile.Show());
+            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
+            AddUntilStep("wait for scores to appear", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Any());
+            AddAssert("PlayerOne has 3 best scores", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Count() >= 3);
         }
 
         [Test]
-        public void TestActualUser()
+        public void TestPlayerTwoProfile()
         {
-            AddStep("Update statistics", () => {
-                localUserManager.UpdateStatistics(TEST_USER.Statistics,ruleset.RulesetInfo);
-            });
-            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 0 }, ruleset.RulesetInfo));
-            // AddToggleStep("toggle visibility", visible => profile.State.Value = visible ? Visibility.Visible : Visibility.Hidden);
-            // AddStep("log out", () => dummyAPI.Logout());
-            // AddStep("log back in", () =>
-            // {
-            //     dummyAPI.Login("username", "password");
-            //     dummyAPI.AuthenticateSecondFactor("abcdefgh");
-            // });
+            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddUntilStep("wait for scores to appear", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Any());
+            AddAssert("PlayerTwo has 2 best scores", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Count() >= 2);
         }
 
-        // [Test]
-        // public void TestLoading()
-        // {
-        //     GetUserRequest pendingRequest = null!;
-
-        //     AddStep("set up request handling", () =>
-        //     {
-        //         dummyAPI.HandleRequest = req =>
-        //         {
-        //             if (req is GetUserRequest getUserRequest)
-        //             {
-        //                 pendingRequest = getUserRequest;
-        //                 return true;
-        //             }
-
-        //             return false;
-        //         };
-        //     });
-        //     AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1 }));
-        //     AddWaitStep("wait some", 3);
-        //     AddStep("complete request", () => pendingRequest.TriggerSuccess(TEST_USER));
-        // }
-
-        // [Test]
-        // public void TestLogin()
-        // {
-        //     GetUserRequest pendingRequest = null!;
-
-        //     AddStep("set up request handling", () =>
-        //     {
-        //         dummyAPI.HandleRequest = req =>
-        //         {
-        //             if (dummyAPI.State.Value == APIState.Online && req is GetUserRequest getUserRequest)
-        //             {
-        //                 pendingRequest = getUserRequest;
-        //                 return true;
-        //             }
-
-        //             return false;
-        //         };
-        //     });
-        //     AddStep("logout", () => dummyAPI.Logout());
-        //     AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1 }));
-        //     AddStep("login", () =>
-        //     {
-        //         dummyAPI.Login("username", "password");
-        //         dummyAPI.AuthenticateSecondFactor("abcdefgh");
-        //     });
-        //     AddWaitStep("wait some", 3);
-        //     AddStep("complete request", () => pendingRequest.TriggerSuccess(TEST_USER));
-        // }
-
-        // [Test]
-        // public void TestCustomColourScheme()
-        // {
-        //     int hue = 0;
-
-        //     AddSliderStep("hue", 0, 360, 222, h => hue = h);
-
-        //     AddStep("set up request handling", () =>
-        //     {
-        //         dummyAPI.HandleRequest = req =>
-        //         {
-        //             if (req is GetUserRequest getUserRequest)
-        //             {
-        //                 getUserRequest.TriggerSuccess(new APIUser
-        //                 {
-        //                     Username = $"Colorful #{hue}",
-        //                     Id = 1,
-        //                     CountryCode = CountryCode.JP,
-        //                     CoverUrl = TestResources.COVER_IMAGE_2,
-        //                     ProfileHue = hue,
-        //                     PlayMode = "osu",
-        //                 });
-        //                 return true;
-        //             }
-
-        //             return false;
-        //         };
-        //     });
-
-        //     AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1 }));
-        // }
-
-        // [Test]
-        // public void TestCustomColourSchemeWithReload()
-        // {
-        //     int hue = 0;
-        //     GetUserRequest pendingRequest = null!;
-
-        //     AddSliderStep("hue", 0, 360, 222, h => hue = h);
-
-        //     AddStep("set up request handling", () =>
-        //     {
-        //         dummyAPI.HandleRequest = req =>
-        //         {
-        //             if (req is GetUserRequest getUserRequest)
-        //             {
-        //                 pendingRequest = getUserRequest;
-        //                 return true;
-        //             }
-
-        //             return false;
-        //         };
-        //     });
-
-        //     AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1 }));
-
-        //     AddWaitStep("wait some", 3);
-        //     AddStep("complete request", () => pendingRequest.TriggerSuccess(new APIUser
-        //     {
-        //         Username = $"Colorful #{hue}",
-        //         Id = 1,
-        //         CountryCode = CountryCode.JP,
-        //         CoverUrl = TestResources.COVER_IMAGE_2,
-        //         ProfileHue = hue,
-        //         PlayMode = "osu",
-        //     }));
-
-        //     int hue2 = 0;
-
-        //     AddSliderStep("hue 2", 0, 360, 50, h => hue2 = h);
-        //     AddStep("show user", () => profile.ShowUser(new APIUser { Id = 2 }));
-        //     AddWaitStep("wait some", 3);
-
-        //     AddStep("complete request", () => pendingRequest.TriggerSuccess(new APIUser
-        //     {
-        //         Username = $"Colorful #{hue2}",
-        //         Id = 2,
-        //         CountryCode = CountryCode.JP,
-        //         CoverUrl = TestResources.COVER_IMAGE_2,
-        //         ProfileHue = hue2,
-        //         PlayMode = "osu",
-        //     }));
-
-        //     AddStep("show user different ruleset", () => profile.ShowUser(new APIUser { Id = 2 }, new TaikoRuleset().RulesetInfo));
-        //     AddWaitStep("wait some", 3);
-
-        //     AddStep("complete request", () => pendingRequest.TriggerSuccess(new APIUser
-        //     {
-        //         Username = $"Colorful #{hue2}",
-        //         Id = 2,
-        //         CountryCode = CountryCode.JP,
-        //         CoverUrl = TestResources.COVER_IMAGE_2,
-        //         ProfileHue = hue2,
-        //         PlayMode = "osu",
-        //     }));
-        // }
-
-        public static readonly APIUser TEST_USER = new APIUser
+        [Test]
+        public void TestProfileSwitching()
         {
-            Username = @"Somebody",
-            Id = -1,
-            CountryCode = CountryCode.JP,
-            CoverUrl = "https://assets.ppy.sh/user-cover-presets/1/df28696b58541a9e67f6755918951d542d93bdf1da41720fcca2fd2c1ea8cf51.jpeg",
-            JoinDate = DateTimeOffset.Now.AddDays(-1),
-            LastVisit = DateTimeOffset.Now,
-            Groups = new[]
+            AddStep("show PlayerOne", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
+            AddUntilStep("wait for PlayerOne to load", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Any());
+            AddAssert("PlayerOne has 3 scores", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Count() >= 3);
+
+            AddStep("switch to PlayerTwo", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddUntilStep("wait for PlayerTwo to load", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Any());
+            AddAssert("PlayerTwo has 2 scores", () => profile.ChildrenOfType<DrawableProfileLocalScore>().Count() >= 2);
+        }
+
+        private ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)
+        {
+            var beatmap = new BeatmapInfo
             {
-                new APIUserGroup { Colour = "#EB47D0", ShortName = "DEV", Name = "Developers" },
-                new APIUserGroup { Colour = "#A347EB", ShortName = "BN", Name = "Beatmap Nominators", Playmodes = new[] { "mania" } },
-                new APIUserGroup { Colour = "#A347EB", ShortName = "BN", Name = "Beatmap Nominators", Playmodes = new[] { "osu", "taiko" } },
-                new APIUserGroup { Colour = "#A347EB", ShortName = "BN", Name = "Beatmap Nominators", Playmodes = new[] { "osu", "taiko", "fruits", "mania" } },
-                new APIUserGroup { Colour = "#A347EB", ShortName = "BN", Name = "Beatmap Nominators (Probationary)", Playmodes = new[] { "osu", "taiko", "fruits", "mania" }, IsProbationary = true }
-            },
-            ProfileOrder = new[]
-            {
-                @"me",
-                @"recent_activity",
-                @"beatmaps",
-                @"historical",
-                @"kudosu",
-                @"top_ranks",
-                @"medals"
-            },
-            RankHighest = new APIUser.UserRankHighest
-            {
-                Rank = 1,
-                UpdatedAt = DateTimeOffset.Now,
-            },
-            Statistics = new UserStatistics
-            {
-                IsRanked = true,
-                GlobalRank = 2148,
-                CountryRank = 1,
-                PP = 4567.89m,
-                Level = new UserStatistics.LevelInfo
+                DifficultyName = difficultyName,
+                Ruleset = r.Find<RulesetInfo>(rs.ShortName) ?? rs,
+                Difficulty = new BeatmapDifficulty
                 {
-                    Current = 727,
-                    Progress = 69,
+                    OverallDifficulty = 5,
+                    CircleSize = 4,
+                    ApproachRate = 5,
+                    DrainRate = 5,
                 },
-                RankHistory = new APIRankHistory
+                Metadata = new BeatmapMetadata
                 {
-                    Mode = @"osu",
-                    Data = Enumerable.Range(2345, 45).Concat(Enumerable.Range(2109, 40)).ToArray()
+                    Title = "Test Beatmap",
+                    Artist = "Test Artist",
                 },
-            },
-            TournamentBanners = new[]
+            };
+
+            var user = new RealmUser { Username = username, OnlineID = username == "PlayerOne" ? 1 : 2 };
+
+            return new ScoreInfo(beatmap, rs, user)
             {
-                new TournamentBanner
-                {
-                    Id = 15588,
-                    TournamentId = 41,
-                    ImageLowRes = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_CN.jpg",
-                    Image = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_CN@2x.jpg"
-                },
-                new TournamentBanner
-                {
-                    Id = 15589,
-                    TournamentId = 41,
-                    ImageLowRes = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_PH.jpg",
-                    Image = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_PH@2x.jpg"
-                },
-                new TournamentBanner
-                {
-                    Id = 15590,
-                    TournamentId = 41,
-                    ImageLowRes = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_CL.jpg",
-                    Image = "https://assets.ppy.sh/tournament-banners/official/owc2023/profile/supporter_CL@2x.jpg"
-                }
-            },
-            Badges = new[]
-            {
-                new Badge
-                {
-                    AwardedAt = DateTimeOffset.FromUnixTimeSeconds(1505741569),
-                    Description = "Outstanding help by being a voluntary test subject.",
-                    ImageUrl = "https://assets.ppy.sh/profile-badges/contributor-new@2x.png",
-                    ImageUrlLowRes = "https://assets.ppy.sh/profile-badges/contributor-new.png",
-                    Url = "https://osu.ppy.sh/wiki/en/People/Community_Contributors",
-                },
-                new Badge
-                {
-                    AwardedAt = DateTimeOffset.FromUnixTimeSeconds(1505741569),
-                    Description = "Badge without a url.",
-                    ImageUrl = "https://assets.ppy.sh/profile-badges/contributor@2x.png",
-                    ImageUrlLowRes = "https://assets.ppy.sh/profile-badges/contributor.png",
-                },
-            },
-            DailyChallengeStatistics = new APIUserDailyChallengeStatistics
-            {
-                DailyStreakCurrent = 231,
-                WeeklyStreakCurrent = 18,
-                DailyStreakBest = 370,
-                WeeklyStreakBest = 51,
-                Top10PercentPlacements = 345,
-                Top50PercentPlacements = 427,
-            },
-            Title = "osu!volunteer",
-            Colour = "ff0000",
-            Achievements = Array.Empty<APIUserAchievement>(),
-            PlayMode = "osu",
-            Kudosu = new APIUser.KudosuCount
-            {
-                Available = 10,
-                Total = 50
-            },
-            SupportLevel = 2,
-            Location = "Somewhere",
-            Interests = "Rhythm games",
-            Occupation = "Gamer",
-            Twitter = "test_user",
-            Discord = "test_user",
-            Website = "https://google.com",
-            Team = new APITeam
-            {
-                Id = 1,
-                Name = "Collective Wangs",
-                ShortName = "WANG",
-                FlagUrl = "https://assets.ppy.sh/teams/flag/1/wanglogo.jpg",
-            }
-        };
+                TotalScore = 1000000,
+                MaxCombo = 50,
+                Accuracy = 0.95,
+                PP = pp,
+                Rank = rank,
+                Date = date,
+                DeletePending = false,
+                Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>(),
+            };
+        }
     }
 }

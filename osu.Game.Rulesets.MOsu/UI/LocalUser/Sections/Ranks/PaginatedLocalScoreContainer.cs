@@ -38,23 +38,22 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
 
         protected override int GetCount(APIUser user)
         {
-            switch (type)
+            // Use actual score count from LocalUserManager, not APIUser.ScoresBestCount (which is 0 for local users)
+            if (User.Value is var ud && ud != null)
             {
-                case ScoreType.Best:
-                    return user.ScoresBestCount;
-
-                case ScoreType.Firsts:
-                    return user.ScoresFirstCount;
-
-                case ScoreType.Recent:
-                    return user.ScoresRecentCount;
-
-                case ScoreType.Pinned:
-                    return user.ScoresPinnedCount;
-
-                default:
-                    return 0;
+                var username = user.Username;
+                switch (type)
+                {
+                    case ScoreType.Recent:
+                        return username == "Guest" ? LocalUserManager.GetRecentScores(ud.Ruleset).Count
+                                                    : LocalUserManager.GetRecentScores(username, ud.Ruleset).Count;
+                    case ScoreType.Best:
+                    default:
+                        return username == "Guest" ? LocalUserManager.GetLocalScores(ud.Ruleset).Count
+                                                    : LocalUserManager.GetBestScores(username, ud.Ruleset).Count;
+                }
             }
+            return 0;
         }
 
         protected override void OnItemsReceived(List<ScoreInfo> items)
@@ -85,13 +84,14 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
 
         protected override Drawable CreateDrawableItem(ScoreInfo model)
         {
+            var ruleset = new OsuRuleset();
             switch (type)
             {
                 default:
-                    return new DrawableProfileLocalScore(model);
+                    return new DrawableProfileLocalScore(model, ruleset);
 
                 case ScoreType.Best:
-                    return new DrawableProfileLocalWeightedScore(model, Math.Pow(0.95, drawableItemIndex++));
+                    return new DrawableProfileLocalWeightedScore(model, Math.Pow(0.95, drawableItemIndex++), ruleset);
             }
         }
     }
