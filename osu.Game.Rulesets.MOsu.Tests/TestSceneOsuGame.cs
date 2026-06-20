@@ -13,6 +13,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 {
     public partial class TestSceneOsuGame : OsuTestScene
     {
+        protected override bool UseFreshStoragePerRun => true;
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
 

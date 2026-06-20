@@ -21,6 +21,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     [TestFixture]
     public partial class TestSceneToolbarUserButton : OsuTestScene
     {
+        protected override bool UseFreshStoragePerRun => true;
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
 

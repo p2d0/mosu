@@ -11,6 +11,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     [TestFixture]
     public partial class TestSceneOsuPlayer : PlayerTestScene
     {
+        protected override bool UseFreshStoragePerRun => true;
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
 
