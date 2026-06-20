@@ -18,12 +18,16 @@ using osu.Game.Tests.Visual;
 using NUnit.Framework;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using System.Runtime.Versioning;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
     public partial class AutomatedVisualTestGame : OsuGameBase
     {
         private DependencyContainer dependencies = null!;
+
+        protected override Storage CreateStorage(GameHost host, Storage defaultStorage)
+            => new TemporaryNativeStorage($"visual-test-{Guid.NewGuid()}");
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
         {
