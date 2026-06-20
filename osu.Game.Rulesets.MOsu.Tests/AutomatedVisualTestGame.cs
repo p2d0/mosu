@@ -39,11 +39,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
     public class StubNotificationOverlay : INotificationOverlay
     {
-        public void Post(Overlays.Notifications.Notification notification) { }
+        public void Post(Notification notification) { }
         public void Hide() { }
         public IBindable<int> UnreadCount { get; } = new Bindable<int>(0);
         public bool HasOngoingOperations => false;
-        public IEnumerable<Overlays.Notifications.Notification> AllNotifications => Array.Empty<Overlays.Notifications.Notification>();
+        public IEnumerable<Notification> AllNotifications => Array.Empty<Notification>();
     }
 
     public partial class ScreenshotTestRunner : CompositeDrawable
@@ -70,9 +70,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 .Where(t => t.Name != "TestSceneOsuGame")
                 .ToList();
 
-            // Count individual [Test] methods for logging
             int totalTests = filteredTestTypes.Sum(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Count(m => m.GetCustomAttribute<TestAttribute>() != null));
+                .Count(m => m.GetCustomAttribute<TestAttribute>() != null && m.Name != nameof(osu.Framework.Testing.TestScene.TestConstructor)));
             Console.WriteLine($"[ScreenshotTestRunner] {filteredTestTypes.Count} test types, {totalTests} test methods");
         }
 
@@ -94,32 +93,29 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         private void runNext()
         {
-            if (loadableTestType == null)
+            var testType = loadableTestType;
+            if (testType == null)
             {
                 Console.WriteLine("[ScreenshotTestRunner] All tests complete.");
                 Scheduler.AddDelayed(host.Exit, time_between_tests);
                 return;
             }
 
-            string testName = loadableTestType.Name;
+            string testName = testType.Name;
             Console.WriteLine($"[ScreenshotTestRunner] Running: {testName} ({testIndex + 1}/{filteredTestTypes.Count})");
 
             testTimedOut = false;
 
-            try
+            // Force non-interactive mode via reflection to bypass stop condition
+            var interactiveField = browser.GetType().GetField("interactive", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            interactiveField?.SetValue(browser, false);
+
+            browser.LoadTest(testType, () =>
             {
-                browser.LoadTest(loadableTestType, () =>
-                {
-                    if (testTimedOut) return;
-                    Scheduler.Add(takeScreenshot(testName, advanceToNext));
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ScreenshotTestRunner] Failed to load {testName}: {ex.Message}");
-                advanceToNext();
-                return;
-            }
+                if (testTimedOut) return;
+                Console.WriteLine($"[ScreenshotTestRunner] Completed: {testName}");
+                Scheduler.Add(takeScreenshot(testName, advanceToNext));
+            });
 
             Scheduler.AddDelayed(() =>
             {
