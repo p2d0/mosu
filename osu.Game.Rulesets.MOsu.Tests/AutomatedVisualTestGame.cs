@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -12,7 +13,9 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
 using osu.Game.Tests.Visual;
+using NUnit.Framework;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
@@ -46,7 +49,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class ScreenshotTestRunner : CompositeDrawable
     {
         private const double time_between_tests = 500;
-        private const double test_timeout = 5000;
+        private const double test_timeout = 15000;
 
         private readonly TestBrowser browser;
         private int testIndex;
@@ -66,6 +69,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
                          && !typeof(ModTestScene).IsAssignableFrom(t))
                 .Where(t => t.Name != "TestSceneOsuGame")
                 .ToList();
+
+            // Count individual [Test] methods for logging
+            int totalTests = filteredTestTypes.Sum(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Count(m => m.GetCustomAttribute<TestAttribute>() != null));
+            Console.WriteLine($"[ScreenshotTestRunner] {filteredTestTypes.Count} test types, {totalTests} test methods");
         }
 
         [Resolved]
@@ -76,7 +84,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
             base.LoadComplete();
             AddInternal(browser);
             Directory.CreateDirectory(SCREENSHOT_DIR);
-            host.ExceptionThrown += _ => true;
+            host.ExceptionThrown += e =>
+            {
+                Console.WriteLine($"[ScreenshotTestRunner] Exception caught: {e.Message}");
+                return true;
+            };
             Scheduler.AddDelayed(runNext, 1000);
         }
 
@@ -84,43 +96,40 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             if (loadableTestType == null)
             {
+                Console.WriteLine("[ScreenshotTestRunner] All tests complete.");
                 Scheduler.AddDelayed(host.Exit, time_between_tests);
                 return;
             }
 
             string testName = loadableTestType.Name;
+            Console.WriteLine($"[ScreenshotTestRunner] Running: {testName} ({testIndex + 1}/{filteredTestTypes.Count})");
 
-            if (browser.CurrentTest?.GetType() != loadableTestType)
+            testTimedOut = false;
+
+            try
             {
-                testTimedOut = false;
-
-                try
+                browser.LoadTest(loadableTestType, () =>
                 {
-                    browser.LoadTest(loadableTestType, () =>
-                    {
-                        if (testTimedOut) return;
-                        Scheduler.Add(takeScreenshot(testName, advanceToNext));
-                    });
-                }
-                catch
-                {
-                    advanceToNext();
-                    return;
-                }
-
-                Scheduler.AddDelayed(() =>
-                {
-                    if (!testTimedOut && loadableTestType != null && browser.CurrentTest?.GetType() == loadableTestType)
-                    {
-                        testTimedOut = true;
-                        takeScreenshot(testName, advanceToNext).Invoke();
-                    }
-                }, test_timeout);
+                    if (testTimedOut) return;
+                    Scheduler.Add(takeScreenshot(testName, advanceToNext));
+                });
             }
-            else
+            catch (Exception ex)
             {
-                Scheduler.Add(takeScreenshot(testName, advanceToNext));
+                Console.WriteLine($"[ScreenshotTestRunner] Failed to load {testName}: {ex.Message}");
+                advanceToNext();
+                return;
             }
+
+            Scheduler.AddDelayed(() =>
+            {
+                if (!testTimedOut)
+                {
+                    testTimedOut = true;
+                    Console.WriteLine($"[ScreenshotTestRunner] Timeout for {testName}");
+                    takeScreenshot(testName, advanceToNext).Invoke();
+                }
+            }, test_timeout);
         }
 
         private void advanceToNext()
@@ -143,14 +152,17 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 {
                     try
                     {
-                        using (var image = t.GetAwaiter().GetResult())
-                        {
-                            string path = Path.Combine(SCREENSHOT_DIR, $"{testName}.png");
-                            using (var stream = File.Create(path))
-                                image.SaveAsPng(stream);
-                        }
+                        var image = t.GetAwaiter().GetResult();
+                        string path = Path.Combine(SCREENSHOT_DIR, $"{testName}.png");
+                        using (image)
+                        using (var stream = File.Create(path))
+                            image.SaveAsPng(stream);
+                        Console.WriteLine($"[ScreenshotTestRunner] Saved: {path}");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ScreenshotTestRunner] Screenshot failed for {testName}: {ex.Message}");
+                    }
 
                     Scheduler.Add(() => onCompletion?.Invoke());
                 });

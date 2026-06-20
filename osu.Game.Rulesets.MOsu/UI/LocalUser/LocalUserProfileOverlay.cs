@@ -133,8 +133,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         public void ShowUser(IUser userToShow, IRulesetInfo? userRuleset = null)
         {
             Show();
-
-            // Schedule the data fetch
             Schedule(() => fetchAndSetContentForLocalUser(userToShow, userRuleset));
         }
 

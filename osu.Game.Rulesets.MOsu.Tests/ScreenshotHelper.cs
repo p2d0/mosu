@@ -9,7 +9,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 {
     public static class ScreenshotHelper
     {
-        private static readonly string SCREENSHOT_DIR = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "screenshots"));
+        public static readonly string SCREENSHOT_DIR = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "screenshots"));
 
         public static void Capture(GameHost host)
         {
@@ -77,6 +77,29 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 }
                 catch { }
             });
+        }
+
+        /// <summary>
+        /// Synchronous screenshot capture that waits for completion.
+        /// Use this for step-level screenshots where timing matters.
+        /// </summary>
+        public static void CaptureSync(GameHost host, string name)
+        {
+            if (host == null || host.Window == null)
+                return;
+
+            try
+            {
+                var image = host.TakeScreenshotAsync().Result;
+                Directory.CreateDirectory(SCREENSHOT_DIR);
+                string path = Path.Combine(SCREENSHOT_DIR, $"{name}.png");
+                using (image)
+                using (var stream = File.Create(path))
+                {
+                    image.SaveAsPng(stream);
+                }
+            }
+            catch { }
         }
     }
 }
