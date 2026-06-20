@@ -18,6 +18,26 @@ Dont do dotnet run with -c Release though
 - Global type aliases in `osu.Game.Rulesets.MOsu/GlobalTypeAliases.cs` redirect to osu! core types — check there before adding new files
 - Realm models in `osu.Game.Rulesets.MOsu/Models/` use `[assembly: Explicit]` registration
 
+## Running visual tests
+
+Automated visual test runner generates one screenshot per test scene.
+
+```sh
+# Start headless display
+Xvfb :99 -screen 0 1280x720x24 &
+
+# Run tests (generates screenshots/ directory)
+DISPLAY=:99 dotnet run --project osu.Game.Rulesets.MOsu.Tests/osu.Game.Rulesets.MOsu.Tests.csproj -- --auto
+```
+
+Each test scene file = one `[Test]` method = one screenshot. No multi-method test files.
+
+**After running tests, read every screenshot in `screenshots/` and validate:**
+- UI elements render (not blank/black)
+- Expected content visible (usernames, scores, controls)
+- No layout crashes or clipping
+- Compare against previous screenshots if refactoring UI
+
 ## UI caveats
 
 - **No `RelativeSizeAxes = Axes.Both` inside auto-sizing FillFlowContainer** — `FillFlowContainer` with `AutoSizeAxes = Axes.Y` (or `Axes.Both`) will crash with `InvalidOperationException` if any child uses `RelativeSizeAxes` on the axis the container is auto-sizing. Use `AutoSizeAxes` or fixed dimensions instead.
