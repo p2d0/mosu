@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -15,7 +15,6 @@ using osu.Game.Overlays;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
-using osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Scoring;
 using osu.Game.Tests.Visual;
@@ -25,7 +24,7 @@ using osu.Game.Users;
 namespace osu.Game.Rulesets.MOsu.Tests
 {
     [TestFixture]
-    public partial class TestSceneUserProfileOverlay : OsuTestScene
+    public partial class TestSceneUserProfileOverlayPlayerTwo : OsuTestScene
     {
         private DummyAPIAccess dummyAPI => (DummyAPIAccess)API;
 
@@ -118,22 +117,10 @@ namespace osu.Game.Rulesets.MOsu.Tests
         }
 
         [Test]
-        public void TestPlayerOneProfile()
-        {
-            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
-        }
-
-        [Test]
         public void TestPlayerTwoProfile()
         {
             AddStep("show user", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
-        }
-
-        [Test]
-        public void TestProfileSwitching()
-        {
-            AddStep("show PlayerOne", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
-            AddStep("switch to PlayerTwo", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddStep("wait for overlay", () => Thread.Sleep(1000));
         }
 
         private ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)

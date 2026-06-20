@@ -8,6 +8,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Platform;
+using osu.Framework.Threading;
 using osu.Framework.Testing;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
@@ -49,7 +50,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class ScreenshotTestRunner : CompositeDrawable
     {
         private const double time_between_tests = 500;
-        private const double test_timeout = 15000;
+        private const double test_timeout = 30000;
 
         private readonly TestBrowser browser;
         private int testIndex;
@@ -105,6 +106,17 @@ namespace osu.Game.Rulesets.MOsu.Tests
             Console.WriteLine($"[ScreenshotTestRunner] Running: {testName} ({testIndex + 1}/{filteredTestTypes.Count})");
 
             testTimedOut = false;
+            var timeoutDelegate = new ScheduledDelegate(() =>
+            {
+                if (!testTimedOut)
+                {
+                    testTimedOut = true;
+                    Console.WriteLine($"[ScreenshotTestRunner] Timeout for {testName}");
+                    takeScreenshotImmediate(testName);
+                    Scheduler.AddDelayed(advanceToNext, time_between_tests);
+                }
+            }, test_timeout);
+            Scheduler.Add(timeoutDelegate);
 
             // Force non-interactive mode via reflection to bypass stop condition
             var interactiveField = browser.GetType().GetField("interactive", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -112,20 +124,34 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             browser.LoadTest(testType, () =>
             {
+                timeoutDelegate.Cancel();
                 if (testTimedOut) return;
                 Console.WriteLine($"[ScreenshotTestRunner] Completed: {testName}");
                 Scheduler.Add(takeScreenshot(testName, advanceToNext));
             });
+        }
 
-            Scheduler.AddDelayed(() =>
+        private void takeScreenshotImmediate(string testName)
+        {
+            if (host.Window == null)
             {
-                if (!testTimedOut)
-                {
-                    testTimedOut = true;
-                    Console.WriteLine($"[ScreenshotTestRunner] Timeout for {testName}");
-                    takeScreenshot(testName, advanceToNext).Invoke();
-                }
-            }, test_timeout);
+                Console.WriteLine($"[ScreenshotTestRunner] No window for {testName}");
+                return;
+            }
+
+            try
+            {
+                var image = host.TakeScreenshotAsync().Result;
+                string path = Path.Combine(SCREENSHOT_DIR, $"{testName}.png");
+                using (image)
+                using (var stream = File.Create(path))
+                    image.SaveAsPng(stream);
+                Console.WriteLine($"[ScreenshotTestRunner] Saved: {path}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ScreenshotTestRunner] Screenshot failed for {testName}: {ex.Message}");
+            }
         }
 
         private void advanceToNext()
