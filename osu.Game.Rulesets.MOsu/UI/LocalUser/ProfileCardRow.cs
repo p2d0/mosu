@@ -44,39 +44,26 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             };
         }
 
+        private OverlayColourProvider colours = null!;
+        private AddProfileButton addButton = null!;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colours)
         {
-            foreach (var profile in localUserManager.GetProfiles())
-                addCard(profile, colours);
-
-            addButton = new AddProfileButton
-            {
-                Action = showAddPopover,
-            };
-            cardsContainer.Add(addButton);
+            this.colours = colours;
+            populateCards();
         }
 
-        private void addCard(LocalProfile profile, OverlayColourProvider colours)
-        {
-            var card = new ProfilePill(profile, localUserManager, colours, RequestDeleteProfile);
-            cardsContainer.Add(card);
-        }
-
-        public void Refresh()
+        private void populateCards()
         {
             cardsContainer.Clear();
-            var colours = new OverlayColourProvider(OverlayColourScheme.Pink);
             foreach (var profile in localUserManager.GetProfiles())
-                addCard(profile, colours);
-            addButton = new AddProfileButton
-            {
-                Action = showAddPopover,
-            };
+                cardsContainer.Add(new ProfilePill(profile, localUserManager, colours, RequestDeleteProfile));
+            addButton = new AddProfileButton { Action = showAddPopover };
             cardsContainer.Add(addButton);
         }
 
-        private AddProfileButton addButton = null!;
+        public void Refresh() => populateCards();
 
         private void showAddPopover()
         {
@@ -155,7 +142,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             public Popover GetPopover() => CurrentPopover;
         }
 
-        // Profile pill: name + PP
+        // Profile pill: name + PP. Click to switch, double-click to delete.
         private partial class ProfilePill : CompositeDrawable, IHasContextMenu
         {
             private readonly string profileName;
@@ -209,18 +196,16 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 };
 
                 nameText.Text = profileName;
-                updatePP();
-
-                localUserManager.ActiveProfile.GetBoundCopy().BindValueChanged(_ => updateActive());
-                localUserManager.ProfileChanged += _ => updateActive();
+                localUserManager.ActiveProfile.BindValueChanged(_ => updateVisuals());
                 localUserManager.StatisticsUpdated += _ => updatePP();
-                updateActive();
+                updatePP();
+                updateVisuals();
             }
 
-            private void updateActive()
+            private void updateVisuals()
             {
                 bool isActive = localUserManager.ActiveProfile.Value == profileName;
-                background.Colour = isActive ? colours.Colour1 : colours.Light3;
+                background.Colour = IsHovered && !isActive ? colours.Light2 : (isActive ? colours.Colour1 : colours.Light3);
                 nameText.Colour = isActive ? colours.Content1 : colours.Content2;
             }
 
@@ -232,12 +217,11 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
             protected override bool OnHover(HoverEvent e)
             {
-                if (localUserManager.ActiveProfile.Value != profileName)
-                    background.Colour = colours.Light2;
+                updateVisuals();
                 return base.OnHover(e);
             }
 
-            protected override void OnHoverLost(HoverLostEvent e) => updateActive();
+            protected override void OnHoverLost(HoverLostEvent e) => updateVisuals();
 
             protected override bool OnClick(ClickEvent e)
             {
@@ -252,18 +236,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 return true;
             }
 
-            public MenuItem[]? ContextMenuItems
-            {
-                get
-                {
-                    if (localUserManager.GetProfiles().Count <= 1)
-                        return null;
-                    return new MenuItem[]
-                    {
-                        new MenuItem("Delete profile", () => requestDelete?.Invoke(profileName)),
-                    };
-                }
-            }
+            public MenuItem[]? ContextMenuItems => localUserManager.GetProfiles().Count > 1
+                ? new[] { new MenuItem("Delete profile", () => requestDelete?.Invoke(profileName)) }
+                : null;
         }
 
         // Popover for adding a profile
