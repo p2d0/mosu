@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osu.Framework.Testing;
+using System.Threading;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
@@ -127,7 +128,12 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 timeoutDelegate.Cancel();
                 if (testTimedOut) return;
                 Console.WriteLine($"[ScreenshotTestRunner] Completed: {testName}");
-                Scheduler.Add(takeScreenshot(testName, advanceToNext));
+                // Wait for UI to settle, then synchronous screenshot
+                Scheduler.AddDelayed(() =>
+                {
+                    takeScreenshotImmediate(testName);
+                    Scheduler.AddDelayed(advanceToNext, time_between_tests);
+                }, 500);
             });
         }
 

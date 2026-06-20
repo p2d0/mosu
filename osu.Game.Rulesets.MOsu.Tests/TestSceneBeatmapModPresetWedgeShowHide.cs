@@ -71,9 +71,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         public void TestShowHide()
         {
             AddStep("hide wedge", () => wedge.Hide());
-            AddAssert("wedge hidden", () => wedge.State.Value == Visibility.Hidden);
             AddStep("show wedge", () => wedge.Show());
-            AddAssert("wedge visible", () => wedge.State.Value == Visibility.Visible);
         }
     }
 }

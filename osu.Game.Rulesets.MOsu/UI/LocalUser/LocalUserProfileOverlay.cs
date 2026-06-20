@@ -133,6 +133,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         public void ShowUser(IUser userToShow, IRulesetInfo? userRuleset = null)
         {
             Show();
+            localUserManager.SetActiveProfile(userToShow.Username);
             Schedule(() => fetchAndSetContentForLocalUser(userToShow, userRuleset));
         }
 

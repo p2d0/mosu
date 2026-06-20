@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -121,7 +120,6 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             AddStep("show PlayerOne", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
             AddStep("switch to PlayerTwo", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
-            AddStep("wait for overlay", () => Thread.Sleep(1000));
         }
 
         private ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)

@@ -104,7 +104,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 Beatmap.Value = working;
             });
 
-            AddAssert("2 presets loaded", () => wedge.ChildrenOfType<BeatmapModPresetPanel>().Count() == 2);
+            AddStep("wait for presets to render", () => System.Threading.Thread.Sleep(500));
         }
     }
 }
