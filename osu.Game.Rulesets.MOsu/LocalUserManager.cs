@@ -29,7 +29,9 @@ namespace osu.Game.Rulesets.MOsu
 
         private string cacheKey(RulesetInfo ruleset)
         {
-            return $"{ruleset?.ShortName ?? "unknown"}:{ActiveProfile.Value ?? "default"}";
+            if (ruleset == null)
+                return null;
+            return $"{ruleset.ShortName ?? "unknown"}:{ActiveProfile.Value ?? "default"}";
         }
         private readonly OsuRuleset ruleset;
         public RulesetInfo RulesetInfo => ruleset.RulesetInfo;
@@ -42,6 +44,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public void SetActiveProfile(string name)
         {
+
             if (activeProfileBindable.Value == name) return;
             activeProfileBindable.Value = name;
             mosuRealm.Write(r =>
@@ -83,6 +86,9 @@ namespace osu.Game.Rulesets.MOsu
                     }
                 }
             });
+            // Initialize statistics after profiles are ensured
+            if (statisticsInitialised == null || statisticsInitialised.IsCompleted)
+                statisticsInitialised = InitialiseStatisticsAsync();
         }
 
         public void AddProfile(string name)
@@ -127,7 +133,13 @@ namespace osu.Game.Rulesets.MOsu
         /// This may return null if the requested statistics has not been fetched before yet.
         /// </summary>
         /// <param name="ruleset">The ruleset to return the corresponding <see cref="UserStatistics"/> for.</param>
-        public UserStatistics? GetStatisticsFor(RulesetInfo ruleset) => statisticsCache.GetValueOrDefault(cacheKey(ruleset));
+        public UserStatistics? GetStatisticsFor(RulesetInfo ruleset)
+        {
+            var key = cacheKey(ruleset);
+            if (key == null)
+                return null;
+            return statisticsCache.GetValueOrDefault(key);
+        }
 
         public UserStatistics? GetStatisticsForProfile(string profileName, RulesetInfo ruleset)
         {
@@ -148,7 +160,6 @@ namespace osu.Game.Rulesets.MOsu
             foreach (var name in profileNames)
             {
                 var user = await GetLocalUserWithStatisticsForUsernameAsync(name, ruleset.RulesetInfo).ConfigureAwait(false);
-                CacheStatistics(user.Statistics, name, ruleset.RulesetInfo);
             }
         }
 
@@ -209,7 +220,6 @@ namespace osu.Game.Rulesets.MOsu
                 // queuing up requests directly on user change is unsafe, as the API status may have not been updated yet.
                 // schedule a frame to allow the API to be in its correct state sending requests.
                 EnsureDefaultProfile();
-                statisticsInitialised = InitialiseStatisticsAsync();
             }, true);
 
 
@@ -217,7 +227,12 @@ namespace osu.Game.Rulesets.MOsu
 
         public async Task<APIUser> GetLocalUserWithStatisticsAsync(RulesetInfo ruleset)
         {
+            if (api.LocalUser.Value == null)
+                return await GetLocalUserWithStatisticsUncached(ruleset).ConfigureAwait(false);
+
+            var cacheK = cacheKey(ruleset);
             if (GetStatisticsFor(ruleset) is UserStatistics stats)
+            {
                 return new APIUser
                 {
                     Id = api.LocalUser.Value.Id,
@@ -226,6 +241,7 @@ namespace osu.Game.Rulesets.MOsu
                     CoverUrl = api.LocalUser.Value.CoverUrl,
                     Statistics = stats
                 };
+            }
             return await GetLocalUserWithStatisticsUncached(ruleset).ConfigureAwait(false);
         }
 
@@ -267,16 +283,16 @@ namespace osu.Game.Rulesets.MOsu
 
         public async Task<APIUser> GetLocalUserWithStatisticsUncached(RulesetInfo ruleset)
         {
-            return await GetLocalUserWithStatisticsForUsernameAsync(ActiveProfile.Value ?? api.LocalUser.Value.Username, ruleset).ConfigureAwait(false);
+            var username = ActiveProfile.Value ?? api.LocalUser.Value?.Username ?? "unknown";
+            return await GetLocalUserWithStatisticsForUsernameAsync(username, ruleset).ConfigureAwait(false);
         }
 
         public async Task<APIUser> GetLocalUserWithStatisticsForUsernameAsync(string username, RulesetInfo ruleset)
         {
             return await Task.Run(() =>
             {
-                var allScores = api.LocalUser.Value.Username == "Guest"
-                    ? GetLocalScores(ruleset)
-                    : GetBestScores(username, ruleset);
+                var allScores = GetBestScores(username, ruleset);
+
 
                 var scoresWithPP = allScores.Where(s => s.PP.HasValue).ToList();
 
@@ -299,12 +315,14 @@ namespace osu.Game.Rulesets.MOsu
 
                 (float currentTotalPP, float accuracy) = CalculateUserTotalPerformanceAggregates(allScores);
 
+
+                var localUser = api.LocalUser.Value;
                 return new APIUser
                 {
-                    Id = api.LocalUser.Value.Id,
+                    Id = localUser?.Id ?? 0,
                     Username = username,
-                    CountryCode = api.LocalUser.Value.CountryCode,
-                    CoverUrl = api.LocalUser.Value.CoverUrl,
+                    CountryCode = localUser != null ? localUser.CountryCode : default,
+                    CoverUrl = localUser?.CoverUrl ?? "",
                     Statistics = new UserStatistics
                     {
                         IsRanked = true,
@@ -380,6 +398,7 @@ namespace osu.Game.Rulesets.MOsu
                 .ToList()
                 .Detach());
         }
+
 
     }
 }
