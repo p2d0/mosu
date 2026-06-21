@@ -16,6 +16,7 @@ using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.Leaderboards;
@@ -107,7 +108,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                                                 {
                                                     new OsuSpriteText
                                                     {
-                                                        Text = $"{Score.BeatmapInfo.DifficultyName}",
+                                                        Text = $"{Score.BeatmapInfo?.DifficultyName ?? "Unknown"}",
                                                         Font = OsuFont.GetFont(size: 12, weight: FontWeight.Regular),
                                                         Colour = colours.Yellow
                                                     },
@@ -266,12 +267,13 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             };
         }
 
-        private partial class ScoreBeatmapMetadataContainer : BeatmapMetadataContainer, IHasContextMenu
+        private partial class ScoreBeatmapMetadataContainer : OsuHoverContainer, IHasContextMenu
         {
             IScoreInfo ScoreInfo;
+            private readonly IBeatmapInfo? beatmap;
 
-            [Resolved]
-            private BeatmapManager BeatmapManager {get; set;} = null!;
+            [Resolved(CanBeNull = true)]
+            private BeatmapManager BeatmapManager {get; set;}
 
             [Resolved(CanBeNull = true)]
             private IPerformFromScreenRunner? performer { get; set; }
@@ -279,13 +281,13 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             [Resolved(CanBeNull = true)]
             private DifficultyRecommender difficultyRecommender { get; set; }
 
-            [Resolved]
-            private ScoreManager scoreManager { get; set; } = null!;
+            [Resolved(CanBeNull = true)]
+            private ScoreManager scoreManager { get; set; }
 
-            [Resolved]
-            private LocalUserManager localUserManager { get; set; } = null!;
-            [Resolved]
-            private LocalUserProfileOverlay? overlay { get; set; } = null!;
+            [Resolved(CanBeNull = true)]
+            private LocalUserManager localUserManager { get; set; }
+            [Resolved(CanBeNull = true)]
+            private LocalUserProfileOverlay? overlay { get; set; }
 
 
             public MenuItem[] ContextMenuItems
@@ -296,49 +298,61 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                     {
                         new OsuMenuItem("Delete", MenuItemType.Destructive, async () =>
                         {
-                            // Delete the score from the database
+                            if (scoreManager == null) return;
                             scoreManager.Delete((ScoreInfo)ScoreInfo);
-                            await localUserManager.UpdateUserStatisticsAsync((RulesetInfo)ScoreInfo.Ruleset);
+                            if (localUserManager != null)
+                                await localUserManager.UpdateUserStatisticsAsync((RulesetInfo)ScoreInfo.Ruleset);
                             overlay?.fetchAndSetContentForLocalUser(ScoreInfo.User,ScoreInfo.Ruleset);
-                            // Make this drawable disappear immediately
-                            // this.Parent.Parent.Parent.Parent.Parent.Expire();
                         })
                     };
                 }
             }
 
             public ScoreBeatmapMetadataContainer(IScoreInfo scoreInfo)
-                : base(scoreInfo.Beatmap)
             {
                 ScoreInfo = scoreInfo;
+                beatmap = scoreInfo.Beatmap;
+                AutoSizeAxes = Axes.Both;
             }
 
 
             [BackgroundDependencyLoader]
-            private void load(OsuGame? game)
+            private void load()
             {
+                if (beatmap == null)
+                {
+                    Child = new OsuSpriteText
+                    {
+                        Text = "Beatmap either updated or removed",
+                        Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold, italics: true)
+                    };
+                    return;
+                }
+
                 Action = () =>
                 {
-                    PresentBeatmap(ScoreInfo.Beatmap.BeatmapSet, s => ScoreInfo.Beatmap.Equals(s));
+                    PresentBeatmap(beatmap.BeatmapSet, s => beatmap.Equals(s));
                     overlay?.Hide();
                 };
 
                 Child = new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
-                    Children = CreateText(ScoreInfo.Beatmap),
+                    Children = CreateText(beatmap),
                 };
             }
 
-            public void PresentBeatmap(IBeatmapSetInfo beatmap, Predicate<BeatmapInfo> difficultyCriteria = null)
+            public void PresentBeatmap(IBeatmapSetInfo beatmapSet, Predicate<BeatmapInfo> difficultyCriteria = null)
             {
-                Logger.Log($"Beginning {nameof(PresentBeatmap)} with beatmap {beatmap}");
+                if (BeatmapManager == null) return;
+
+                Logger.Log($"Beginning {nameof(PresentBeatmap)} with beatmap {beatmapSet}");
                 Live<BeatmapSetInfo> databasedSet = null;
 
-                if (beatmap.OnlineID > 0)
-                    databasedSet = BeatmapManager.QueryBeatmapSet(s => s.OnlineID == beatmap.OnlineID && !s.DeletePending);
+                if (beatmapSet.OnlineID > 0)
+                    databasedSet = BeatmapManager.QueryBeatmapSet(s => s.OnlineID == beatmapSet.OnlineID && !s.DeletePending);
 
-                if (beatmap is BeatmapSetInfo localBeatmap)
+                if (beatmapSet is BeatmapSetInfo localBeatmap)
                     databasedSet ??= BeatmapManager.QueryBeatmapSet(s => s.Hash == localBeatmap.Hash && !s.DeletePending);
 
                 if (databasedSet == null)
@@ -359,11 +373,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                 {
                     var beatmaps = detachedSet.Beatmaps.Where(b => difficultyCriteria?.Invoke(b) ?? true).ToList();
 
-                    // Use all beatmaps if predicate matched nothing
                     if (beatmaps.Count == 0)
                         beatmaps = detachedSet.Beatmaps.ToList();
 
-                    // Prefer recommended beatmap if recommendations are available, else fallback to a sane selection.
                     var selection = beatmaps.FirstOrDefault(b => b.Ruleset.Equals(ScoreInfo.Ruleset)) ?? beatmaps.First();
 
                     if (screen is IHandlePresentBeatmap presentableScreen)
@@ -372,8 +384,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                     }
                     else
                     {
-                        // Beatmap.Value = BeatmapManager.GetWorkingBeatmap(selection);
-                        Logger.Log($"Completing {nameof(PresentBeatmap)} with beatmap {beatmap} (maintaining ruleset)");
+                        Logger.Log($"Completing {nameof(PresentBeatmap)} with beatmap {beatmapSet} (maintaining ruleset)");
                     }
                 }, validScreens: new[]
                 {
@@ -381,7 +392,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                 });
             }
 
-            protected override Drawable[] CreateText(IBeatmapInfo beatmapInfo)
+            private Drawable[] CreateText(IBeatmapInfo beatmapInfo)
             {
                 var metadata = beatmapInfo.Metadata;
 
