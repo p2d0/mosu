@@ -6,6 +6,7 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Platform;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
@@ -58,34 +59,6 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [SetUpSteps]
         public void SetUp()
         {
-            AddStep("set up dummy API user", () =>
-            {
-                ((DummyAPIAccess)API).LocalUser.Value = new APIUser
-                {
-                    Username = MAIN_USER,
-                    Id = 1,
-                    CountryCode = CountryCode.US,
-                };
-            });
-
-            AddStep("SETUP", () =>
-            {
-                localUserManager.EnsureDefaultProfile();
-                localUserManager.SetActiveProfile(MAIN_USER);
-                Ruleset.Value = ruleset.RulesetInfo;
-
-                profileOverlay = new LocalUserProfileOverlay();
-                Dependencies.CacheAs<LocalUserProfileOverlay>(profileOverlay);
-
-                toolbarButton = new ToolbarLocalUserButton();
-                Add(toolbarButton);
-            });
-        }
-
-        [Test]
-        public void TestToolbarShowsPPAfterLogin()
-        {
-            // Seed scores for the user
             AddStep("seed scores", () =>
             {
                 realm.Write(r =>
@@ -117,13 +90,54 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 });
             });
 
-            // Simulate stats being loaded (as InitialiseStatisticsAsync would do)
-            AddStep("load stats into cache", () =>
+            AddStep("SETUP", () =>
             {
-                localUserManager.UpdateStatistics(new UserStatistics { PP = 150m, TotalScore = 1000000, PlayCount = 1 }, ruleset.RulesetInfo);
+                Ruleset.Value = ruleset.RulesetInfo;
+
+                profileOverlay = new LocalUserProfileOverlay();
+                Dependencies.CacheAs<LocalUserProfileOverlay>(profileOverlay);
+
+                // Add LocalUserManager to hierarchy so Schedule() processes
+                Add(new Container { localUserManager });
+
+                toolbarButton = new ToolbarLocalUserButton();
+                Add(toolbarButton);
+            });
+        }
+
+        [Test]
+        public void TestToolbarShowsPPAfterLogin()
+        {
+            // Simulate login via API.Login() which triggers EnsureDefaultProfile via BindValueChanged
+            AddStep("simulate login", () =>
+            {
+                ((DummyAPIAccess)API).SkipSecondFactor();
+                API.Login(MAIN_USER, "password");
             });
 
-            AddAssert("toolbar shows correct PP", () => toolbarButton.ppText.Text == "150 pp");
+            // Create profile for logged-in user and set as active
+            AddStep("set up user profile", () =>
+            {
+                localUserManager.AddProfile(MAIN_USER);
+                localUserManager.SetActiveProfile(MAIN_USER);
+            });
+
+            // Load stats from scores and await completion
+            AddStep("load statistics from scores", () =>
+            {
+                localUserManager.RefreshStatisticsAsync(ruleset.RulesetInfo);
+            });
+
+            // Wait for stats to be cached (async load)
+            AddUntilStep("wait for stats to load", () =>
+            {
+                var stats = localUserManager.GetStatisticsFor(ruleset.RulesetInfo);
+                return stats != null && stats.PP > 0;
+            });
+
+            // Wait for toolbar to update
+            AddUntilStep("wait for toolbar update", () => toolbarButton.ppText.Text != "- pp");
+            AddAssert("toolbar shows PP", () => { var t = toolbarButton.ppText.Text.ToString(); return t.EndsWith(" pp") && t != "- pp"; });
             AddAssert("toolbar shows correct username", () => toolbarButton.usernameText.Text == MAIN_USER);
         }
     }
