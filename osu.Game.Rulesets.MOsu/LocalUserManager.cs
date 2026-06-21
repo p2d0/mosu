@@ -160,6 +160,19 @@ namespace osu.Game.Rulesets.MOsu
             foreach (var name in profileNames)
             {
                 var user = await GetLocalUserWithStatisticsForUsernameAsync(name, ruleset.RulesetInfo).ConfigureAwait(false);
+                if (user.Statistics != null)
+                {
+                    var key = $"{ruleset.RulesetInfo.ShortName}:{name}";
+                    statisticsCache[key] = user.Statistics;
+                }
+            }
+
+            // Fire update for active profile so toolbar picks it up
+            var activeKey = cacheKey(ruleset.RulesetInfo);
+            if (activeKey != null && statisticsCache.TryGetValue(activeKey, out var activeStats))
+            {
+                var update = new UserStatisticsUpdate(ruleset.RulesetInfo, null, activeStats);
+                StatisticsUpdated?.Invoke(update);
             }
         }
 
