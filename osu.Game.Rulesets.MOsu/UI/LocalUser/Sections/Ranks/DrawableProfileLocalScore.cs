@@ -124,11 +124,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                                     }
                                 }
                             },
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.Both,
-                                Child = CreateScoreAndHitStatistics()
-                            },
                             new FillFlowContainer
                             {
                                 Anchor = Anchor.CentreRight,
@@ -159,6 +154,15 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                                         {
                                             Scale = new Vector2(0.35f)
                                         }).ToList(),
+                                    },
+                                    new Container
+                                    {
+                                        AutoSizeAxes = Axes.X,
+                                        RelativeSizeAxes = Axes.Y,
+                                        Padding = new MarginPadding { Horizontal = 10, Vertical = 5 },
+                                        Anchor = Anchor.CentreRight,
+                                        Origin = Anchor.CentreRight,
+                                        Child = CreateScoreAndHitStatistics()
                                     }
                                 }
                             }
@@ -247,7 +251,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             {
                 Text = count.ToString(),
                 Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold),
-                Colour = count > 0 ? colour : colourProvider.Background2
+                Colour = count > 0 ? colour : colourProvider.Background1
             };
         }
 
