@@ -45,12 +45,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                 switch (type)
                 {
                     case ScoreType.Recent:
-                        return username == "Guest" ? LocalUserManager.GetRecentScores(ud.Ruleset).Count
-                                                    : LocalUserManager.GetRecentScores(username, ud.Ruleset).Count;
-                    case ScoreType.Best:
+                        return LocalUserManager.GetRecentScores(username, ud.Ruleset).Count; case ScoreType.Best:
                     default:
-                        return username == "Guest" ? LocalUserManager.GetLocalScores(ud.Ruleset).Count
-                                                    : LocalUserManager.GetBestScores(username, ud.Ruleset).Count;
+                        return LocalUserManager.GetBestScores(username, ud.Ruleset).Count;
                 }
             }
             return 0;
@@ -72,10 +69,10 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             return Task.Run(() => {
                 switch (type) {
                     case ScoreType.Recent:
-                        return user.User.Username == "Guest" ? LocalUserManager.GetRecentScores(user.Ruleset) : LocalUserManager.GetRecentScores(user.User.Username, user.Ruleset);
+                        return LocalUserManager.GetRecentScores(user.User.Username, user.Ruleset);
                     case ScoreType.Best:
                     default:
-                        return user.User.Username == "Guest" ? LocalUserManager.GetLocalScores(user.Ruleset) : LocalUserManager.GetBestScores(user.User.Username,user.Ruleset);
+                        return LocalUserManager.GetBestScores(user.User.Username,user.Ruleset);
 
                 }});
                 }
