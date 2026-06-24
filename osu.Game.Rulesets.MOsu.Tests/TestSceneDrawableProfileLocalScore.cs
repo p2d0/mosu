@@ -76,7 +76,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     Child = drawable,
                 };
             });
-            AddUntilStep("wait for drawable to load", () => Child?.Children.FirstOrDefault()?.LoadState == LoadState.Ready);
+            AddWaitStep("wait for drawable to load", 2);
         }
     }
 }

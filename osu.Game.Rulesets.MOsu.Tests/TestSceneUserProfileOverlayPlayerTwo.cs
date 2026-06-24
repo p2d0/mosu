@@ -119,6 +119,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         public void TestPlayerTwoProfile()
         {
             AddStep("show user", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for content", 3);
         }
 
         private ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)

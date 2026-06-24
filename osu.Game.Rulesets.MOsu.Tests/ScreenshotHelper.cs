@@ -25,33 +25,30 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 return;
             }
 
-            host.TakeScreenshotAsync().ContinueWith(t =>
+            try
             {
-                try
+                var image = host.TakeScreenshotAsync().Result;
+
+                var test = TestContext.CurrentContext.Test;
+                string testName = test?.Name?.Replace(".", "_") ?? "unknown";
+                string fixtureName = test?.ClassName?.Replace("osu.Game.Rulesets.MOsu.Tests.", "").Replace(".", "_") ?? "unknown";
+
+                Directory.CreateDirectory(SCREENSHOT_DIR);
+
+                string path = Path.Combine(SCREENSHOT_DIR, $"{fixtureName}_{testName}.png");
+
+                using (image)
+                using (var stream = File.Create(path))
                 {
-                    var image = t.GetAwaiter().GetResult();
-
-                    var test = TestContext.CurrentContext.Test;
-                    string testName = test?.Name?.Replace(".", "_") ?? "unknown";
-                    string fixtureName = test?.ClassName?.Replace("osu.Game.Rulesets.MOsu.Tests.", "").Replace(".", "_") ?? "unknown";
-
-                    Directory.CreateDirectory(SCREENSHOT_DIR);
-
-                    string path = Path.Combine(SCREENSHOT_DIR, $"{fixtureName}_{testName}.png");
-
-                    using (image)
-                    using (var stream = File.Create(path))
-                    {
-                        image.SaveAsPng(stream);
-                    }
-
-                    TestContext.WriteLine($"[ScreenshotHelper] Saved: {path}");
+                    image.SaveAsPng(stream);
                 }
-                catch (Exception ex)
-                {
-                    TestContext.WriteLine($"[ScreenshotHelper] Screenshot failed: {ex.GetType().Name}: {ex.Message}");
-                }
-            });
+
+                TestContext.WriteLine($"[ScreenshotHelper] Saved: {path}");
+            }
+            catch (Exception ex)
+            {
+                TestContext.WriteLine($"[ScreenshotHelper] Screenshot failed: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         public static void CaptureNamed(GameHost host, string name)

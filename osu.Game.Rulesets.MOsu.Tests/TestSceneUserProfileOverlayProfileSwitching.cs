@@ -119,7 +119,10 @@ namespace osu.Game.Rulesets.MOsu.Tests
         public void TestProfileSwitching()
         {
             AddStep("show PlayerOne", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for content", 2);
             AddStep("switch to PlayerTwo", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for switch", 2);
+
         }
 
         private ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)
