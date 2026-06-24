@@ -259,6 +259,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 AddInternal(scroll.Button.CreateProxy());
             }
         }
+        /// <summary>Whether the overlay is currently loading content.</summary>
+        public bool Loading => loadingLayer.IsPresent;
         public bool IsDisposedPublic => IsDisposed;
     }
 }

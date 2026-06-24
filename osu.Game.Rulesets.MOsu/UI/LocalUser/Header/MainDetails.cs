@@ -23,7 +23,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
         private readonly Dictionary<ScoreRank, ScoreRankInfo> scoreRankInfos = new Dictionary<ScoreRank, ScoreRankInfo>();
         private ProfileValueDisplay medalInfo = null!;
         private ProfileValueDisplay ppInfo = null!;
-        private GlobalRankDisplay detailGlobalRank = null!;
+        private ProfileValueDisplay detailPerformancePoints = null!;
         private ProfileValueDisplay detailCountryRank = null!;
         private Container rankGraphContainer = null!;
         private RankGraph rankGraph = null!;
@@ -64,7 +64,10 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
                         {
                             new[]
                             {
-                                detailGlobalRank = new GlobalRankDisplay(),
+                                detailPerformancePoints = new ProfileValueDisplay(true)
+                                {
+                                    Title = "Performance points",
+                                },
                                 Empty(),
                                 detailCountryRank = new ProfileValueDisplay(true)
                                 {
@@ -160,8 +163,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Header
             foreach (var scoreRankInfo in scoreRankInfos)
                 scoreRankInfo.Value.RankCount = user?.Statistics?.GradesCount[scoreRankInfo.Key] ?? 0;
 
-            detailGlobalRank.HighestRank.Value = user?.RankHighest;
-            detailGlobalRank.UserStatistics.Value = user?.Statistics;
+            detailPerformancePoints.Content.Text = user?.Statistics?.PP != null ? LocalisableString.Interpolate($"{user.Statistics.PP.Value:#,##0}pp") : (LocalisableString)"0pp";
+            detailPerformancePoints.Content.TooltipText = getPPInfoTooltipText(user);
 
             detailCountryRank.Content.Text = user?.Statistics?.CountryRank?.ToLocalisableString("\\##,##0") ?? (LocalisableString)"-";
             detailCountryRank.Content.TooltipText = getCountryRankTooltipText(user);
