@@ -4,7 +4,7 @@ This is a standalone ruleset project using NuGet package references to `ppy.osu.
 
 ## Source reference
 
-See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine.
+See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine. (read LOCAL.md immediately)
 
 ## Release Build
 
