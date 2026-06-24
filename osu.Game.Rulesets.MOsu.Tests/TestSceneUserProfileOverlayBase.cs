@@ -116,6 +116,13 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 Date = date,
                 DeletePending = false,
                 Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>(),
+                Statistics = new System.Collections.Generic.Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>
+                {
+                    { osu.Game.Rulesets.Scoring.HitResult.Great, 45 },
+                    { osu.Game.Rulesets.Scoring.HitResult.Good, 3 },
+                    { osu.Game.Rulesets.Scoring.HitResult.Ok, 2 },
+                    { osu.Game.Rulesets.Scoring.HitResult.Miss, 1 },
+                },
             };
         }
     }

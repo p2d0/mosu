@@ -38,7 +38,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                     Spacing = new Vector2(10, 0),
                     Children = new[]
                     {
-                        CreateDrawableAccuracy(),
+                        new Container { AutoSizeAxes = Axes.Both, Child = CreateDrawableAccuracy() },
                         new Container
                         {
                             Size = new Vector2(50, 14),

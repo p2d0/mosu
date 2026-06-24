@@ -25,12 +25,14 @@ using osu.Game.Overlays.Profile.Sections;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
 using osu.Game.Screens;
 using osu.Game.Screens.Select;
 using osu.Game.Utils;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
 {
@@ -122,6 +124,11 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                                     }
                                 }
                             },
+                            new Container
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Child = CreateScoreAndHitStatistics()
+                            },
                             new FillFlowContainer
                             {
                                 Anchor = Anchor.CentreRight,
@@ -209,6 +216,40 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
         }
 
         protected virtual Drawable CreateRightContent() => CreateDrawableAccuracy();
+
+        protected virtual Drawable CreateScoreAndHitStatistics() => new FillFlowContainer
+        {
+            Anchor = Anchor.Centre,
+            Origin = Anchor.Centre,
+            AutoSizeAxes = Axes.Both,
+            Direction = FillDirection.Horizontal,
+            Spacing = new Vector2(4, 0),
+            Children = new Drawable[]
+            {
+                new OsuSpriteText { Text = Score.TotalScore.ToString("N0"), Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold), Colour = colourProvider.Foreground1 },
+                new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                new OsuSpriteText { Text = $"{Score.Combo}x", Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold), Colour = colourProvider.Foreground1 },
+                new OsuSpriteText { Text = $"({Score.MaxCombo}x)", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                new OsuSpriteText { Text = "|", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Great) ? Score.Statistics[HitResult.Great] : 0, colours.GreenLight),
+                new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Good) ? Score.Statistics[HitResult.Good] : 0, colours.Orange1),
+                new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Ok) ? Score.Statistics[HitResult.Ok] : 0, colours.Orange2),
+                new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Miss) ? Score.Statistics[HitResult.Miss] : 0, colours.Red)
+            }
+        };
+
+        private Drawable createHitCount(int count, Color4 colour)
+        {
+            return new OsuSpriteText
+            {
+                Text = count.ToString(),
+                Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold),
+                Colour = count > 0 ? colour : colourProvider.Background2
+            };
+        }
 
         protected Drawable CreateDrawableAccuracy() => new Container
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -34,6 +35,13 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     Date = DateTimeOffset.Now,
                     DeletePending = false,
                     Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>(),
+                    Statistics = new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>
+                    {
+                        { osu.Game.Rulesets.Scoring.HitResult.Great, 45 },
+                        { osu.Game.Rulesets.Scoring.HitResult.Good, 3 },
+                        { osu.Game.Rulesets.Scoring.HitResult.Ok, 2 },
+                        { osu.Game.Rulesets.Scoring.HitResult.Miss, 1 },
+                    },
                 };
 
                 score.BeatmapInfo = null;
