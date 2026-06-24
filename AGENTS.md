@@ -6,6 +6,19 @@ This is a standalone ruleset project using NuGet package references to `ppy.osu.
 
 See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine. (read LOCAL.md immediately)
 
+## Workflow
+
+**Always run tests and check screenshots after every change.**
+
+1. Run `dotnet build` to catch compile errors.
+2. Run visual tests: `DISPLAY=:99 dotnet run --project osu.Game.Rulesets.MOsu.Tests/osu.Game.Rulesets.MOsu.Tests.csproj -- --auto`
+3. **Read every screenshot in `screenshots/`** and validate:
+   - UI elements render (not blank/black)
+   - Expected content visible (usernames, scores, controls)
+   - No layout crashes or clipping
+   - Compare against previous screenshots if refactoring UI
+4. Do not commit or finish until tests pass and screenshots are verified.
+
 ## Release Build
 
 ```sh
