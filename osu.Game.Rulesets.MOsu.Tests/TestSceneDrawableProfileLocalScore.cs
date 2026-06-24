@@ -9,6 +9,8 @@ using osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks;
 using osu.Game.Models;
 using osu.Game.Scoring;
 using osu.Game.Users;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
@@ -34,7 +36,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     Rank = ScoreRank.S,
                     Date = DateTimeOffset.Now,
                     DeletePending = false,
-                    Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>(),
+                    Mods = new Mod[] { new OsuModDoubleTime() {SpeedChange = {Value = 2.3f}}, new OsuModHidden() {
+                            OnlyFadeApproachCircles = { Value = true }
+                        } },
                     Statistics = new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>
                     {
                         { osu.Game.Rulesets.Scoring.HitResult.Great, 45 },
