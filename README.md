@@ -6,10 +6,6 @@ https://github.com/user-attachments/assets/a94b24b1-2ad0-4456-87fa-0d8f1d29181a
 
 
 
-https://github.com/user-attachments/assets/1047a40e-c983-41b1-8062-08979dc40bb2
-
-
-
 ## Features
 
 - **Local PP** — calculates and tracks performance points locally (with local profiles)
