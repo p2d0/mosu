@@ -207,12 +207,6 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         private async Task startBackgroundDownload(List<int> missingSetIds)
         {
-            if (!api.IsLoggedIn)
-            {
-                Schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." }));
-                return;
-            }
-
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,

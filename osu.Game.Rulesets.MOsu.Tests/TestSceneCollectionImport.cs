@@ -11,6 +11,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Database;
 using osu.Game.Online.API;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Rulesets.MOsu.UI;
@@ -26,6 +27,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
     {
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmapManager { get; set; } = null!;
 
         protected MOsuRealmAccess mosuRealm { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
@@ -128,6 +132,33 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 if (collection == null) return false;
                 return collection.BeatmapMD5Hashes.Distinct().Count() == collection.BeatmapMD5Hashes.Count;
             });
+        }
+
+        [Test]
+        public void TestDownloadRequiresLogin()
+        {
+            // Use real API to download a beatmap set and check if it requires login
+            IAPIProvider? realApi = null;
+            BeatmapModelDownloader downloader = null!;
+            bool downloadBegan = false;
+            bool downloadFailed = false;
+
+            AddStep("get real API and create downloader", () =>
+            {
+                realApi = Dependencies.Get<IAPIProvider>();
+                downloader = new BeatmapModelDownloader(beatmapManager, realApi);
+                downloader.DownloadBegan += _ => downloadBegan = true;
+                downloader.DownloadFailed += _ => downloadFailed = true;
+            });
+
+            AddStep("try download real beatmap set 99756", () =>
+            {
+                downloader.Download(new APIBeatmapSet { OnlineID = 99756 });
+            });
+
+            AddUntilStep("wait for download to complete or fail", () => downloadBegan || downloadFailed);
+            AddAssert("download began", () => downloadBegan);
+            AddAssert("download did not fail", () => !downloadFailed);
         }
 
         [Test]
