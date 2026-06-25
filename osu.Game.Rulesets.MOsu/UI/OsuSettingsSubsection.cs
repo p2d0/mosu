@@ -295,6 +295,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                                     {
                                         BeatmapSetId = beatmap.BeatmapSet.OnlineID,
                                         BeatmapMD5Hash = hash,
+                                        BeatmapTitle = beatmap.Metadata.Title,
+                                        BeatmapAuthor = beatmap.Metadata.Artist,
                                         Scores = new List<ScoreExportDto>()
                                     };
 
@@ -309,6 +311,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                                         {
                                             BeatmapHash = s.BeatmapInfo.MD5Hash,
                                             RulesetShortName = s.Ruleset.ShortName,
+                                            BeatmapDifficultyName = s.BeatmapInfo.DifficultyName,
                                             TotalScore = s.TotalScore,
                                             Accuracy = s.Accuracy,
                                             MaxCombo = s.MaxCombo,
@@ -360,6 +363,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                                     {
                                         BeatmapSetId = beatmap.BeatmapSet.OnlineID,
                                         BeatmapMD5Hash = hash,
+                                        BeatmapTitle = beatmap.Metadata.Title,
+                                        BeatmapAuthor = beatmap.Metadata.Artist,
                                         Scores = new List<ScoreExportDto>()
                                     });
                                 }

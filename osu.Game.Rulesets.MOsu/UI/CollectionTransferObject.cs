@@ -17,6 +17,8 @@ namespace osu.Game.Rulesets.MOsu.UI {
     {
         public int BeatmapSetId { get; set; }
         public string BeatmapMD5Hash { get; set; } = string.Empty;
+        public string BeatmapTitle { get; set; } = string.Empty;
+        public string BeatmapAuthor { get; set; } = string.Empty;
         public List<ScoreExportDto> Scores { get; set; } = new List<ScoreExportDto>();
     }
 
@@ -24,6 +26,7 @@ namespace osu.Game.Rulesets.MOsu.UI {
     {
         public string BeatmapHash { get; set; } = string.Empty;
         public string RulesetShortName { get; set; } = string.Empty;
+        public string BeatmapDifficultyName { get; set; } = string.Empty;
         public long TotalScore { get; set; }
         public double Accuracy { get; set; }
         public int MaxCombo { get; set; }

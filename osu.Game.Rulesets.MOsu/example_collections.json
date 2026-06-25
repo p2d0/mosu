@@ -5,117 +5,1773 @@
       {
         "BeatmapSetId": 99756,
         "BeatmapMD5Hash": "04a8c84dc9f5217a3713f9fadfc969a1",
-        "Scores": []
+        "BeatmapTitle": "Clarity (feat. Foxes)",
+        "BeatmapAuthor": "Zedd",
+        "Scores": [
+          {
+            "BeatmapHash": "04a8c84dc9f5217a3713f9fadfc969a1",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Clarity",
+            "TotalScore": 207040,
+            "Accuracy": 0.9111384111384111,
+            "MaxCombo": 69,
+            "Rank": "A",
+            "Date": "2026-05-26T10:12:28.2592653+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "drain_rate": 6.0,
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 7.25,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 287545666
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 61,
+              "Meh": 0,
+              "Ok": 17,
+              "Good": 0,
+              "Great": 736,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 50,
+              "LargeBonus": 21,
+              "IgnoreMiss": 39,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 110969,
+        "BeatmapMD5Hash": "af1f43cd9dee6e3a1721809c0a9f0484",
+        "BeatmapTitle": "Leave Out All The Rest",
+        "BeatmapAuthor": "Linkin Park",
+        "Scores": [
+          {
+            "BeatmapHash": "af1f43cd9dee6e3a1721809c0a9f0484",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Hard",
+            "TotalScore": 57304,
+            "Accuracy": 0.8119205298013245,
+            "MaxCombo": 37,
+            "Rank": "B",
+            "Date": "2026-05-31T06:34:01.2335534+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "power_jumps": true,
+                  "stream_distance_multiplier": 12.0,
+                  "seed": 1167024759
+                }
+              },
+              {
+                "acronym": "NL"
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 136,
+              "Meh": 0,
+              "Ok": 9,
+              "Good": 0,
+              "Great": 610,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 24,
+              "LargeBonus": 0,
+              "IgnoreMiss": 22,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 215977,
+        "BeatmapMD5Hash": "bdb088fb181883d24ac37e62c143a368",
+        "BeatmapTitle": "SARABA ITOSHIKI KANASHIMI TACHIYO",
+        "BeatmapAuthor": "MOMOIRO CLOVER Z",
+        "Scores": [
+          {
+            "BeatmapHash": "bdb088fb181883d24ac37e62c143a368",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Master",
+            "TotalScore": 238649,
+            "Accuracy": 0.9293050553554755,
+            "MaxCombo": 78,
+            "Rank": "A",
+            "Date": "2026-03-16T17:31:20.5213907+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 3.44,
+                  "stream_distance": 69,
+                  "seed": 1103084814
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 33,
+              "Meh": 0,
+              "Ok": 2,
+              "Good": 0,
+              "Great": 403,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 13,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 2,
+              "IgnoreHit": 121,
+              "ComboBreak": 0,
+              "SliderTailHit": 119
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 291907,
+        "BeatmapMD5Hash": "74e15dac2bac0424054142e72d36c302",
+        "BeatmapTitle": "The Children",
+        "BeatmapAuthor": "Ramin Djawadi",
+        "Scores": [
+          {
+            "BeatmapHash": "74e15dac2bac0424054142e72d36c302",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Hard",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-25T14:37:30.3320287+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 10.0,
+                  "stream_distance_multiplier": 20.2,
+                  "seed": 700588496
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 7,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 19,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 140662,
         "BeatmapMD5Hash": "28f3e6ccab319022dae7937f1eeaa09e",
-        "Scores": []
-      },
-      {
-        "BeatmapSetId": 140662,
-        "BeatmapMD5Hash": "79a7c4192fba0100e83411255b7d7d35",
-        "Scores": []
-      },
-      {
-        "BeatmapSetId": 140662,
-        "BeatmapMD5Hash": "594f3895a30671e389654fc644349af1",
-        "Scores": []
+        "BeatmapTitle": "Tear Rain",
+        "BeatmapAuthor": "cYsmix feat. Emmy",
+        "Scores": [
+          {
+            "BeatmapHash": "28f3e6ccab319022dae7937f1eeaa09e",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 262116,
+            "Accuracy": 0.9469246031746031,
+            "MaxCombo": 177,
+            "Rank": "A",
+            "Date": "2026-05-26T09:49:07.0348681+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "drain_rate": 6.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 431752442
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 34,
+              "Meh": 5,
+              "Ok": 23,
+              "Good": 0,
+              "Great": 946,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 17,
+              "LargeBonus": 3,
+              "IgnoreMiss": 10,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 159357,
         "BeatmapMD5Hash": "836c7c2972556d0d317ecbed7fe16961",
-        "Scores": []
+        "BeatmapTitle": "2013 In 10 Minutes",
+        "BeatmapAuthor": "Dzeko & Torres",
+        "Scores": [
+          {
+            "BeatmapHash": "836c7c2972556d0d317ecbed7fe16961",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Marathon",
+            "TotalScore": 11481,
+            "Accuracy": 0.8027397260273973,
+            "MaxCombo": 32,
+            "Rank": "F",
+            "Date": "2025-10-13T12:11:10.5454226+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "power_jumps": true,
+                  "stream_distance_multiplier": 6.0,
+                  "power_streams": true,
+                  "seed": 1221807823
+                }
+              },
+              {
+                "acronym": "NL"
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 44,
+              "Meh": 0,
+              "Ok": 42,
+              "Good": 0,
+              "Great": 279,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 11,
+              "LargeBonus": 2,
+              "IgnoreMiss": 7,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 316861,
         "BeatmapMD5Hash": "63daf4d00fbb75ecb43805eac4dc6b61",
-        "Scores": []
+        "BeatmapTitle": "Aoi Shiori",
+        "BeatmapAuthor": "Galileo Galilei",
+        "Scores": [
+            {
+                "BeatmapHash": "63daf4d00fbb75ecb43805eac4dc6b61",
+                "RulesetShortName": "mosu",
+                "BeatmapDifficultyName": "Hanabi",
+                "TotalScore": 106722,
+                "Accuracy": 0.9111050328227571,
+                "MaxCombo": 185,
+                "Rank": "A",
+                "Date": "2025-09-07T07:56:56.5698042+00:00",
+                "Mods": [
+                    {
+                        "acronym": "NF"
+                    },
+                    {
+                        "acronym": "HD"
+                    },
+                    {
+                        "acronym": "DA",
+                        "settings": {
+                            "approach_rate": 10.0,
+                            "overall_difficulty": 7.0
+                        }
+                    },
+                    {
+                        "acronym": "NL"
+                    }
+                ],
+                "Statistics": {
+                    "None": 0,
+                    "Miss": 46,
+                    "Meh": 27,
+                    "Ok": 141,
+                    "Good": 0,
+                    "Great": 1614,
+                    "Perfect": 0,
+                    "SmallTickMiss": 0,
+                    "SmallTickHit": 0,
+                    "LargeTickMiss": 0,
+                    "LargeTickHit": 0,
+                    "SmallBonus": 12,
+                    "LargeBonus": 3,
+                    "IgnoreMiss": 8,
+                    "IgnoreHit": 0,
+                    "ComboBreak": 0,
+                    "SliderTailHit": 0
+                }
+            }
+        ]
       },
       {
         "BeatmapSetId": 20426,
         "BeatmapMD5Hash": "651aec29cde607d8dae81a3cc285737b",
-        "Scores": []
+        "BeatmapTitle": "The Sharpest Lives",
+        "BeatmapAuthor": "My Chemical Romance",
+        "Scores": [
+          {
+            "BeatmapHash": "651aec29cde607d8dae81a3cc285737b",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 80276,
+            "Accuracy": 0.8602150537634409,
+            "MaxCombo": 41,
+            "Rank": "B",
+            "Date": "2025-09-11T12:36:59.9591643+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "overall_difficulty": 7.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 4.97,
+                  "power_jumps": true,
+                  "stream_distance_multiplier": 10.0,
+                  "seed": 303710747
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 65,
+              "Meh": 0,
+              "Ok": 39,
+              "Good": 0,
+              "Great": 547,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 46,
+              "LargeBonus": 3,
+              "IgnoreMiss": 29,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 913778,
         "BeatmapMD5Hash": "a0221207b4dc4bdabe796d225de0ded0",
-        "Scores": []
+        "BeatmapTitle": "This Is War",
+        "BeatmapAuthor": "30 Seconds To Mars",
+        "Scores": [
+          {
+            "BeatmapHash": "a0221207b4dc4bdabe796d225de0ded0",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Extra",
+            "TotalScore": 142854,
+            "Accuracy": 0.8414403355327094,
+            "MaxCombo": 42,
+            "Rank": "B",
+            "Date": "2026-05-26T07:51:59.8685446+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.5,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 4.15,
+                  "seed": 1073449839
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 87,
+              "Meh": 2,
+              "Ok": 22,
+              "Good": 0,
+              "Great": 488,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 22,
+              "SmallBonus": 11,
+              "LargeBonus": 1,
+              "IgnoreMiss": 7,
+              "IgnoreHit": 101,
+              "ComboBreak": 0,
+              "SliderTailHit": 101
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 2315186,
         "BeatmapMD5Hash": "357d1685e7932b45837954f3f36900fb",
-        "Scores": []
+        "BeatmapTitle": "chess",
+        "BeatmapAuthor": "Joyful",
+        "Scores": [
+          {
+            "BeatmapHash": "357d1685e7932b45837954f3f36900fb",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Stockfish Level 5",
+            "TotalScore": 19886,
+            "Accuracy": 0.8677248677248677,
+            "MaxCombo": 13,
+            "Rank": "F",
+            "Date": "2026-05-17T15:00:37.7963416+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1497492727
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 7,
+              "Meh": 0,
+              "Ok": 2,
+              "Good": 0,
+              "Great": 54,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 155288,
         "BeatmapMD5Hash": "f42457f6b9c53a3d7ab1ca78f54a2aca",
-        "Scores": []
+        "BeatmapTitle": "Insane Techniques",
+        "BeatmapAuthor": "kors k",
+        "Scores": [
+            {
+                "BeatmapHash": "f42457f6b9c53a3d7ab1ca78f54a2aca",
+                "RulesetShortName": "mosu",
+                "BeatmapDifficultyName": "Azer's Extra",
+                "TotalScore": 234365,
+                "Accuracy": 0.9168352438750281,
+                "MaxCombo": 176,
+                "Rank": "A",
+                "Date": "2025-08-18T17:06:04.3072302+00:00",
+                "Mods": [
+                    {
+                        "acronym": "HD"
+                    },
+                    {
+                        "acronym": "DA",
+                        "settings": {
+                            "approach_rate": 10
+                        }
+                    },
+                    {
+                        "acronym": "RDV2",
+                        "settings": {
+                            "aim_distance_multiplier": 2.01,
+                            "stream_distance_multiplier": 6.0,
+                            "seed": 1030648395
+                        }
+                    }
+                ],
+                "Statistics": {
+                    "None": 0,
+                    "Miss": 37,
+                    "Meh": 0,
+                    "Ok": 14,
+                    "Good": 0,
+                    "Great": 430,
+                    "Perfect": 0,
+                    "SmallTickMiss": 0,
+                    "SmallTickHit": 0,
+                    "LargeTickMiss": 0,
+                    "LargeTickHit": 152,
+                    "SmallBonus": 36,
+                    "LargeBonus": 2,
+                    "IgnoreMiss": 29,
+                    "IgnoreHit": 191,
+                    "ComboBreak": 0,
+                    "SliderTailHit": 188
+                }
+            }
+        ]
       },
       {
         "BeatmapSetId": 486535,
         "BeatmapMD5Hash": "d8ee1c5a7d6caf83a11acce96dc023b6",
-        "Scores": []
+        "BeatmapTitle": "Moonlight Sonata",
+        "BeatmapAuthor": "cYsmix",
+        "Scores": [
+            {
+                "BeatmapHash": "651aec29cde607d8dae81a3cc285737b",
+                "RulesetShortName": "mosu",
+                "TotalScore": 77339,
+                "Accuracy": 0.8561187916026626,
+                "MaxCombo": 40,
+                "Rank": "B",
+                "Date": "2026-05-26T07:59:18.6113384+00:00",
+                "Mods": [
+                    {
+                        "acronym": "NF"
+                    },
+                    {
+                        "acronym": "HD"
+                    },
+                    {
+                        "acronym": "DA",
+                        "settings": {
+                            "approach_rate": 10
+                        }
+                    },
+                    {
+                        "acronym": "RDV2",
+                        "settings": {
+                            "aim_distance_multiplier": 11,
+                            "power_streams": true,
+                            "seed": 1029294438
+                        }
+                    },
+                    {
+                        "acronym": "NL",
+                        "settings": {
+                            "beat_divisor": 2
+                        }
+                    }
+                ],
+                "Statistics": {
+                    "None": 0,
+                    "Miss": 79,
+                    "Meh": 0,
+                    "Ok": 22,
+                    "Good": 0,
+                    "Great": 550,
+                    "Perfect": 0,
+                    "SmallTickMiss": 0,
+                    "SmallTickHit": 0,
+                    "LargeTickMiss": 0,
+                    "LargeTickHit": 0,
+                    "SmallBonus": 47,
+                    "LargeBonus": 4,
+                    "IgnoreMiss": 29,
+                    "IgnoreHit": 0,
+                    "ComboBreak": 0,
+                    "SliderTailHit": 0
+                }
+            }
+        ]
+      },
+      {
+        "BeatmapSetId": 1558869,
+        "BeatmapMD5Hash": "0516b64de7ee90071d6bbedf903d277b",
+        "BeatmapTitle": "My Ordinary Life",
+        "BeatmapAuthor": "The Living Tombstone",
+        "Scores": [
+          {
+            "BeatmapHash": "0516b64de7ee90071d6bbedf903d277b",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "EXTREME LIFE",
+            "TotalScore": 153980,
+            "Accuracy": 0.8580304765871776,
+            "MaxCombo": 93,
+            "Rank": "B",
+            "Date": "2026-05-23T06:55:32.1142776+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0,
+                  "overall_difficulty": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 3.0,
+                  "stream_distance": 25,
+                  "seed": 1329812736
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 93,
+              "Meh": 0,
+              "Ok": 53,
+              "Good": 0,
+              "Great": 724,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 3,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 20,
+              "IgnoreHit": 176,
+              "ComboBreak": 0,
+              "SliderTailHit": 164
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 296320,
         "BeatmapMD5Hash": "13378f1ee64ece5c4c8ce388e3278a7f",
-        "Scores": []
+        "BeatmapTitle": "Cheerleaders (Radio Mix)",
+        "BeatmapAuthor": "Caramella Girls",
+        "Scores": [
+          {
+            "BeatmapHash": "13378f1ee64ece5c4c8ce388e3278a7f",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Geroversible's Jump Festival",
+            "TotalScore": 142785,
+            "Accuracy": 0.9477401129943502,
+            "MaxCombo": 54,
+            "Rank": "A",
+            "Date": "2026-05-30T15:15:58.0937101+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.5,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 7.15,
+                  "seed": 1259096725
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 11,
+              "Meh": 0,
+              "Ok": 2,
+              "Good": 0,
+              "Great": 223,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 11,
+              "LargeBonus": 0,
+              "IgnoreMiss": 7,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 1867501,
         "BeatmapMD5Hash": "6dcdd9a76e90d6c822786e55a480054b",
-        "Scores": []
+        "BeatmapTitle": "Bumble Bee",
+        "BeatmapAuthor": "Bambee",
+        "Scores": [
+          {
+            "BeatmapHash": "6dcdd9a76e90d6c822786e55a480054b",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Fantasy",
+            "TotalScore": 35536,
+            "Accuracy": 0.7577538361083904,
+            "MaxCombo": 64,
+            "Rank": "F",
+            "Date": "2026-05-19T17:48:44.4926101+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "SA",
+                "settings": {
+                  "object_spacing": 0.5
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 66,
+              "Meh": 3,
+              "Ok": 79,
+              "Good": 0,
+              "Great": 301,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 9,
+              "IgnoreHit": 119,
+              "ComboBreak": 0,
+              "SliderTailHit": 118
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 49052,
         "BeatmapMD5Hash": "12e14d24b09da2dc7b067dfd11497b69",
-        "Scores": []
+        "BeatmapTitle": "the nature of dying",
+        "BeatmapAuthor": "goreshit",
+        "Scores": [
+            {
+                "BeatmapHash": "12e14d24b09da2dc7b067dfd11497b69",
+                "RulesetShortName": "mosu",
+                "TotalScore": 232011,
+                "Accuracy": 0.9150189314261674,
+                "MaxCombo": 350,
+                "Rank": "A",
+                "Date": "2025-09-21T11:57:48.4829764+00:00",
+                "Mods": [
+                    {
+                        "acronym": "HD"
+                    },
+                    {
+                        "acronym": "DA",
+                        "settings": {
+                            "approach_rate": 10.0
+                        }
+                    },
+                    {
+                        "acronym": "NL"
+                    }
+                ],
+                "Statistics": {
+                    "None": 0,
+                    "Miss": 22,
+                    "Meh": 16,
+                    "Ok": 250,
+                    "Good": 0,
+                    "Great": 2089,
+                    "Perfect": 0,
+                    "SmallTickMiss": 0,
+                    "SmallTickHit": 0,
+                    "LargeTickMiss": 0,
+                    "LargeTickHit": 0,
+                    "SmallBonus": 9,
+                    "LargeBonus": 1,
+                    "IgnoreMiss": 5,
+                    "IgnoreHit": 0,
+                    "ComboBreak": 0,
+                    "SliderTailHit": 0
+                }
+            }
+        ]
       },
       {
         "BeatmapSetId": 146794,
         "BeatmapMD5Hash": "930d22bde7dc7f423e088e53515a0ecc",
-        "Scores": []
+        "BeatmapTitle": "Electric Angel",
+        "BeatmapAuthor": "Giga-P",
+        "Scores": [
+          {
+            "BeatmapHash": "930d22bde7dc7f423e088e53515a0ecc",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 179499,
+            "Accuracy": 0.8875645609853,
+            "MaxCombo": 51,
+            "Rank": "B",
+            "Date": "2026-05-22T09:06:42.8471319+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.3,
+                  "drain_rate": 3.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 7.0,
+                  "power_jumps": true,
+                  "seed": 1727151129
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 85,
+              "Meh": 0,
+              "Ok": 14,
+              "Good": 0,
+              "Great": 740,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 6,
+              "LargeBonus": 0,
+              "IgnoreMiss": 6,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 1829485,
         "BeatmapMD5Hash": "b059e700ddc2639f62151e1b5e22f975",
-        "Scores": []
+        "BeatmapTitle": "cool for the summer",
+        "BeatmapAuthor": "Demi Lovato",
+        "Scores": [
+          {
+            "BeatmapHash": "b059e700ddc2639f62151e1b5e22f975",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "DIE FOR EACH OTHER",
+            "TotalScore": 144042,
+            "Accuracy": 0.8295362740345775,
+            "MaxCombo": 150,
+            "Rank": "B",
+            "Date": "2026-05-31T06:50:23.6578243+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.5,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "SA",
+                "settings": {
+                  "object_spacing": 0.5
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 78,
+              "Meh": 2,
+              "Ok": 142,
+              "Good": 0,
+              "Great": 720,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 15,
+              "SmallBonus": 18,
+              "LargeBonus": 0,
+              "IgnoreMiss": 22,
+              "IgnoreHit": 173,
+              "ComboBreak": 0,
+              "SliderTailHit": 173
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 568156,
+        "BeatmapMD5Hash": "a6ad4c8c4c0533a64b89ac4b7306d16a",
+        "BeatmapTitle": "dream escape",
+        "BeatmapAuthor": "009 sound system",
+        "Scores": [
+          {
+            "BeatmapHash": "a6ad4c8c4c0533a64b89ac4b7306d16a",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "IMPOSIBLE",
+            "TotalScore": 50206,
+            "Accuracy": 0.7902597402597402,
+            "MaxCombo": 27,
+            "Rank": "C",
+            "Date": "2026-06-05T06:09:55.9439513+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.8,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 7.96,
+                  "square_mod": true,
+                  "square_mod_distance": 100,
+                  "square_mod_count": 200,
+                  "seed": 323743834
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 150,
+              "Meh": 1,
+              "Ok": 16,
+              "Good": 0,
+              "Great": 603,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 2473656,
+        "BeatmapMD5Hash": "e1c515ad44840975a1274d6d1f0a941d",
+        "BeatmapTitle": "Haggstrom",
+        "BeatmapAuthor": "C418",
+        "Scores": [
+          {
+            "BeatmapHash": "e1c515ad44840975a1274d6d1f0a941d",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "1.9",
+            "TotalScore": 239865,
+            "Accuracy": 0.9303675048355899,
+            "MaxCombo": 52,
+            "Rank": "A",
+            "Date": "2026-05-20T11:26:31.0632929+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 5.0,
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 10.0,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1487401140
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 30,
+              "Meh": 0,
+              "Ok": 9,
+              "Good": 0,
+              "Great": 478,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 23,
+              "LargeBonus": 1,
+              "IgnoreMiss": 24,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 396643,
+        "BeatmapMD5Hash": "a4f4019e79b5413dd13c3267ca6804b4",
+        "BeatmapTitle": "Rainbow Tylenol",
+        "BeatmapAuthor": "Kitsune^2",
+        "Scores": [
+            {
+                "BeatmapHash": "a4f4019e79b5413dd13c3267ca6804b4",
+                "RulesetShortName": "mosu",
+                "BeatmapDifficultyName": "Nogard's Extra",
+                "TotalScore": 75,
+                "Accuracy": 0.32,
+                "MaxCombo": 5,
+                "Rank": "F",
+                "Date": "2026-05-30T15:46:26.2525549+00:00",
+                "Mods": [
+                    {
+                        "acronym": "HD"
+                    },
+                    {
+                        "acronym": "DA",
+                        "settings": {
+                            "approach_rate": 10.5,
+                            "extended_limits": true
+                        }
+                    },
+                    {
+                        "acronym": "RDV2",
+                        "settings": {
+                            "aim_distance_multiplier": 3.68,
+                            "power_jumps": true,
+                            "divisor": 4,
+                            "seed": 356614920
+                        }
+                    }
+                ],
+                "Statistics": {
+                    "None": 0,
+                    "Miss": 5,
+                    "Meh": 0,
+                    "Ok": 3,
+                    "Good": 0,
+                    "Great": 2,
+                    "Perfect": 0,
+                    "SmallTickMiss": 0,
+                    "SmallTickHit": 0,
+                    "LargeTickMiss": 0,
+                    "LargeTickHit": 0,
+                    "SmallBonus": 0,
+                    "LargeBonus": 0,
+                    "IgnoreMiss": 5,
+                    "IgnoreHit": 3,
+                    "ComboBreak": 0,
+                    "SliderTailHit": 2
+                }
+            }
+        ]
+      },
+      {
+        "BeatmapSetId": 2587,
+        "BeatmapMD5Hash": "eaa7dc979a4316b09dcb67b8f2bd03b1",
+        "BeatmapTitle": "He's a Pirate",
+        "BeatmapAuthor": "Klaus Badelt",
+        "Scores": [
+          {
+            "BeatmapHash": "eaa7dc979a4316b09dcb67b8f2bd03b1",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Hard",
+            "TotalScore": 272497,
+            "Accuracy": 0.9143426294820717,
+            "MaxCombo": 105,
+            "Rank": "A",
+            "Date": "2026-05-17T14:24:48.6590862+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 3.02,
+                  "stream_distance_multiplier": 10.5,
+                  "seed": 620836183
+                }
+              },
+              {
+                "acronym": "NL"
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 10,
+              "Meh": 5,
+              "Ok": 11,
+              "Good": 0,
+              "Great": 225,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 8,
+              "LargeBonus": 0,
+              "IgnoreMiss": 10,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 43337,
+        "BeatmapMD5Hash": "222c2cd915e7738aefae34566d67ff5e",
+        "BeatmapTitle": "Symphonic Love (Short Ver.)",
+        "BeatmapAuthor": "Hashimoto Miyuki",
+        "Scores": [
+          {
+            "BeatmapHash": "222c2cd915e7738aefae34566d67ff5e",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Cookiezi's Insane",
+            "TotalScore": 183219,
+            "Accuracy": 0.8754850088183421,
+            "MaxCombo": 58,
+            "Rank": "B",
+            "Date": "2026-05-30T15:09:16.0750032+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.5,
+                  "drain_rate": 1.9,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 3.07,
+                  "stream_distance_multiplier": 8.1,
+                  "power_streams": true,
+                  "stream_distance": 60,
+                  "seed": 1676184565
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 40,
+              "Meh": 3,
+              "Ok": 23,
+              "Good": 0,
+              "Great": 365,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 35,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 3,
+              "IgnoreHit": 75,
+              "ComboBreak": 0,
+              "SliderTailHit": 74
+            }
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 194114,
+        "BeatmapMD5Hash": "eb512980f5f8935f30cfd80f8b8ce643",
+        "BeatmapTitle": "Professional Griefers (Radio Edit)",
+        "BeatmapAuthor": "deadmau5 ft. Gerard Way",
+        "Scores": [
+          {
+            "BeatmapHash": "eb512980f5f8935f30cfd80f8b8ce643",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Hard",
+            "TotalScore": 84398,
+            "Accuracy": 0.8727227966518957,
+            "MaxCombo": 44,
+            "Rank": "B",
+            "Date": "2026-06-01T07:45:50.3900872+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.7,
+                  "drain_rate": 6.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 8.43,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1743527931
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 77,
+              "Meh": 3,
+              "Ok": 10,
+              "Good": 0,
+              "Great": 587,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 10,
+              "LargeBonus": 0,
+              "IgnoreMiss": 7,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 137377,
         "BeatmapMD5Hash": "623d681fc59cbe90d6b7c44ded72d17a",
-        "Scores": []
-      },
-      {
-        "BeatmapSetId": 163112,
-        "BeatmapMD5Hash": "9a6856703c9eb4313a7efe6d8ba025d9",
-        "Scores": []
+        "BeatmapTitle": "Worldwide Choppers",
+        "BeatmapAuthor": "Tech N9ne",
+        "Scores": [
+          {
+            "BeatmapHash": "623d681fc59cbe90d6b7c44ded72d17a",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Gangsta",
+            "TotalScore": 10,
+            "Accuracy": 0.21839080459770116,
+            "MaxCombo": 3,
+            "Rank": "F",
+            "Date": "2026-06-04T09:18:20.1663718+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 4.2,
+                  "power_jumps": true,
+                  "divisor": 4,
+                  "stream_distance": 50,
+                  "seed": 1918209043
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 1,
+              "Ok": 6,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 2,
+              "IgnoreHit": 2,
+              "ComboBreak": 0,
+              "SliderTailHit": 2
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 163112,
         "BeatmapMD5Hash": "e9d69824c6d6d584bd055b690f71deaf",
-        "Scores": []
-      },
-      {
-        "BeatmapSetId": 163112,
-        "BeatmapMD5Hash": "484180849a04f6563acde138f94d2ccc",
-        "Scores": []
+        "BeatmapTitle": "My Love",
+        "BeatmapAuthor": "Kuba Oms",
+        "Scores": [
+          {
+            "BeatmapHash": "e9d69824c6d6d584bd055b690f71deaf",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 73370,
+            "Accuracy": 0.8520427644138985,
+            "MaxCombo": 34,
+            "Rank": "B",
+            "Date": "2026-06-01T07:55:00.467096+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.7,
+                  "drain_rate": 6.0,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 8.43,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1743527931
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 97,
+              "Meh": 5,
+              "Ok": 42,
+              "Good": 0,
+              "Great": 729,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 13,
+              "LargeBonus": 2,
+              "IgnoreMiss": 10,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 123593,
         "BeatmapMD5Hash": "ebfa2a7b3d58f4f5592816429b3da5c9",
-        "Scores": []
+        "BeatmapTitle": "Liquid (Paul Rosenthal Remix)",
+        "BeatmapAuthor": "Rostik",
+        "Scores": [
+          {
+            "BeatmapHash": "ebfa2a7b3d58f4f5592816429b3da5c9",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-02T10:01:12.5857009+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.8,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 127803630
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 59631,
         "BeatmapMD5Hash": "044eefc51cfb0c78814ea8e3edb657a0",
-        "Scores": []
+        "BeatmapTitle": "Three Magic",
+        "BeatmapAuthor": "3L",
+        "Scores": [
+          {
+            "BeatmapHash": "044eefc51cfb0c78814ea8e3edb657a0",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Collab",
+            "TotalScore": 93736,
+            "Accuracy": 0.8542420587052674,
+            "MaxCombo": 219,
+            "Rank": "B",
+            "Date": "2026-06-02T10:05:40.6626828+00:00",
+            "Mods": [
+              {
+                "acronym": "NF"
+              },
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1641505188
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 26,
+              "Meh": 9,
+              "Ok": 131,
+              "Good": 0,
+              "Great": 663,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 10,
+              "LargeBonus": 0,
+              "IgnoreMiss": 9,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       },
       {
         "BeatmapSetId": 395444,
         "BeatmapMD5Hash": "e6b8eeecbe47edf8f11de848222ddf97",
-        "Scores": []
+        "BeatmapTitle": "Slow Stream Practice Maps",
+        "BeatmapAuthor": "Various Artists",
+        "Scores": [
+          {
+            "BeatmapHash": "e6b8eeecbe47edf8f11de848222ddf97",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Fairy Tail BPM110",
+            "TotalScore": 128233,
+            "Accuracy": 0.8347670250896058,
+            "MaxCombo": 27,
+            "Rank": "B",
+            "Date": "2026-06-05T06:18:07.1198629+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "stream_distance_multiplier": 19.0,
+                  "seed": 180596413
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 153,
+              "Meh": 0,
+              "Ok": 1,
+              "Good": 0,
+              "Great": 776,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 12,
+              "LargeBonus": 0,
+              "IgnoreMiss": 14,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            }
+          }
+        ]
       }
     ]
   }
