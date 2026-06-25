@@ -137,28 +137,32 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [Test]
         public void TestDownloadRequiresLogin()
         {
-            // Use real API to download a beatmap set and check if it requires login
-            IAPIProvider? realApi = null;
+            // Verify BeatmapModelDownloader does NOT check api.IsLoggedIn.
+            // It only checks api != null. This confirms the IsLoggedIn guard
+            // in BackgroundCollectionImportProcessor.startBackgroundDownload() is essential.
+            DummyAPIAccess dummyApi = null!;
             BeatmapModelDownloader downloader = null!;
             bool downloadBegan = false;
-            bool downloadFailed = false;
 
-            AddStep("get real API and create downloader", () =>
+            AddStep("create downloader with dummy API offline", () =>
             {
-                realApi = Dependencies.Get<IAPIProvider>();
-                downloader = new BeatmapModelDownloader(beatmapManager, realApi);
+                dummyApi = new DummyAPIAccess();
+                dummyApi.SetState(APIState.Offline);
+
+                downloader = new BeatmapModelDownloader(beatmapManager, dummyApi);
                 downloader.DownloadBegan += _ => downloadBegan = true;
-                downloader.DownloadFailed += _ => downloadFailed = true;
             });
 
-            AddStep("try download real beatmap set 99756", () =>
+            AddAssert("not logged in", () => !dummyApi.IsLoggedIn);
+
+            AddStep("try download while offline", () =>
             {
                 downloader.Download(new APIBeatmapSet { OnlineID = 99756 });
             });
 
-            AddUntilStep("wait for download to complete or fail", () => downloadBegan || downloadFailed);
-            AddAssert("download began", () => downloadBegan);
-            AddAssert("download did not fail", () => !downloadFailed);
+            // BeatmapModelDownloader attempts download regardless of login state.
+            // It only checks api != null, not api.IsLoggedIn.
+            AddAssert("download attempted despite offline (proves IsLoggedIn guard needed)", () => downloadBegan);
         }
 
         [Test]

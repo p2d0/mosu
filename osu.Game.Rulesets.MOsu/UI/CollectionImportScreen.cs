@@ -229,7 +229,14 @@ namespace osu.Game.Rulesets.MOsu.UI
                         // 3. Start Background Process with Progress Notification
                         if (missingSetIds.Count > 0)
                         {
-                            startBackgroundDownload(missingSetIds);
+                            if (!api.IsLoggedIn)
+                            {
+                                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                            }
+                            else
+                            {
+                                startBackgroundDownload(missingSetIds);
+                            }
                         }
 
                         // 4. Close the screen immediately so user can do other things
@@ -249,6 +256,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void startBackgroundDownload(List<int> missingSetIds)
         {
+            if (!api.IsLoggedIn)
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                return;
+            }
+
             // Create the notification
             var notification = new ProgressNotification
             {
