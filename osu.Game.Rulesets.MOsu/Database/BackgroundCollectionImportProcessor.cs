@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,9 +13,7 @@ using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Database;
-using osu.Game.Models;
 using osu.Game.Online.API;
-using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
@@ -73,7 +72,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                 try
                 {
                     string json = readEmbeddedCollections();
-
                     var transferObjects = JsonConvert.DeserializeObject<List<CollectionWithScoresTransferObject>>(json);
 
                     if (transferObjects == null || transferObjects.Count == 0)
@@ -82,44 +80,9 @@ namespace osu.Game.Rulesets.MOsu.Database
                         return;
                     }
 
-                    // Step 1: Import collections (structure + hashes only)
-                    HashSet<string> allImportedHashes = new HashSet<string>();
-                    HashSet<int> allSetIds = new HashSet<int>();
-                    int importedCollections = 0;
-
-                    realm.Write(r =>
-                    {
-                        foreach (var dto in transferObjects)
-                        {
-                            var collection = r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == dto.Name);
-                            if (collection == null)
-                            {
-                                collection = new BeatmapCollection(dto.Name);
-                                r.Add(collection);
-                                importedCollections++;
-                            }
-
-                            foreach (var beatmapEntry in dto.Beatmaps)
-                            {
-                                if (!collection.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
-                                    collection.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
-
-                                allImportedHashes.Add(beatmapEntry.BeatmapMD5Hash);
-                                allSetIds.Add(beatmapEntry.BeatmapSetId);
-                            }
-                        }
-                    });
-
-                    Logger.Log($"Imported {importedCollections} collections.");
-
-                    mosuRealm.Write(r =>
-                    {
-                        var state = r.All<PresetImportState>().FirstOrDefault();
-                        if (state == null)
-                            r.Add(new PresetImportState { CollectionsImported = true });
-                        else
-                            state.CollectionsImported = true;
-                    });
+                    // Step 1: Import collections
+                    var (allSetIds, importedCollections) = importCollections(transferObjects);
+                    markCollectionsImported();
 
                     Schedule(() =>
                     {
@@ -130,68 +93,12 @@ namespace osu.Game.Rulesets.MOsu.Database
                     });
 
                     // Step 2: Download missing maps (blocking)
-                    var missingSetIds = allSetIds.Where(id =>
-                    {
-                        var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", id).FirstOrDefault());
-                        return existing == null;
-                    }).ToList();
-
+                    var missingSetIds = getMissingSetIds(allSetIds);
                     if (missingSetIds.Count > 0)
                         await startBackgroundDownload(missingSetIds);
 
-                    // Step 3: Import scores (maps now exist)
-                    int importedScores = 0;
-
-                    realm.Write(r =>
-                    {
-                        foreach (var dto in transferObjects)
-                        {
-                            foreach (var beatmapEntry in dto.Beatmaps)
-                            {
-                                foreach (var sDto in beatmapEntry.Scores)
-                                {
-                                    var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == beatmapEntry.BeatmapMD5Hash);
-                                    var rulesetInfo = r.All<RulesetInfo>().FirstOrDefault(ru => ru.ShortName == sDto.RulesetShortName);
-
-                                    if (beatmap == null || rulesetInfo == null) continue;
-
-                                    bool scoreExists = r.All<ScoreInfo>()
-                                        .Filter("BeatmapInfo.MD5Hash == $0 && TotalScore == $1 && Date == $2",
-                                            sDto.BeatmapHash, sDto.TotalScore, sDto.Date)
-                                        .Count() > 0;
-
-                                    if (scoreExists) continue;
-
-                                    var rulesetInstance = rulesetInfo.CreateInstance();
-                                    var mods = sDto.Mods.Select(m => m.ToMod(rulesetInstance)).ToArray();
-
-                                    var score = new ScoreInfo(beatmap, rulesetInfo)
-                                    {
-                                        TotalScore = sDto.TotalScore,
-                                        Accuracy = sDto.Accuracy,
-                                        MaxCombo = sDto.MaxCombo,
-                                        Rank = Enum.TryParse<ScoreRank>(sDto.Rank, out var rank) ? rank : ScoreRank.F,
-                                        Date = sDto.Date,
-                                        Mods = mods,
-                                    };
-
-                                    score.User = new APIUser { Username = @"Example mods configuration", Id = -123 };
-
-                                    foreach (var stat in sDto.Statistics)
-                                    {
-                                        if (Enum.TryParse<HitResult>(stat.Key, out var result))
-                                            score.Statistics[result] = stat.Value;
-                                    }
-
-                                    score.StatisticsJson = JsonConvert.SerializeObject(score.Statistics);
-
-                                    r.Add(score);
-                                    importedScores++;
-                                }
-                            }
-                        }
-                    });
-
+                    // Step 3: Import scores
+                    int importedScores = importScores(transferObjects);
                     Logger.Log($"Imported {importedScores} scores.");
                 }
                 catch (Exception ex)
@@ -203,6 +110,111 @@ namespace osu.Game.Rulesets.MOsu.Database
                     }));
                 }
             }, TaskCreationOptions.LongRunning);
+        }
+
+        private (HashSet<int> setIds, int count) importCollections(List<CollectionWithScoresTransferObject> transferObjects)
+        {
+            var allSetIds = new HashSet<int>();
+            int importedCollections = 0;
+
+            realm.Write(r =>
+            {
+                foreach (var dto in transferObjects)
+                {
+                    var collection = r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == dto.Name);
+                    if (collection == null)
+                    {
+                        collection = new BeatmapCollection(dto.Name);
+                        r.Add(collection);
+                        importedCollections++;
+                    }
+
+                    foreach (var beatmapEntry in dto.Beatmaps)
+                    {
+                        if (!collection.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
+                            collection.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
+                        allSetIds.Add(beatmapEntry.BeatmapSetId);
+                    }
+                }
+            });
+
+            Logger.Log($"Imported {importedCollections} collections.");
+            return (allSetIds, importedCollections);
+        }
+
+        private void markCollectionsImported()
+        {
+            mosuRealm.Write(r =>
+            {
+                var state = r.All<PresetImportState>().FirstOrDefault();
+                if (state == null)
+                    r.Add(new PresetImportState { CollectionsImported = true });
+                else
+                    state.CollectionsImported = true;
+            });
+        }
+
+        private List<int> getMissingSetIds(HashSet<int> allSetIds)
+        {
+            return allSetIds.Where(id =>
+            {
+                var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", id).FirstOrDefault());
+                return existing == null;
+            }).ToList();
+        }
+
+        private int importScores(List<CollectionWithScoresTransferObject> transferObjects)
+        {
+            int importedScores = 0;
+
+            realm.Write(r =>
+            {
+                foreach (var dto in transferObjects)
+                {
+                    foreach (var beatmapEntry in dto.Beatmaps)
+                    {
+                        foreach (var sDto in beatmapEntry.Scores)
+                        {
+                            var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == beatmapEntry.BeatmapMD5Hash);
+                            var rulesetInfo = r.All<RulesetInfo>().FirstOrDefault(ru => ru.ShortName == sDto.RulesetShortName);
+                            if (beatmap == null || rulesetInfo == null) continue;
+
+                            bool scoreExists = r.All<ScoreInfo>()
+                                .Filter("BeatmapInfo.MD5Hash == $0 && TotalScore == $1 && Date == $2",
+                                    sDto.BeatmapHash, sDto.TotalScore, sDto.Date)
+                                .Count() > 0;
+                            if (scoreExists) continue;
+
+                            var rulesetInstance = rulesetInfo.CreateInstance();
+                            var mods = sDto.Mods.Select(m => m.ToMod(rulesetInstance)).ToArray();
+
+                            var score = new ScoreInfo(beatmap, rulesetInfo)
+                            {
+                                TotalScore = sDto.TotalScore,
+                                Accuracy = sDto.Accuracy,
+                                MaxCombo = sDto.MaxCombo,
+                                Rank = Enum.TryParse<ScoreRank>(sDto.Rank, out var rank) ? rank : ScoreRank.F,
+                                Date = sDto.Date,
+                                Mods = mods,
+                            };
+
+                            score.User = new APIUser { Username = @"Example mods configuration", Id = -123 };
+
+                            foreach (var stat in sDto.Statistics)
+                            {
+                                if (Enum.TryParse<HitResult>(stat.Key, out var result))
+                                    score.Statistics[result] = stat.Value;
+                            }
+
+                            score.StatisticsJson = JsonConvert.SerializeObject(score.Statistics);
+                            r.Add(score);
+                            importedScores++;
+                        }
+                    }
+                }
+            });
+
+            return importedScores;
         }
 
         private async Task startBackgroundDownload(List<int> missingSetIds)
@@ -222,80 +234,16 @@ namespace osu.Game.Rulesets.MOsu.Database
 
             notifications.Post(notification);
 
-            var downloadedSets = new HashSet<int>(missingSetIds);
+            var remainingSets = new HashSet<int>(missingSetIds);
+            var failedSets = new HashSet<int>();
+            var lockObj = new object();
 
-            Action<ArchiveDownloadRequest<IBeatmapSetInfo>> onDownloadFailed = req =>
-            {
-                int setId = req.Model.OnlineID;
+            downloader.DownloadFailed += createDownloadFailedHandler(lockObj, failedSets);
 
-                if (File.Exists(Path.Combine(Path.GetTempPath(), $"beatconnect_{setId}.osz")))
-                {
-                    Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
-                    return;
-                }
-                Logger.Log($"Download failed for set {setId}, trying beatconnect backup...");
-                Task.Factory.StartNew(() =>
-                {
-                    try
-                    {
-                        var webReq = new osu.Framework.IO.Network.WebRequest($"https://beatconnect.io/b/{setId}")
-                        {
-                            Timeout = 60000
-                        };
-                        webReq.Perform();
-
-                        string filename = $"beatconnect_{setId}.osz";
-                        string path = Path.Combine(Path.GetTempPath(), filename);
-
-                        byte[] data;
-                        using (var ms = new MemoryStream())
-                        using (var src = webReq.ResponseStream)
-                        {
-                            src.CopyTo(ms);
-                            data = ms.ToArray();
-                        }
-                        File.WriteAllBytes(path, data);
-
-                        Schedule(() =>
-                        {
-                            var importNotification = new ProgressNotification
-                            {
-                                State = ProgressNotificationState.Active,
-                                Text = $"Importing set {setId} from beatconnect..."
-                            };
-                            notifications.Post(importNotification);
-                            Task.Run(async () =>
-                            {
-                                var result = await beatmapManager.Import(importNotification, new[] { new ImportTask(path) });
-                                File.Delete(path);
-                                Schedule(() =>
-                                {
-                                    if (result.Any())
-                                    {
-                                        importNotification.State = ProgressNotificationState.Completed;
-                                        importNotification.CompletionText = $"Imported set {setId} from beatconnect backup";
-                                    }
-                                    else
-                                    {
-                                        notifications.Post(new SimpleErrorNotification { Text = $"Beatconnect import failed for set {setId}" });
-                                    }
-                                });
-                            });
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, $"Beatconnect backup failed for set {setId}");
-                    }
-                }, TaskCreationOptions.LongRunning);
-            };
-
-            downloader.DownloadFailed += onDownloadFailed;
-
-            Task.Factory.StartNew(() =>
+            // Queue all downloads
+            await Task.Factory.StartNew(() =>
             {
                 int processedCount = 0;
-
                 foreach (var setId in missingSetIds)
                 {
                     if (notification.State == ProgressNotificationState.Cancelled)
@@ -307,14 +255,10 @@ namespace osu.Game.Rulesets.MOsu.Database
                     {
                         var onlineSet = new APIBeatmapSet { OnlineID = setId };
                         if (downloader.GetExistingDownload(onlineSet) == null)
-                        {
                             downloader.Download(onlineSet);
-                        }
                         Thread.Sleep(100);
                     }
-                    catch
-                    {
-                    }
+                    catch { }
                     finally
                     {
                         processedCount++;
@@ -322,24 +266,28 @@ namespace osu.Game.Rulesets.MOsu.Database
                 }
             }, TaskCreationOptions.LongRunning);
 
-            // Wait for all downloads (official + beatconnect) to complete
+            // Wait for downloads to appear in realm or fail
             await Task.Run(async () =>
             {
-                var maxWait = 3600;
-                for (int i = 0; i < maxWait; i++)
+                for (int i = 0; i < 300; i++) // 5 min max
                 {
-                    var localSets = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false").ToList().Select(b => b.OnlineID).ToList());
-                    bool allDone = downloadedSets.All(id => localSets.Contains(id));
-                    if (allDone) break;
+                    var localIds = realm.Run(r =>
+                        r.All<BeatmapSetInfo>().Filter("DeletePending == false").ToList()
+                            .Select(b => b.OnlineID).ToHashSet());
+
+                    lock (lockObj)
+                    {
+                        bool allDone = missingSetIds.All(id => localIds.Contains(id) || failedSets.Contains(id));
+                        if (allDone) break;
+                    }
                     await Task.Delay(1000);
                 }
             });
 
-            downloader.DownloadFailed -= onDownloadFailed;
+            downloader.DownloadFailed -= createDownloadFailedHandler(lockObj, failedSets);
 
-            // Count truly unavailable: set IDs still missing after all downloads
-            var localSetIds = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false").ToList().Select(b => b.OnlineID).ToHashSet());
-            int unavailableCount = missingSetIds.Count(id => !localSetIds.Contains(id));
+            int unavailableCount;
+            lock (lockObj) unavailableCount = failedSets.Count;
 
             Schedule(() =>
             {
@@ -350,6 +298,80 @@ namespace osu.Game.Rulesets.MOsu.Database
                 notification.Progress = 1;
                 notification.State = ProgressNotificationState.Completed;
             });
+        }
+
+        private Action<ArchiveDownloadRequest<IBeatmapSetInfo>> createDownloadFailedHandler(object lockObj, HashSet<int> failedSets)
+        {
+            return req =>
+            {
+                int setId = req.Model.OnlineID;
+                if (File.Exists(Path.Combine(Path.GetTempPath(), $"nekoha_{setId}.osz")))
+                {
+                    Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
+                    return;
+                }
+                tryMirrorFallback(setId, lockObj, failedSets);
+            };
+        }
+
+        private void tryMirrorFallback(int setId, object lockObj, HashSet<int> failedSets)
+        {
+            Logger.Log($"Download failed for set {setId}, trying nekoha mirror backup...");
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var response = new HttpClient
+                    {
+                        Timeout = TimeSpan.FromSeconds(60)
+                    }.GetAsync($"https://mirror.nekoha.moe/api4/download/{setId}").Result;
+
+                    string filename = $"nekoha_{setId}.osz";
+                    string path = Path.Combine(Path.GetTempPath(), filename);
+
+                    byte[] data = response.Content.ReadAsByteArrayAsync().Result;
+                    Logger.Log($"Nekoha mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={data.Length} bytes");
+                    if (!response.IsSuccessStatusCode)
+                        throw new Exception($"Nekoha mirror returned {response.StatusCode}");
+                    File.WriteAllBytes(path, data);
+
+                    Schedule(() =>
+                    {
+                        var importNotification = new ProgressNotification
+                        {
+                            State = ProgressNotificationState.Active,
+                            Text = $"Importing set {setId} from nekoha mirror..."
+                        };
+                        notifications.Post(importNotification);
+                        Task.Run(async () =>
+                        {
+                            long fileSize = new FileInfo(path).Length;
+                            var result = await beatmapManager.Import(importNotification, new[] { new ImportTask(path) });
+                            File.Delete(path);
+                            Schedule(() =>
+                            {
+                                if (result.Any())
+                                {
+                                    importNotification.State = ProgressNotificationState.Completed;
+                                    importNotification.CompletionText = $"Imported set {setId} from nekoha mirror backup";
+                                }
+                                else
+                                {
+                                    Logger.Error(new Exception($"Nekoha mirror import returned 0 items for set {setId}. File size: {fileSize} bytes."), "Nekoha mirror import empty");
+                                    importNotification.State = ProgressNotificationState.Cancelled;
+                                    notifications.Post(new SimpleErrorNotification { Text = $"Nekoha mirror import failed for set {setId}" });
+                                    lock (lockObj) failedSets.Add(setId);
+                                }
+                            });
+                        });
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, $"Nekoha mirror backup failed for set {setId}");
+                    lock (lockObj) failedSets.Add(setId);
+                }
+            }, TaskCreationOptions.LongRunning);
         }
 
         private static string readEmbeddedCollections()
