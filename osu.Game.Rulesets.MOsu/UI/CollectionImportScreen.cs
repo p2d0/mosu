@@ -22,6 +22,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens;
@@ -183,6 +184,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
 
                     HashSet<string> allImportedHashes = new HashSet<string>();
+                    HashSet<int> allSetIds = new HashSet<int>();
                     int importedCount = 0;
 
                     // 1. Synchronously update Realm (Must be done on a thread safe for Realm, Task.Run with new context is fine)
@@ -199,26 +201,23 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 importedCount++;
                             }
 
-                            foreach (var hash in c.BeatmapMD5Hashes)
+                            foreach (var beatmapEntry in c.Beatmaps)
                             {
-                                if (!existing.BeatmapMD5Hashes.Contains(hash))
-                                    existing.BeatmapMD5Hashes.Add(hash);
+                                if (!existing.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
+                                    existing.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
 
-                                allImportedHashes.Add(hash);
+                                allImportedHashes.Add(beatmapEntry.BeatmapMD5Hash);
+                                allSetIds.Add(beatmapEntry.BeatmapSetId);
                             }
                         }
                     });
 
-                    // 2. Identify missing maps immediately
-                    var missingHashes = realm.Run(r =>
+                    // 2. Identify missing sets immediately
+                    var missingSetIds = allSetIds.Where(id =>
                     {
-                        var localBeatmaps = r.All<BeatmapInfo>()
-                            .Filter("BeatmapSet.DeletePending == false")
-                            .ToList(); // Materialize to memory
-
-                        var localHashSet = new HashSet<string>(localBeatmaps.Select(b => b.MD5Hash));
-                        return allImportedHashes.Where(h => !localHashSet.Contains(h)).ToList();
-                    });
+                        var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", id).FirstOrDefault());
+                        return existing == null;
+                    }).ToList();
 
                     Schedule(() =>
                     {
@@ -228,7 +227,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         });
 
                         // 3. Start Background Process with Progress Notification
-                        if (missingHashes.Count > 0)
+                        if (missingSetIds.Count > 0)
                         {
                             if (!api.IsLoggedIn)
                             {
@@ -236,7 +235,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             }
                             else
                             {
-                                startBackgroundDownload(missingHashes);
+                                startBackgroundDownload(missingSetIds);
                             }
                         }
 
@@ -255,7 +254,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
-        private void startBackgroundDownload(List<string> missingHashes)
+        private void startBackgroundDownload(List<int> missingSetIds)
         {
             if (!api.IsLoggedIn)
             {
@@ -278,40 +277,21 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 int processedCount = 0;
                 int failedCount = 0;
-                int queuedCount = 0;
-                var processedSets = new HashSet<int>();
 
-                foreach (var hash in missingHashes)
+                foreach (var setId in missingSetIds)
                 {
                     if (notification.State == ProgressNotificationState.Cancelled)
                         break;
 
-                    updateNotificationProgress(notification, processedCount, missingHashes.Count);
+                    updateNotificationProgress(notification, processedCount, missingSetIds.Count);
 
                     try
                     {
-                        var req = new GetBeatmapRequest(new BeatmapInfo { MD5Hash = hash });
-                        api.Perform(req);
-
-                        var onlineSet = req.Response?.BeatmapSet;
-
-                        if (onlineSet != null)
+                        var onlineSet = new APIBeatmapSet { OnlineID = setId };
+                        if (downloader.GetExistingDownload(onlineSet) == null)
                         {
-                            if (!processedSets.Contains(onlineSet.OnlineID))
-                            {
-                                processedSets.Add(onlineSet.OnlineID);
-                                queuedCount++;
-
-                                if (downloader.GetExistingDownload(onlineSet) == null)
-                                    downloader.Download(onlineSet);
-                            }
+                            downloader.Download(onlineSet);
                         }
-                        else
-                        {
-                            failedCount++;
-                        }
-
-                        // Rate limiting
                         Thread.Sleep(100);
                     }
                     catch
@@ -324,7 +304,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
                 }
 
-                completeNotification(notification, processedCount, missingHashes.Count, failedCount);
+                completeNotification(notification, processedCount, missingSetIds.Count, failedCount);
 
             }, TaskCreationOptions.LongRunning);
         }

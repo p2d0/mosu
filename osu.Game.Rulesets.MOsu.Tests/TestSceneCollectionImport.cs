@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -5,12 +7,16 @@ using NUnit.Framework;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Platform;
+using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Database;
+using osu.Game.Online.API;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Scoring;
+using osu.Game.Scoring;
 using osu.Game.Tests.Visual;
 
 namespace osu.Game.Rulesets.MOsu.Tests
@@ -50,7 +56,13 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             AddStep("clear collections and import state", () =>
             {
-                Realm.Write(r => r.RemoveAll<BeatmapCollection>());
+                Realm.Write(r =>
+                {
+                    r.RemoveAll<BeatmapCollection>();
+                    r.RemoveAll<ScoreInfo>();
+                    r.RemoveAll<BeatmapInfo>();
+                    r.RemoveAll<BeatmapSetInfo>();
+                });
                 mosuRealm.Write(r => r.RemoveAll<PresetImportState>());
             });
         }
@@ -118,6 +130,215 @@ namespace osu.Game.Rulesets.MOsu.Tests
             });
         }
 
+        [Test]
+        public void TestExportImportRoundTrip()
+        {
+            AddStep("seed beatmaps and scores", () => SeedBeatmapsAndScores());
+
+            AddAssert("beatmaps exist", () =>
+                Realm.Run(r => r.All<BeatmapSetInfo>().Count() > 0));
+
+            AddAssert("scores exist", () =>
+                Realm.Run(r => r.All<ScoreInfo>().Count() > 0));
+
+            string exportedJson = "";
+            AddStep("create collection", () =>
+            {
+                var hashes = Realm.Run(r => r.All<BeatmapInfo>().ToList().Select(b => b.MD5Hash).ToList());
+                var collection = new BeatmapCollection("Test collection");
+                foreach (var h in hashes)
+                    collection.BeatmapMD5Hashes.Add(h);
+                Realm.Write(r => r.Add(collection));
+            });
+
+            AddStep("export", () =>
+            {
+                exportedJson = RunExport();
+            });
+
+            AddAssert("export contains collection", () =>
+                exportedJson.Contains("\"Test collection\""));
+
+            AddAssert("export contains beatmap entries", () =>
+                exportedJson.Contains("\"BeatmapSetId\""));
+
+            AddAssert("export contains scores", () =>
+                exportedJson.Contains("\"TotalScore\""));
+
+            AddStep("clear collections", () =>
+            {
+                Realm.Write(r => r.RemoveAll<BeatmapCollection>());
+            });
+
+            AddAssert("collection removed", () =>
+                Realm.Run(r => r.All<BeatmapCollection>().Count() == 0));
+
+            AddStep("import from export", () =>
+            {
+                var transferObjects = JsonConvert.DeserializeObject<List<CollectionWithScoresTransferObject>>(exportedJson);
+                if (transferObjects == null) return;
+
+                Realm.Write(r =>
+                {
+                    foreach (var dto in transferObjects)
+                    {
+                        var collection = r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == dto.Name);
+                        if (collection == null)
+                        {
+                            collection = new BeatmapCollection(dto.Name);
+                            r.Add(collection);
+                        }
+
+                        foreach (var beatmapEntry in dto.Beatmaps)
+                        {
+                            if (!collection.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
+                                collection.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
+                        }
+                    }
+                });
+            });
+
+            AddAssert("collection reimported", () =>
+            {
+                var collection = Realm.Run(r => r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == "Test collection"));
+                return collection != null && collection.BeatmapMD5Hashes.Count > 0;
+            });
+
+            AddAssert("hashes match original", () =>
+            {
+                var collection = Realm.Run(r => r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == "Test collection"));
+                var originalHashes = Realm.Run(r => r.All<BeatmapInfo>().ToList().Select(b => b.MD5Hash).ToHashSet());
+                if (collection == null) return false;
+                return collection.BeatmapMD5Hashes.OrderBy(x => x).SequenceEqual(originalHashes.OrderBy(x => x));
+            });
+
+            AddAssert("imported collection in realm", () =>
+            {
+                var collection = Realm.Run(r => r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == "Test collection"));
+                return collection != null
+                    && collection.BeatmapMD5Hashes.Count == 3
+                    && collection.BeatmapMD5Hashes.Contains("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                    && collection.BeatmapMD5Hashes.Contains("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+                    && collection.BeatmapMD5Hashes.Contains("cccccccccccccccccccccccccccccccc");
+            });
+
+            AddAssert("beatmaps still exist in realm", () =>
+                Realm.Run(r => r.All<BeatmapSetInfo>().Count() == 3));
+
+            AddAssert("scores still exist in realm", () =>
+                Realm.Run(r => r.All<ScoreInfo>().Count() == 3));
+        }
+
+        private void SeedBeatmapsAndScores()
+        {
+            var osuRuleset = Realm.Run(r => r.Find<RulesetInfo>("osu"));
+            var mosuRuleset = Realm.Run(r => r.Find<RulesetInfo>("mosu"));
+
+            if (osuRuleset == null || mosuRuleset == null) return;
+
+            var testHashes = new[]
+            {
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "cccccccccccccccccccccccccccccccc"
+            };
+
+            var testSetIds = new[] { 100, 200, 300 };
+
+            Realm.Write(r =>
+            {
+                for (int i = 0; i < testHashes.Length; i++)
+                {
+                    var setInfo = new BeatmapSetInfo
+                    {
+                        OnlineID = testSetIds[i],
+                        DeletePending = false
+                    };
+                    r.Add(setInfo);
+
+                    var beatmapInfo = new BeatmapInfo
+                    {
+                        MD5Hash = testHashes[i],
+                        BeatmapSet = setInfo,
+                        Ruleset = osuRuleset
+                    };
+                    setInfo.Beatmaps.Add(beatmapInfo);
+
+                    // Seed a score for this beatmap
+                    var score = new ScoreInfo(beatmapInfo, mosuRuleset)
+                    {
+                        TotalScore = 100000 + i * 10000,
+                        Accuracy = 0.95,
+                        MaxCombo = 50,
+                        Rank = ScoreRank.A,
+                        Date = DateTimeOffset.UtcNow,
+                        User = new osu.Game.Online.API.Requests.Responses.APIUser { Username = "TestUser", Id = 999 }
+                    };
+                    score.Statistics[HitResult.Great] = 100;
+                    score.StatisticsJson = JsonConvert.SerializeObject(score.Statistics);
+                    r.Add(score);
+                }
+            });
+        }
+
+        private string RunExport()
+        {
+            var collectionObjects = new List<CollectionWithScoresTransferObject>();
+
+            Realm.Run(r =>
+            {
+                var collections = osu.Game.Database.RealmObjectExtensions.Detach(r.All<BeatmapCollection>()).ToList();
+
+                foreach (var c in collections)
+                {
+                    var dto = new CollectionWithScoresTransferObject
+                    {
+                        Name = c.Name,
+                        Beatmaps = new List<CollectionBeatmapEntry>()
+                    };
+
+                    foreach (var hash in c.BeatmapMD5Hashes)
+                    {
+                        var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == hash);
+                        if (beatmap == null) continue;
+
+                        var entry = new CollectionBeatmapEntry
+                        {
+                            BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                            BeatmapMD5Hash = hash,
+                            Scores = new List<ScoreExportDto>()
+                        };
+
+                        var scores = r.All<ScoreInfo>().ToList()
+                            .Where(s => s.BeatmapInfo.MD5Hash == hash && !s.DeletePending)
+                            .ToList();
+
+                        foreach (var s in scores)
+                        {
+                            entry.Scores.Add(new ScoreExportDto
+                            {
+                                BeatmapHash = s.BeatmapInfo.MD5Hash,
+                                RulesetShortName = s.Ruleset.ShortName,
+                                TotalScore = s.TotalScore,
+                                Accuracy = s.Accuracy,
+                                MaxCombo = s.MaxCombo,
+                                Rank = s.Rank.ToString(),
+                                Date = s.Date,
+                                Mods = s.Mods.Select(m => new APIMod(m)).ToList(),
+                                Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
+                            });
+                        }
+
+                        dto.Beatmaps.Add(entry);
+                    }
+
+                    collectionObjects.Add(dto);
+                }
+            });
+
+            return JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
+        }
+
         /// <summary>
         /// Import example collections directly without needing BackgroundCollectionImportProcessor's full dependencies.
         /// This tests the core data import logic (JSON parsing + Realm writes) without requiring IModelImporter.
@@ -125,7 +346,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private void ImportCollections()
         {
             string json = ReadEmbeddedCollections();
-            var transferObjects = JsonConvert.DeserializeObject<OsuSettingsSubsection.CollectionWithScoresTransferObject[]>(json);
+            var transferObjects = JsonConvert.DeserializeObject<CollectionWithScoresTransferObject[]>(json);
 
             if (transferObjects == null || transferObjects.Length == 0) return;
 
@@ -140,10 +361,10 @@ namespace osu.Game.Rulesets.MOsu.Tests
                         r.Add(collection);
                     }
 
-                    foreach (var hash in dto.BeatmapMD5Hashes)
+                    foreach (var beatmapEntry in dto.Beatmaps)
                     {
-                        if (!collection.BeatmapMD5Hashes.Contains(hash))
-                            collection.BeatmapMD5Hashes.Add(hash);
+                        if (!collection.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
+                            collection.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
                     }
                 }
             });

@@ -172,7 +172,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 try
                 {
                     string json = File.ReadAllText(path);
-                    var transferObjects = JsonConvert.DeserializeObject<List<OsuSettingsSubsection.CollectionWithScoresTransferObject>>(json);
+                    var transferObjects = JsonConvert.DeserializeObject<List<CollectionWithScoresTransferObject>>(json);
 
                     if (transferObjects == null || transferObjects.Count == 0)
                     {
@@ -205,16 +205,17 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 importedCollections++;
                             }
 
-                            foreach (var hash in dto.BeatmapMD5Hashes)
+                            foreach (var beatmapEntry in dto.Beatmaps)
                             {
-                                if (!collection.BeatmapMD5Hashes.Contains(hash))
-                                    collection.BeatmapMD5Hashes.Add(hash);
+                                if (!collection.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
+                                    collection.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
 
-                                allImportedHashes.Add(hash);
+                                allImportedHashes.Add(beatmapEntry.BeatmapMD5Hash);
                             }
 
                             // 2. Scores
-                            foreach (var sDto in dto.Scores)
+                            foreach (var beatmapEntry in dto.Beatmaps)
+                            foreach (var sDto in beatmapEntry.Scores)
                             {
                                 var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == sDto.BeatmapHash);
                                 var rulesetInfo = r.All<RulesetInfo>().FirstOrDefault(ru => ru.ShortName == sDto.RulesetShortName);

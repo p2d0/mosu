@@ -283,12 +283,21 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 var dto = new CollectionWithScoresTransferObject
                                 {
                                     Name = c.Name,
-                                    BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList(),
-                                    Scores = new List<ScoreExportDto>()
+                                    Beatmaps = new List<CollectionBeatmapEntry>()
                                 };
 
                                 foreach (var hash in c.BeatmapMD5Hashes)
                                 {
+                                    var beatmap = r.All<BeatmapInfo>().Filter("MD5Hash == $0", hash).FirstOrDefault();
+                                    if (beatmap == null) continue;
+
+                                    var entry = new CollectionBeatmapEntry
+                                    {
+                                        BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                                        BeatmapMD5Hash = hash,
+                                        Scores = new List<ScoreExportDto>()
+                                    };
+
                                     var scores = r.All<ScoreInfo>()
                                         .Filter("BeatmapInfo.MD5Hash == $0 && DeletePending == false", hash)
                                         .Detach()
@@ -296,7 +305,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                                     foreach (var s in scores)
                                     {
-                                        dto.Scores.Add(new ScoreExportDto
+                                        entry.Scores.Add(new ScoreExportDto
                                         {
                                             BeatmapHash = s.BeatmapInfo.MD5Hash,
                                             RulesetShortName = s.Ruleset.ShortName,
@@ -309,7 +318,10 @@ namespace osu.Game.Rulesets.MOsu.UI
                                             Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
                                         });
                                     }
+
+                                    dto.Beatmaps.Add(entry);
                                 }
+
                                 collectionObjects.Add(dto);
                                 current++;
 
@@ -325,15 +337,38 @@ namespace osu.Game.Rulesets.MOsu.UI
                     else
                     {
                         notification.Text = "Fetching collections...";
-                        var collections = realm.Run(r => r.All<BeatmapCollection>().Detach())
-                            .Select(c => new CollectionTransferObject
-                            {
-                                Name = c.Name,
-                                BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList()
-                            })
-                            .ToList();
+                        var collectionObjects = new List<CollectionTransferObject>();
 
-                        if (collections.Count == 0)
+                        realm.Run(r =>
+                        {
+                            var collections = r.All<BeatmapCollection>().Detach().ToList();
+
+                            foreach (var c in collections)
+                            {
+                                var dto = new CollectionTransferObject
+                                {
+                                    Name = c.Name,
+                                    Beatmaps = new List<CollectionBeatmapEntry>()
+                                };
+
+                                foreach (var hash in c.BeatmapMD5Hashes)
+                                {
+                                    var beatmap = r.All<BeatmapInfo>().Filter("MD5Hash == $0", hash).FirstOrDefault();
+                                    if (beatmap == null) continue;
+
+                                    dto.Beatmaps.Add(new CollectionBeatmapEntry
+                                    {
+                                        BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                                        BeatmapMD5Hash = hash,
+                                        Scores = new List<ScoreExportDto>()
+                                    });
+                                }
+
+                                collectionObjects.Add(dto);
+                            }
+                        });
+
+                        if (collectionObjects.Count == 0)
                         {
                             notification.Text = "No collections found to export.";
                             notification.State = ProgressNotificationState.Cancelled;
@@ -341,8 +376,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                         }
 
                         notification.Text = "Serializing data...";
-                        json = JsonConvert.SerializeObject(collections, Formatting.Indented);
-                        count = collections.Count;
+                        json = JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
+                        count = collectionObjects.Count;
                     }
 
                     notification.Text = "Writing file...";
@@ -364,26 +399,6 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
-        // DTOs for Scores Export
-        public class CollectionWithScoresTransferObject
-        {
-            public string Name { get; set; } = string.Empty;
-            public List<string> BeatmapMD5Hashes { get; set; } = new List<string>();
-            public List<ScoreExportDto> Scores { get; set; } = new List<ScoreExportDto>();
-        }
-
-        public class ScoreExportDto
-        {
-            public string BeatmapHash { get; set; } = string.Empty;
-            public string RulesetShortName { get; set; } = string.Empty;
-            public long TotalScore { get; set; }
-            public double Accuracy { get; set; }
-            public int MaxCombo { get; set; }
-            public string Rank { get; set; } = string.Empty;
-            public DateTimeOffset Date { get; set; }
-            public List<APIMod> Mods { get; set; } = new List<APIMod>();
-            public Dictionary<string, int> Statistics { get; set; } = new Dictionary<string, int>();
-        }
     }
 
     public partial class ImportPresetButton : SettingsButtonV2, IHasPopover
