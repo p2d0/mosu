@@ -284,7 +284,14 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                         if (missingHashes.Count > 0)
                         {
-                            startBackgroundDownload(missingHashes);
+                            if (!api.IsLoggedIn)
+                            {
+                                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                            }
+                            else
+                            {
+                                startBackgroundDownload(missingHashes);
+                            }
                         }
 
                         this.Exit();
@@ -303,6 +310,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void startBackgroundDownload(List<string> missingHashes)
         {
+            if (!api.IsLoggedIn)
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                return;
+            }
+
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,

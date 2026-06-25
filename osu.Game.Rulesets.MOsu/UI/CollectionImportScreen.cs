@@ -230,7 +230,14 @@ namespace osu.Game.Rulesets.MOsu.UI
                         // 3. Start Background Process with Progress Notification
                         if (missingHashes.Count > 0)
                         {
-                            startBackgroundDownload(missingHashes);
+                            if (!api.IsLoggedIn)
+                            {
+                                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                            }
+                            else
+                            {
+                                startBackgroundDownload(missingHashes);
+                            }
                         }
 
                         // 4. Close the screen immediately so user can do other things
@@ -250,6 +257,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void startBackgroundDownload(List<string> missingHashes)
         {
+            if (!api.IsLoggedIn)
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
+                return;
+            }
+
             // Create the notification
             var notification = new ProgressNotification
             {
@@ -278,8 +291,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     try
                     {
                         var req = new GetBeatmapRequest(new BeatmapInfo { MD5Hash = hash });
-                        req.AttachAPI(api);
-                        req.Perform();
+                        api.Perform(req);
 
                         var onlineSet = req.Response?.BeatmapSet;
 

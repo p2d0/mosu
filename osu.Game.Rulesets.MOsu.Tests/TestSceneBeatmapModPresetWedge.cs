@@ -10,6 +10,7 @@ using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.UI;
@@ -46,6 +47,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             Dependencies.Cache(MOsuRealm = new MOsuRealmAccess(LocalStorage, "mosurealm-test", host.UpdateThread));
             Dependencies.Cache(new OverlayColourProvider(OverlayColourScheme.Green));
+            Dependencies.CacheAs<INotificationOverlay>(new StubNotificationOverlay());
         }
 
         protected override void LoadComplete()

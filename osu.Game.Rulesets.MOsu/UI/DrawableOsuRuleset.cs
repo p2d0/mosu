@@ -136,7 +136,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 private LocalUserManager localUserManager = null!;
 
         [BackgroundDependencyLoader]
-        private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager localUserManager, ScoreManager? scoreManager)
+        private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager? localUserManager, ScoreManager? scoreManager)
         {
             this.scoreManager = scoreManager!;
             this.localUserManager = localUserManager;
@@ -193,7 +193,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 };
             }
 
-            if(player != null){
+            if (player != null && localUserManager != null){
                 player.OnShowingResults += async () => {
                     var scoreInfo = player.Score.ScoreInfo;
                     var pp = await calculatePP(scoreInfo).ConfigureAwait(false);

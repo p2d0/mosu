@@ -74,6 +74,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved(CanBeNull = true)]
         private IPerformFromScreenRunner? performer { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private osu.Game.Rulesets.MOsu.Database.BackgroundCollectionImportProcessor? collectionImportProcessor { get; set; }
+
         private readonly Bindable<bool> exportWithScores = new Bindable<bool>(false);
 
         public OsuSettingsSubsection(Ruleset ruleset)
@@ -169,6 +172,12 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
                 },
                 new ImportCollectionScoresButton(),
+                new SettingsButtonV2
+                {
+                    Text = "Load example collections",
+                    TooltipText = "Import example collections from embedded JSON file",
+                    Action = () => collectionImportProcessor?.ImportExampleCollections()
+                },
             };
         }
 

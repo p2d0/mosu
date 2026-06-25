@@ -49,24 +49,26 @@ namespace osu.Game.Rulesets.MOsu.Database
         {
             base.LoadComplete();
 
+            Logger.Log("Beginning MOsu default collection import check..");
+
+            bool alreadyImported = mosuRealm.Run(r =>
+            {
+                var state = r.All<PresetImportState>().FirstOrDefault();
+                return state?.CollectionsImported ?? false;
+            });
+
+            if (!alreadyImported)
+                ImportExampleCollections();
+            else
+                Logger.Log("MOsu default collections already imported, skipping.");
+        }
+
+        public void ImportExampleCollections()
+        {
             Task.Factory.StartNew(() =>
             {
                 try
                 {
-                    Logger.Log("Beginning MOsu default collection import check..");
-
-                    bool alreadyImported = mosuRealm.Run(r =>
-                    {
-                        var state = r.All<PresetImportState>().FirstOrDefault();
-                        return state?.CollectionsImported ?? false;
-                    });
-
-                    if (alreadyImported)
-                    {
-                        Logger.Log("MOsu default collections already imported, skipping.");
-                        return;
-                    }
-
                     string json = readEmbeddedCollections();
 
                     var transferObjects = JsonConvert.DeserializeObject<List<OsuSettingsSubsection.CollectionWithScoresTransferObject>>(json);
@@ -146,7 +148,6 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     Logger.Log($"Imported {importedCollections} collections and {importedScores} scores.");
 
-                    // Identify missing maps for download
                     var missingHashes = realm.Run(r =>
                     {
                         var localBeatmaps = r.All<BeatmapInfo>()
@@ -189,6 +190,12 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         private void startBackgroundDownload(List<string> missingHashes)
         {
+            if (!api.IsLoggedIn)
+            {
+                Schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." }));
+                return;
+            }
+
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
@@ -197,6 +204,47 @@ namespace osu.Game.Rulesets.MOsu.Database
             };
 
             notifications.Post(notification);
+
+            Action<ArchiveDownloadRequest<IBeatmapSetInfo>> onDownloadFailed = req =>
+            {
+                int setId = req.Model.OnlineID;
+
+                Logger.Log($"Download failed for set {setId}, trying beatconnect backup...");
+                Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        var webReq = new osu.Framework.IO.Network.WebRequest($"https://beatconnect.io/b/{setId}")
+                        {
+                            Timeout = 60000
+                        };
+                        webReq.Perform();
+
+                        string filename = $"beatconnect_{setId}.osz";
+                        string path = Path.Combine(Path.GetTempPath(), filename);
+
+                        using (var stream = File.Create(path))
+                        using (var src = webReq.ResponseStream)
+                        {
+                            src.CopyTo(stream);
+                        }
+
+                        Schedule(() =>
+                        {
+                            notifications.Post(new SimpleNotification
+                            {
+                                Text = $"Downloaded set {setId} from beatconnect backup to {path}"
+                            });
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"Beatconnect backup failed for set {setId}");
+                    }
+                }, TaskCreationOptions.LongRunning);
+            };
+
+            downloader.DownloadFailed += onDownloadFailed;
 
             Task.Factory.StartNew(() =>
             {
@@ -225,7 +273,9 @@ namespace osu.Game.Rulesets.MOsu.Database
                             {
                                 processedSets.Add(onlineSet.OnlineID);
                                 if (downloader.GetExistingDownload(onlineSet) == null)
+                                {
                                     downloader.Download(onlineSet);
+                                }
                             }
                         }
                         else
