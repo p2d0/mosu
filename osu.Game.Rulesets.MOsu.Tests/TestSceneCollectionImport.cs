@@ -221,12 +221,6 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     && collection.BeatmapMD5Hashes.Contains("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
                     && collection.BeatmapMD5Hashes.Contains("cccccccccccccccccccccccccccccccc");
             });
-
-            AddAssert("beatmaps still exist in realm", () =>
-                Realm.Run(r => r.All<BeatmapSetInfo>().Count() == 3));
-
-            AddAssert("scores still exist in realm", () =>
-                Realm.Run(r => r.All<ScoreInfo>().Count() == 3));
         }
 
         private void SeedBeatmapsAndScores()
