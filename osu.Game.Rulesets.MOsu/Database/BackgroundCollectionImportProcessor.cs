@@ -249,66 +249,54 @@ namespace osu.Game.Rulesets.MOsu.Database
                 tryMirrorFallback(setId, lockObj, failedSets);
             };
 
-            // Queue all downloads
-            await Task.Factory.StartNew(() =>
-            {
-                int processedCount = 0;
-                foreach (var setId in missingSetIds)
+            // Subscribe to all beatmap sets, filter client-side (Realm can't translate HashSet.Contains)
+            var tcs = new TaskCompletionSource<bool>();
+            IDisposable? realmSubscription = null;
+            realmSubscription = realm.RegisterForNotifications(
+                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
+                (sender, _) =>
                 {
-                    if (notification.State == ProgressNotificationState.Cancelled)
-                        break;
+                    if (notification.State == ProgressNotificationState.Cancelled) return;
 
-                    Schedule(() =>
-                    {
-                        notification.Text = $"Queuing downloads ({processedCount + 1}/{missingSetIds.Count})...";
-                        notification.Progress = (float)(processedCount + 1) / missingSetIds.Count;
-                    });
-
-                    try
-                    {
-                        var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                        if (localDownloader.GetExistingDownload(onlineSet) == null)
-                            localDownloader.Download(onlineSet);
-                        Thread.Sleep(100);
-                    }
-                    catch { }
-                    finally
-                    {
-                        processedCount++;
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
-
-            // Wait for downloads to appear in realm or fail
-            await Task.Run(async () =>
-            {
-                for (int i = 0; i < 300; i++) // 5 min max
-                {
-                    var localIds = realm.Run(r =>
-                        r.All<BeatmapSetInfo>().Filter("DeletePending == false").ToList()
-                            .Select(b => b.OnlineID).ToHashSet());
+                    int importedCount = sender.ToList().Count(s => missingSetIds.Contains(s.OnlineID));
 
                     lock (lockObj)
                     {
-                        bool allDone = missingSetIds.All(id => localIds.Contains(id) || failedSets.Contains(id));
-                        if (allDone) break;
+                        int resolved = importedCount + failedSets.Count;
+                        float progress = (float)resolved / missingSetIds.Count;
+
+                        Schedule(() =>
+                        {
+                            notification.Text = $"Importing {importedCount}/{missingSetIds.Count} maps...";
+                            notification.Progress = progress;
+                        });
+
+                        if (resolved >= missingSetIds.Count)
+                        {
+                            realmSubscription.Dispose();
+                            Schedule(() =>
+                            {
+                                notification.Text = $"Downloaded {importedCount} maps.";
+                                if (failedSets.Count > 0)
+                                    notification.Text += $" ({failedSets.Count} unavailable)";
+                                notification.Progress = 1;
+                                notification.State = ProgressNotificationState.Completed;
+                            });
+                            tcs.TrySetResult(true);
+                        }
                     }
-                    await Task.Delay(1000);
-                }
-            });
+                });
 
-            int unavailableCount;
-            lock (lockObj) unavailableCount = failedSets.Count;
-
-            Schedule(() =>
+            // Queue all downloads
+            foreach (var setId in missingSetIds)
             {
-                notification.CompletionText = "Download queueing finished.";
-                if (unavailableCount > 0)
-                    notification.CompletionText += $" ({unavailableCount} maps unavailable)";
+                var onlineSet = new APIBeatmapSet { OnlineID = setId };
+                if (localDownloader.GetExistingDownload(onlineSet) == null)
+                    localDownloader.Download(onlineSet);
+            }
 
-                notification.Progress = 1;
-                notification.State = ProgressNotificationState.Completed;
-            });
+            // Wait for subscription to resolve (max 5 min)
+            await tcs.Task.WaitAsync(TimeSpan.FromMinutes(5));
         }
 
         private void tryMirrorFallback(int setId, object lockObj, HashSet<int> failedSets)

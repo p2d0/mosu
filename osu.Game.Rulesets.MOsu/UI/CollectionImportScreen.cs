@@ -265,66 +265,64 @@ namespace osu.Game.Rulesets.MOsu.UI
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
-                Text = "Starting collection download...",
-                CompletionText = "Missing collection maps have been queued.",
+                Text = "Downloading collection maps...",
             };
 
             notifications.Post(notification);
 
             // Local downloader — no PostNotification set, so no per-download notifications
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
-            int failedCount = 0;
+            var failedSets = new HashSet<int>();
             var lockObj = new object();
 
             localDownloader.DownloadFailed += req =>
             {
-                lock (lockObj) failedCount++;
+                lock (lockObj) failedSets.Add(req.Model.OnlineID);
             };
 
-            Task.Factory.StartNew(() =>
-            {
-                int processedCount = 0;
-
-                foreach (var setId in missingSetIds)
+            // Subscribe to all beatmap sets, filter client-side (Realm can't translate HashSet.Contains)
+            IDisposable? realmSubscription = null;
+            realmSubscription = realm.RegisterForNotifications(
+                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
+                (sender, _) =>
                 {
-                    if (notification.State == ProgressNotificationState.Cancelled)
-                        break;
+                    if (notification.State == ProgressNotificationState.Cancelled) return;
 
-                    Schedule(() =>
-                    {
-                        notification.Text = $"Queuing downloads ({processedCount + 1}/{missingSetIds.Count})...";
-                        notification.Progress = (float)(processedCount + 1) / missingSetIds.Count;
-                    });
+                    int importedCount = sender.ToList().Count(s => missingSetIds.Contains(s.OnlineID));
 
-                    try
+                    lock (lockObj)
                     {
-                        var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                        if (localDownloader.GetExistingDownload(onlineSet) == null)
-                            localDownloader.Download(onlineSet);
-                        Thread.Sleep(100);
-                    }
-                    catch { }
-                    finally
-                    {
-                        processedCount++;
-                    }
-                }
+                        int resolved = importedCount + failedSets.Count;
+                        float progress = (float)resolved / missingSetIds.Count;
 
-                Schedule(() =>
-                {
-                    if (notification.State != ProgressNotificationState.Cancelled)
-                    {
-                        notification.CompletionText = "Download queueing finished.";
-                        lock (lockObj)
+                        Schedule(() =>
                         {
-                            if (failedCount > 0)
-                                notification.CompletionText += $" ({failedCount} maps unavailable)";
+                            notification.Text = $"Importing {importedCount}/{missingSetIds.Count} maps...";
+                            notification.Progress = progress;
+                        });
+
+                        if (resolved >= missingSetIds.Count)
+                        {
+                            realmSubscription.Dispose();
+                            Schedule(() =>
+                            {
+                                notification.Text = $"Downloaded {importedCount} maps.";
+                                if (failedSets.Count > 0)
+                                    notification.Text += $" ({failedSets.Count} unavailable)";
+                                notification.Progress = 1;
+                                notification.State = ProgressNotificationState.Completed;
+                            });
                         }
-                        notification.Progress = 1;
-                        notification.State = ProgressNotificationState.Completed;
                     }
                 });
-            }, TaskCreationOptions.LongRunning);
+
+            // Queue all downloads
+            foreach (var setId in missingSetIds)
+            {
+                var onlineSet = new APIBeatmapSet { OnlineID = setId };
+                if (localDownloader.GetExistingDownload(onlineSet) == null)
+                    localDownloader.Download(onlineSet);
+            }
         }
     }
 }
