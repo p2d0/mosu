@@ -249,7 +249,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 };
 
                                 // Assign the current API user. The setter in ScoreInfo will create a new embedded RealmUser.
-                                score.User = new APIUser() {Username = @"ImportedGuest", Id = -123};
+                                score.User = new APIUser() { Username = string.IsNullOrEmpty(sDto.CustomName) ? "Imported" : sDto.CustomName, Id = -123 };
 
                                 foreach (var stat in sDto.Statistics)
                                 {

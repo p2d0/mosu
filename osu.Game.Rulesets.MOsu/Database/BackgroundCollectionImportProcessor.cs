@@ -197,7 +197,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                                 Mods = mods,
                             };
 
-                            score.User = new APIUser { Username = @"Example mods configuration", Id = -123 };
+                            score.User = new APIUser { Username = string.IsNullOrEmpty(sDto.CustomName) ? "Example mods configuration" : sDto.CustomName, Id = -123 };
 
                             foreach (var stat in sDto.Statistics)
                             {
@@ -228,7 +228,7 @@ namespace osu.Game.Rulesets.MOsu.Database
             {
                 State = ProgressNotificationState.Active,
                 Text = "Starting collection download...",
-                CompletionText = "Missing maps have been queued.",
+                CompletionText = "Missing maps have been downloaded.",
             };
 
             notifications.Post(notification);

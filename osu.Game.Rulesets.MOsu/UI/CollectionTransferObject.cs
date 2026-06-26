@@ -34,5 +34,6 @@ namespace osu.Game.Rulesets.MOsu.UI {
         public System.DateTimeOffset Date { get; set; }
         public List<osu.Game.Online.API.APIMod> Mods { get; set; } = new List<osu.Game.Online.API.APIMod>();
         public System.Collections.Generic.Dictionary<string, int> Statistics { get; set; } = new System.Collections.Generic.Dictionary<string, int>();
+        public string CustomName { get; set; } = string.Empty;
     }
 }
