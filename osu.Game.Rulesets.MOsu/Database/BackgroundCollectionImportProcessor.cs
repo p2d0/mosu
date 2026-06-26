@@ -39,8 +39,7 @@ namespace osu.Game.Rulesets.MOsu.Database
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
-        [Resolved]
-        private BeatmapModelDownloader downloader { get; set; } = null!;
+
 
         [Resolved]
         private BeatmapManager beatmapManager { get; set; } = null!;
@@ -234,11 +233,21 @@ namespace osu.Game.Rulesets.MOsu.Database
 
             notifications.Post(notification);
 
-            var remainingSets = new HashSet<int>(missingSetIds);
+            // Local downloader — no PostNotification set, so no per-download notifications
+            var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
             var failedSets = new HashSet<int>();
             var lockObj = new object();
 
-            downloader.DownloadFailed += createDownloadFailedHandler(lockObj, failedSets);
+            localDownloader.DownloadFailed += req =>
+            {
+                int setId = req.Model.OnlineID;
+                if (File.Exists(Path.Combine(Path.GetTempPath(), $"nekoha_{setId}.osz")))
+                {
+                    Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
+                    return;
+                }
+                tryMirrorFallback(setId, lockObj, failedSets);
+            };
 
             // Queue all downloads
             await Task.Factory.StartNew(() =>
@@ -249,13 +258,17 @@ namespace osu.Game.Rulesets.MOsu.Database
                     if (notification.State == ProgressNotificationState.Cancelled)
                         break;
 
-                    updateNotificationProgress(notification, processedCount, missingSetIds.Count);
+                    Schedule(() =>
+                    {
+                        notification.Text = $"Queuing downloads ({processedCount + 1}/{missingSetIds.Count})...";
+                        notification.Progress = (float)(processedCount + 1) / missingSetIds.Count;
+                    });
 
                     try
                     {
                         var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                        if (downloader.GetExistingDownload(onlineSet) == null)
-                            downloader.Download(onlineSet);
+                        if (localDownloader.GetExistingDownload(onlineSet) == null)
+                            localDownloader.Download(onlineSet);
                         Thread.Sleep(100);
                     }
                     catch { }
@@ -284,8 +297,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                 }
             });
 
-            downloader.DownloadFailed -= createDownloadFailedHandler(lockObj, failedSets);
-
             int unavailableCount;
             lock (lockObj) unavailableCount = failedSets.Count;
 
@@ -298,20 +309,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                 notification.Progress = 1;
                 notification.State = ProgressNotificationState.Completed;
             });
-        }
-
-        private Action<ArchiveDownloadRequest<IBeatmapSetInfo>> createDownloadFailedHandler(object lockObj, HashSet<int> failedSets)
-        {
-            return req =>
-            {
-                int setId = req.Model.OnlineID;
-                if (File.Exists(Path.Combine(Path.GetTempPath(), $"nekoha_{setId}.osz")))
-                {
-                    Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
-                    return;
-                }
-                tryMirrorFallback(setId, lockObj, failedSets);
-            };
         }
 
         private void tryMirrorFallback(int setId, object lockObj, HashSet<int> failedSets)
@@ -388,12 +385,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                     return reader.ReadToEnd();
                 }
             }
-        }
-
-        private void updateNotificationProgress(ProgressNotification notification, int processedCount, int totalCount)
-        {
-            notification.Text = $"Checking map {processedCount} of {totalCount} online...";
-            notification.Progress = (float)processedCount / totalCount;
         }
 
     }

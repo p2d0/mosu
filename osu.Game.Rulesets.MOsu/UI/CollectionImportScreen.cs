@@ -55,7 +55,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private IAPIProvider api { get; set; } = null!;
 
         [Resolved]
-        private BeatmapModelDownloader downloader { get; set; } = null!;
+        private BeatmapManager beatmapManager { get; set; } = null!;
 
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
@@ -262,7 +262,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 return;
             }
 
-            // Create the notification
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
@@ -272,64 +271,60 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             notifications.Post(notification);
 
-            // Fire and forget task
+            // Local downloader — no PostNotification set, so no per-download notifications
+            var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
+            int failedCount = 0;
+            var lockObj = new object();
+
+            localDownloader.DownloadFailed += req =>
+            {
+                lock (lockObj) failedCount++;
+            };
+
             Task.Factory.StartNew(() =>
             {
                 int processedCount = 0;
-                int failedCount = 0;
 
                 foreach (var setId in missingSetIds)
                 {
                     if (notification.State == ProgressNotificationState.Cancelled)
                         break;
 
-                    updateNotificationProgress(notification, processedCount, missingSetIds.Count);
+                    Schedule(() =>
+                    {
+                        notification.Text = $"Queuing downloads ({processedCount + 1}/{missingSetIds.Count})...";
+                        notification.Progress = (float)(processedCount + 1) / missingSetIds.Count;
+                    });
 
                     try
                     {
                         var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                        if (downloader.GetExistingDownload(onlineSet) == null)
-                        {
-                            downloader.Download(onlineSet);
-                        }
+                        if (localDownloader.GetExistingDownload(onlineSet) == null)
+                            localDownloader.Download(onlineSet);
                         Thread.Sleep(100);
                     }
-                    catch
-                    {
-                        failedCount++;
-                    }
+                    catch { }
                     finally
                     {
                         processedCount++;
                     }
                 }
 
-                completeNotification(notification, processedCount, missingSetIds.Count, failedCount);
-
+                Schedule(() =>
+                {
+                    if (notification.State != ProgressNotificationState.Cancelled)
+                    {
+                        notification.CompletionText = "Download queueing finished.";
+                        lock (lockObj)
+                        {
+                            if (failedCount > 0)
+                                notification.CompletionText += $" ({failedCount} maps unavailable)";
+                        }
+                        notification.Progress = 1;
+                        notification.State = ProgressNotificationState.Completed;
+                    }
+                });
             }, TaskCreationOptions.LongRunning);
-        }
-
-        private void updateNotificationProgress(ProgressNotification notification, int processedCount, int totalCount)
-        {
-            notification.Text = $"Checking map {processedCount} of {totalCount} online...";
-            notification.Progress = (float)processedCount / totalCount;
-        }
-
-        private void completeNotification(ProgressNotification notification, int processedCount, int totalCount, int failedCount)
-        {
-            if (processedCount == totalCount)
-            {
-                notification.CompletionText = "Download queueing finished.";
-                if (failedCount > 0)
-                    notification.CompletionText += $" ({failedCount} maps unavailable)";
-
-                notification.Progress = 1;
-                notification.State = ProgressNotificationState.Completed;
-            }
-            else
-            {
-                notification.State = ProgressNotificationState.Cancelled;
-            }
         }
     }
 }
