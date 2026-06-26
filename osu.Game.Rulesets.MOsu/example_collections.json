@@ -25,7 +25,7 @@
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
-                  "drain_rate": 6.0,
+                  "drain_rate": 6.0
                 }
               },
               {
