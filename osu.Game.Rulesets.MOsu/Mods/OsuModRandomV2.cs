@@ -100,7 +100,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
         {
             MinValue = 0.1f,
-            MaxValue = 50,
+            MaxValue = 30,
             Precision = 0.01f
         };
 
@@ -114,7 +114,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
         {
             MinValue = 0.1f,
-            MaxValue = 50,
+            MaxValue = 30,
             Precision = 0.1f
         };
 
