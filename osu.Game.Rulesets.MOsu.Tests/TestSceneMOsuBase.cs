@@ -23,8 +23,15 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         protected override bool UseFreshStoragePerRun => true;
 
-        [TearDown]
-        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
+        protected void CaptureScreenshot(string testName)
+        {
+            AddStep("screenshot", () =>
+            {
+                var fixtureName = GetType().Name.Replace("TestScene", "");
+                ScreenshotHelper.Capture(gameHost, $"{fixtureName}_{testName}");
+            });
+            AddWaitStep("wait for screenshot", 1);
+        }
 
         [BackgroundDependencyLoader]
         private void load(IAPIProvider api)

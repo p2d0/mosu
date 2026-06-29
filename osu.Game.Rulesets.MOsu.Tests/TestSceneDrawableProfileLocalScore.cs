@@ -59,6 +59,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 };
             });
             AddWaitStep("wait for drawable to load", 2);
+            CaptureScreenshot("DrawableProfileLocalScore");
         }
     }
 }

@@ -7,7 +7,6 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Platform;
-using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
@@ -24,12 +23,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
     [TestFixture]
     public partial class TestSceneBeatmapModPresetWedge : OsuManualInputManagerTestScene
     {
-        [Resolved]
-        private GameHost gameHost { get; set; } = null!;
-
-        [TearDown]
-        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
         private BeatmapModPresetWedge wedge = null!;
+        private GameHost gameHost = null!;
         protected MOsuRealmAccess MOsuRealm { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
 
@@ -45,6 +40,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [BackgroundDependencyLoader]
         private void load(GameHost host)
         {
+            gameHost = host;
             Dependencies.Cache(MOsuRealm = new MOsuRealmAccess(LocalStorage, "mosurealm-test", host.UpdateThread));
             Dependencies.Cache(new OverlayColourProvider(OverlayColourScheme.Green));
             Dependencies.CacheAs<INotificationOverlay>(new StubNotificationOverlay());
@@ -89,9 +85,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                         Name = "KEKEKEKEK",
                         BeatmapMD5Hash = beatmapHash,
                         Ruleset = r.Find<RulesetInfo>(ruleset.Value.ShortName) ?? ruleset.Value,
-                        Mods = new Mod[] { new OsuModDoubleTime() {SpeedChange = {Value = 2.3f}}, new OsuModHidden() {
-                                OnlyFadeApproachCircles = { Value = true }
-                            } }
+                        Mods = new Mod[] { new OsuModDoubleTime() { SpeedChange = { Value = 2.3f } }, new OsuModHidden() { OnlyFadeApproachCircles = { Value = true } } }
                     });
 
                     r.Add(new BeatmapModPreset
@@ -107,6 +101,17 @@ namespace osu.Game.Rulesets.MOsu.Tests
             });
 
             AddStep("wait for presets to render", () => System.Threading.Thread.Sleep(500));
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "BeatmapModPresetWedge_PresetDisplay"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
+        [Test]
+        public void TestShowHide()
+        {
+            AddStep("hide wedge", () => wedge.Hide());
+            AddStep("show wedge", () => wedge.Show());
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "BeatmapModPresetWedge_ShowHide"));
+            AddWaitStep("wait for screenshot", 1);
         }
     }
 }

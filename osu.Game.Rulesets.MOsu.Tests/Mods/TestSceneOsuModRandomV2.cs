@@ -1,8 +1,6 @@
 
 using System.Collections.Generic;
 using NUnit.Framework;
-using osu.Framework.Allocation;
-using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.MOsu.Beatmaps;
@@ -15,11 +13,6 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
     public partial class TestSceneOsuModRandomV2 : OsuModTestScene
     {
-        [Resolved]
-        private GameHost gameHost { get; set; } = null!;
-
-        [TearDown]
-        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
         [TestCase(1)]
         [TestCase(7)]
         [TestCase(10)]

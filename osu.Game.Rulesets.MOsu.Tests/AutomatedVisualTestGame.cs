@@ -55,7 +55,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class ScreenshotTestRunner : CompositeDrawable
     {
         private const double time_between_tests = 500;
-        private const double test_timeout = 30000;
+        private const double test_timeout = 60000;
 
         private readonly TestBrowser browser;
         private int testIndex;
@@ -132,12 +132,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 timeoutDelegate.Cancel();
                 if (testTimedOut) return;
                 Console.WriteLine($"[ScreenshotTestRunner] Completed: {testName}");
-                // Wait for UI to settle, then synchronous screenshot
-                Scheduler.AddDelayed(() =>
-                {
-                    takeScreenshotImmediate(testName);
-                    Scheduler.AddDelayed(advanceToNext, time_between_tests);
-                }, 500);
+                Scheduler.AddDelayed(advanceToNext, time_between_tests);
             });
         }
 

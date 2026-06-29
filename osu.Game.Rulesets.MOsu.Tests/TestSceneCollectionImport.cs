@@ -26,16 +26,13 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class TestSceneCollectionImport : OsuTestScene
     {
         [Resolved]
-        private GameHost gameHost { get; set; } = null!;
+        private BeatmapManager beatmapManager { get; set; } = null!;
 
         [Resolved]
-        private BeatmapManager beatmapManager { get; set; } = null!;
+        private GameHost gameHost { get; set; } = null!;
 
         protected MOsuRealmAccess mosuRealm { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
-
-        [TearDown]
-        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
 
         [BackgroundDependencyLoader]
         private void load()
@@ -90,6 +87,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 var collection = Realm.Run(r => r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == "MOsu examples"));
                 return collection != null && collection.BeatmapMD5Hashes.Count > 0;
             });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_CollectionsImported"));
+            AddWaitStep("wait for screenshot", 1);
         }
 
         [Test]
@@ -116,6 +115,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 int secondCount = Realm.Run(r => r.All<BeatmapCollection>().Count());
                 return secondCount == firstCount;
             });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ImportIdempotent"));
+            AddWaitStep("wait for screenshot", 1);
         }
 
         [Test]
@@ -132,6 +133,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 if (collection == null) return false;
                 return collection.BeatmapMD5Hashes.Distinct().Count() == collection.BeatmapMD5Hashes.Count;
             });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_HashesNotDuplicated"));
+            AddWaitStep("wait for screenshot", 1);
         }
 
         [Test]
@@ -163,6 +166,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
             // BeatmapModelDownloader attempts download regardless of login state.
             // It only checks api != null, not api.IsLoggedIn.
             AddAssert("download attempted despite offline (proves IsLoggedIn guard needed)", () => downloadBegan);
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_DownloadRequiresLogin"));
+            AddWaitStep("wait for screenshot", 1);
         }
 
         [Test]
@@ -256,6 +261,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     && collection.BeatmapMD5Hashes.Contains("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
                     && collection.BeatmapMD5Hashes.Contains("cccccccccccccccccccccccccccccccc");
             });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ExportImportRoundTrip"));
+            AddWaitStep("wait for screenshot", 1);
         }
 
         private void SeedBeatmapsAndScores()

@@ -5,7 +5,9 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
-using osu.Game.Online.API.Requests.Responses;using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Overlays;
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Models;
 using osu.Game.Scoring;
@@ -14,11 +16,14 @@ using osu.Game.Tests.Visual;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
-    public abstract partial class TestSceneUserProfileOverlayBase : TestSceneMOsuBase
+    public partial class TestSceneUserProfileOverlay : TestSceneMOsuBase
     {
         protected LocalUserProfileOverlay profile = null!;
 
         protected override Ruleset CreateRuleset() => new OsuRuleset();
+
+        [BackgroundDependencyLoader]
+        private void loadOverlay() => Dependencies.Cache(new OverlayColourProvider(OverlayColourScheme.Green));
 
         [SetUpSteps]
         public void SetUp()
@@ -82,6 +87,32 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     Child = profile,
                 };
             });
+        }
+
+        [Test]
+        public void TestPlayerOneProfile()
+        {
+            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for content", 3);
+            CaptureScreenshot("PlayerOneProfile");
+        }
+
+        [Test]
+        public void TestPlayerTwoProfile()
+        {
+            AddStep("show user", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for content", 3);
+            CaptureScreenshot("PlayerTwoProfile");
+        }
+
+        [Test]
+        public void TestProfileSwitching()
+        {
+            AddStep("show PlayerOne", () => profile.ShowUser(new APIUser { Id = 1, Username = "PlayerOne" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for content", 2);
+            AddStep("switch to PlayerTwo", () => profile.ShowUser(new APIUser { Id = 2, Username = "PlayerTwo" }, ruleset.RulesetInfo));
+            AddWaitStep("wait for switch", 2);
+            CaptureScreenshot("ProfileSwitching");
         }
 
         private static ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)

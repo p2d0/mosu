@@ -14,11 +14,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class TestSceneOsuGame : OsuTestScene
     {
         protected override bool UseFreshStoragePerRun => true;
-        [Resolved]
-        private GameHost gameHost { get; set; } = null!;
 
-        [TearDown]
-        public void TearDownScreenshot() => ScreenshotHelper.Capture(gameHost);
         [BackgroundDependencyLoader]
         private void load()
         {
@@ -32,6 +28,17 @@ namespace osu.Game.Rulesets.MOsu.Tests
             };
 
             AddGame(new OsuGame());
+        }
+
+        [Resolved]
+        private GameHost gameHost { get; set; } = null!;
+
+        [Test]
+        public void TestOsuGame()
+        {
+            AddWaitStep("wait for game to load", 3);
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "OsuGame_OsuGame"));
+            AddWaitStep("wait for screenshot", 1);
         }
     }
 }
