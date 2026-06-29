@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.ObjectExtensions;
+using osu.Game.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Framework.Graphics.Containers;
@@ -118,8 +119,10 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         public override bool IsPresent => base.IsPresent || Scheduler.HasPendingTasks;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.GetBindable<bool>(OsuSetting.ProfileCoverExpanded).Value = false;
+
             localUserManager.ProfileChanged += _ =>
             {
                 if (IsPresent)

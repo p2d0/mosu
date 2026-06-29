@@ -99,13 +99,16 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
         public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
         {
-            MinValue = 0.5f,
-            MaxValue = 10,
+            MinValue = 0.1f,
+            MaxValue = 50,
             Precision = 0.01f
         };
 
-        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance")]
+        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance", SettingControlType = typeof(PowerJumpsCheckbox))]
         public BindableBool PowerJumps { get; } = new BindableBool(false);
+
+        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsCheckbox))]
+        public BindableBool ExpoJumps { get; } = new BindableBool(false);
 
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
@@ -246,38 +249,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
                     if(PowerStreams.Value){
-                        float distance = positionInfos[i].DistanceFromPrevious;
-                        float M = StreamDistanceMultiplier.Value;
-
-                        // --- TUNABLE PARAMETERS ---
-
-                        // 1. How much to amplify the base multiplier at zero distance.
-                        // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
-                        // Based on your example, 2.65 is a great starting point.
-                        float bonusAmplifier = 2.65f;
-
-                        // 2. How quickly the bonus effect decays with distance.
-                        // A larger value means a faster drop-off.
-                        // Based on your example, 0.023 is a great starting point.
-                        float decayRate = 0.023f;
-
-                        // --------------------------
-
-
-                        // Step 1: Calculate the maximum possible bonus (at distance = 0)
-                        // We use (M - 1) because a multiplier of M=10 is a "bonus" of 9.
-                        float maxBonus = (M - 1f) * bonusAmplifier;
-
-                        // Step 2: Calculate the decay factor based on distance
-                        // MathF.Exp() is the e^x function. The negative sign makes it decay.
-                        float decayFactor = MathF.Exp(-decayRate * distance);
-
-                        // Step 3: Calculate the actual bonus for this distance
-                        float currentBonus = maxBonus * decayFactor;
-
-                        // Step 4: Apply the final multiplier
-                        // The final multiplier is 1.0 (no change) plus the current bonus.
-                        positionInfos[i].DistanceFromPrevious *= (1f + currentBonus);
+                        positionInfos[i].DistanceFromPrevious = getExpoJumpsDistance(positionInfos[i].DistanceFromPrevious, StreamDistanceMultiplier.Value);
                     }
                     else
                         positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
@@ -289,6 +261,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // else
                     if(PowerJumps.Value)
                         positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
+                    else if (ExpoJumps.Value)
+                        positionInfos[i].DistanceFromPrevious = getExpoJumpsDistance(positionInfos[i].DistanceFromPrevious, AimDistanceMultiplier.Value);
                     else
                         positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
 
@@ -362,6 +336,40 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // }
             // Logger.Log($"Count (Lower is better) {count}");
             // Logger.Log($"TotalDistanceDifferece (Lower is better) {totalDistanceDifferece}");
+        }
+
+        private float getExpoJumpsDistance(float distance, float multiplier) {
+            float M = multiplier;
+
+            // --- TUNABLE PARAMETERS ---
+
+            // 1. How much to amplify the base multiplier at zero distance.
+            // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
+            // Based on your example, 2.65 is a great starting point.
+            float bonusAmplifier = 2.65f;
+
+            // 2. How quickly the bonus effect decays with distance.
+            // A larger value means a faster drop-off.
+            // Based on your example, 0.023 is a great starting point.
+            float decayRate = 0.023f;
+
+            // --------------------------
+
+
+            // Step 1: Calculate the maximum possible bonus (at distance = 0)
+            // We use (M - 1) because a multiplier of M=10 is a "bonus" of 9.
+            float maxBonus = (M - 1f) * bonusAmplifier;
+
+            // Step 2: Calculate the decay factor based on distance
+            // MathF.Exp() is the e^x function. The negative sign makes it decay.
+            float decayFactor = MathF.Exp(-decayRate * distance);
+
+            // Step 3: Calculate the actual bonus for this distance
+            float currentBonus = maxBonus * decayFactor;
+
+            // Step 4: Apply the final multiplier
+            // The final multiplier is 1.0 (no change) plus the current bonus.
+            return distance * (1f + currentBonus);
         }
 
         private bool isStream(OsuBeatmap osuBeatmap, List<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)
@@ -711,6 +719,37 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     mod.DivideByDivisor.BindValueChanged(val =>
                     {
                         if (val.NewValue) Show(); else Hide();
+                    }, true);
+                }
+            }
+        }
+
+        // Power jumps / Expo jumps: mutually exclusive
+        public partial class PowerJumpsCheckbox : SettingsCheckbox
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.ExpoJumps.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Hide(); else Show();
+                    }, true);
+                }
+            }
+        }
+
+        public partial class ExpoJumpsCheckbox : SettingsCheckbox
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.PowerJumps.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Hide(); else Show();
                     }, true);
                 }
             }
