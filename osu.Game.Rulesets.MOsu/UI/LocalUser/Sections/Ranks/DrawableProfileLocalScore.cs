@@ -235,13 +235,13 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                 new OsuSpriteText { Text = $"{Score.Combo}x", Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold), Colour = colourProvider.Foreground1 },
                 new OsuSpriteText { Text = $"({Score.MaxCombo}x)", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
                 new OsuSpriteText { Text = "|", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
-                createHitCount(Score.Statistics.ContainsKey(HitResult.Great) ? Score.Statistics[HitResult.Great] : 0, colours.GreenLight),
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Great) ? Score.Statistics[HitResult.Great] : 0, colours.ForHitResult(HitResult.Great)),
                 new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
-                createHitCount(Score.Statistics.ContainsKey(HitResult.Good) ? Score.Statistics[HitResult.Good] : 0, colours.Orange1),
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Good) ? Score.Statistics[HitResult.Good] : 0, colours.ForHitResult(HitResult.Good)),
                 new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
-                createHitCount(Score.Statistics.ContainsKey(HitResult.Ok) ? Score.Statistics[HitResult.Ok] : 0, colours.Orange2),
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Ok) ? Score.Statistics[HitResult.Ok] : 0, colours.ForHitResult(HitResult.Ok)),
                 new OsuSpriteText { Text = "/", Font = OsuFont.GetFont(size: 14), Colour = colourProvider.Light3 },
-                createHitCount(Score.Statistics.ContainsKey(HitResult.Miss) ? Score.Statistics[HitResult.Miss] : 0, colours.Red)
+                createHitCount(Score.Statistics.ContainsKey(HitResult.Miss) ? Score.Statistics[HitResult.Miss] : 0, colours.ForHitResult(HitResult.Miss))
             }
         };
 
