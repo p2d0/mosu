@@ -110,6 +110,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsCheckbox))]
         public BindableBool ExpoJumps { get; } = new BindableBool(false);
 
+        [SettingSource("Remove stacks", "Remove stacks")]
+        public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
+
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
         {
@@ -246,6 +249,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
             for (int i = 0; i < positionInfos.Count; i++)
             {
                 originalDistance = positionInfos[i].DistanceFromPrevious;
+                if(originalDistance <= 10 && RemoveStacks.Value){
+                    positionInfos[i].DistanceFromPrevious += 50;
+                };
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
                     if(PowerStreams.Value){
