@@ -33,5 +33,5 @@
     "Name": "Stream practice 8x",
     "Description": "Streams with 8 circles at a time",
     "ModsJson": "[{\"acronym\":\"HD\"},{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_break_interval\":8,\"square_mod_break_objects\":6,\"square_mod_full_map\":false,\"square_mod_count\":200}}]"
-  },
+  }
 ]
