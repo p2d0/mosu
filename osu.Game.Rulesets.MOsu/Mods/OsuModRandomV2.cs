@@ -71,9 +71,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public enum AngleEnum
         {
-            Square,
             Star,
             FourtyFive,
+            Ninety,
         }
 
         public float GetAngleValue()
@@ -83,16 +83,16 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         private static readonly Dictionary<AngleEnum, float> AngleValues = new Dictionary<AngleEnum, float>
         {
-            { AngleEnum.Square, 1.57079f }, // 90 degrees in radians
             { AngleEnum.Star, 2.51327f },   // ~36 degrees in radians
-            { AngleEnum.FourtyFive, 0.785398f } // 45 degrees in radians
+            { AngleEnum.FourtyFive, 0.785398f }, // 45 degrees in radians
+            { AngleEnum.Ninety, 1.57079f } // 90 degrees in radians
         };
 
         // 3. Angle: Visible when CustomAngle is true
         [SettingSource("Angle", "Angle selector", SettingControlType = typeof(AngleEnumSetting))]
         public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
         {
-            Default = AngleEnum.Square,
+            Default = AngleEnum.Star,
         };
 
 
