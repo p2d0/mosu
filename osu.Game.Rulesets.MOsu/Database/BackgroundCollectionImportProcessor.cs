@@ -91,14 +91,22 @@ namespace osu.Game.Rulesets.MOsu.Database
                         });
                     });
 
-                    // Step 2: Download missing maps (blocking)
+                    // Step 2: Download missing maps, importing scores after each
                     var missingSetIds = getMissingSetIds(allSetIds);
-                    if (missingSetIds.Count > 0)
-                        await startBackgroundDownload(missingSetIds);
+                    int importedScores = 0;
 
-                    // Step 3: Import scores
-                    int importedScores = importScores(transferObjects);
-                    Logger.Log($"Imported {importedScores} scores.");
+                    if (missingSetIds.Count > 0)
+                    {
+                        var (downloaded, scores) = await startBackgroundDownload(missingSetIds, transferObjects);
+                        importedScores = scores;
+                        Logger.Log($"Downloaded {downloaded} maps and imported scores incrementally.");
+                    }
+                    else
+                    {
+                        // No missing maps, import all scores immediately
+                        importedScores = importScores(transferObjects);
+                        Logger.Log($"Imported {importedScores} scores.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -216,27 +224,88 @@ namespace osu.Game.Rulesets.MOsu.Database
             return importedScores;
         }
 
-        private async Task startBackgroundDownload(List<int> missingSetIds)
+        private int importScoresForSet(List<CollectionWithScoresTransferObject> transferObjects, int setId)
+        {
+            int importedScores = 0;
+
+            realm.Write(r =>
+            {
+                var setBeatmaps = r.All<BeatmapInfo>()
+                    .Filter("BeatmapSet.OnlineID == $0 && BeatmapSet.DeletePending == false", setId)
+                    .ToList();
+                var validHashes = new HashSet<string>(setBeatmaps.Select(b => b.MD5Hash));
+
+                foreach (var dto in transferObjects)
+                {
+                    foreach (var beatmapEntry in dto.Beatmaps)
+                    {
+                        if (!validHashes.Contains(beatmapEntry.BeatmapMD5Hash)) continue;
+
+                        foreach (var sDto in beatmapEntry.Scores)
+                        {
+                            var beatmap = r.All<BeatmapInfo>().FirstOrDefault(b => b.MD5Hash == beatmapEntry.BeatmapMD5Hash);
+                            var rulesetInfo = r.All<RulesetInfo>().FirstOrDefault(ru => ru.ShortName == sDto.RulesetShortName);
+                            if (beatmap == null || rulesetInfo == null) continue;
+
+                            bool scoreExists = r.All<ScoreInfo>()
+                                .Filter("BeatmapInfo.MD5Hash == $0 && TotalScore == $1 && Date == $2",
+                                    sDto.BeatmapHash, sDto.TotalScore, sDto.Date)
+                                .Count() > 0;
+                            if (scoreExists) continue;
+
+                            var rulesetInstance = rulesetInfo.CreateInstance();
+                            var mods = sDto.Mods.Select(m => m.ToMod(rulesetInstance)).ToArray();
+
+                            var score = new ScoreInfo(beatmap, rulesetInfo)
+                            {
+                                TotalScore = sDto.TotalScore,
+                                Accuracy = sDto.Accuracy,
+                                MaxCombo = sDto.MaxCombo,
+                                Rank = Enum.TryParse<ScoreRank>(sDto.Rank, out var rank) ? rank : ScoreRank.F,
+                                Date = sDto.Date,
+                                Mods = mods,
+                            };
+
+                            score.User = new APIUser { Username = string.IsNullOrEmpty(sDto.CustomName) ? "Example mods configuration" : sDto.CustomName, Id = -123 };
+
+                            foreach (var stat in sDto.Statistics)
+                            {
+                                if (Enum.TryParse<HitResult>(stat.Key, out var result))
+                                    score.Statistics[result] = stat.Value;
+                            }
+
+                            score.StatisticsJson = JsonConvert.SerializeObject(score.Statistics);
+                            r.Add(score);
+                            importedScores++;
+                        }
+                    }
+                }
+            });
+
+            return importedScores;
+        }
+
+        private async Task<(int mapsDownloaded, int scoresImported)> startBackgroundDownload(List<int> missingSetIds, List<CollectionWithScoresTransferObject> transferObjects)
         {
             if (!api.IsLoggedIn)
             {
                 Schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." }));
-                return;
+                return (0, 0);
             }
 
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
                 Text = "Starting collection download...",
-                CompletionText = "Missing maps have been downloaded.",
             };
 
             notifications.Post(notification);
 
-            // Local downloader — no PostNotification set, so no per-download notifications
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
             var failedSets = new HashSet<int>();
+            var downloadedSets = new HashSet<int>();
             var lockObj = new object();
+            int totalScoresImported = 0;
 
             localDownloader.DownloadFailed += req =>
             {
@@ -249,54 +318,88 @@ namespace osu.Game.Rulesets.MOsu.Database
                 tryMirrorFallback(setId, lockObj, failedSets);
             };
 
-            // Subscribe to all beatmap sets, filter client-side (Realm can't translate HashSet.Contains)
-            var tcs = new TaskCompletionSource<bool>();
-            IDisposable? realmSubscription = null;
-            realmSubscription = realm.RegisterForNotifications(
-                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
-                (sender, _) =>
+            // Download sets one at a time, importing scores after each
+            for (int i = 0; i < missingSetIds.Count; i++)
+            {
+                if (notification.State == ProgressNotificationState.Cancelled) break;
+
+                int setId = missingSetIds[i];
+
+                string title = transferObjects
+                    .SelectMany(c => c.Beatmaps)
+                    .FirstOrDefault(b => b.BeatmapSetId == setId)
+                    ?.BeatmapTitle ?? $"Set {setId}";
+
+                Schedule(() =>
                 {
-                    if (notification.State == ProgressNotificationState.Cancelled) return;
-
-                    int importedCount = sender.ToList().Count(s => missingSetIds.Contains(s.OnlineID));
-
-                    lock (lockObj)
-                    {
-                        int resolved = importedCount + failedSets.Count;
-                        float progress = (float)resolved / missingSetIds.Count;
-
-                        Schedule(() =>
-                        {
-                            notification.Text = $"Importing {importedCount}/{missingSetIds.Count} maps...";
-                            notification.Progress = progress;
-                        });
-
-                        if (resolved >= missingSetIds.Count)
-                        {
-                            realmSubscription.Dispose();
-                            Schedule(() =>
-                            {
-                                notification.Text = $"Downloaded {importedCount} maps.";
-                                if (failedSets.Count > 0)
-                                    notification.Text += $" ({failedSets.Count} unavailable)";
-                                notification.Progress = 1;
-                                notification.State = ProgressNotificationState.Completed;
-                            });
-                            tcs.TrySetResult(true);
-                        }
-                    }
+                    notification.Text = $"Downloading \"{title}\" ({i + 1}/{missingSetIds.Count})...";
+                    notification.Progress = (float)i / missingSetIds.Count;
                 });
 
-            // Queue all downloads
-            foreach (var setId in missingSetIds)
-            {
                 var onlineSet = new APIBeatmapSet { OnlineID = setId };
                 if (localDownloader.GetExistingDownload(onlineSet) == null)
                     localDownloader.Download(onlineSet);
+
+                // Wait for this specific set to appear in realm
+                await waitForSetInRealm(setId);
+
+                int scoresForSet = 0;
+                lock (lockObj)
+                {
+                    if (failedSets.Contains(setId)) continue;
+                    downloadedSets.Add(setId);
+
+                    // Import scores for maps in this set
+                    scoresForSet = importScoresForSet(transferObjects, setId);
+                    totalScoresImported += scoresForSet;
+                }
+
+                Schedule(() =>
+                {
+                    notification.Text = $"Downloaded \"{title}\", imported {scoresForSet} scores ({i + 1}/{missingSetIds.Count})...";
+                    notification.Progress = (float)(i + 1) / missingSetIds.Count;
+                });
             }
 
-            // Wait for subscription to resolve (max 5 min)
-            await tcs.Task.WaitAsync(TimeSpan.FromMinutes(5));
+            Schedule(() =>
+            {
+                notification.Text = $"Downloaded {downloadedSets.Count} maps.";
+                if (failedSets.Count > 0)
+                    notification.Text += $" ({failedSets.Count} unavailable)";
+                notification.Text += $" | {totalScoresImported} scores imported.";
+                notification.Progress = 1;
+                notification.State = ProgressNotificationState.Completed;
+            });
+
+            return (downloadedSets.Count, totalScoresImported);
+        }
+
+        private async Task waitForSetInRealm(int setId)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            IDisposable? subscription = null;
+
+            subscription = realm.RegisterForNotifications(
+                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
+                (sender, _) =>
+                {
+                    if (sender.ToList().Any(s => s.OnlineID == setId))
+                    {
+                        subscription?.Dispose();
+                        tcs.TrySetResult(true);
+                    }
+                });
+
+            // Check if already present
+            var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", setId).FirstOrDefault());
+            if (existing != null)
+            {
+                subscription?.Dispose();
+                tcs.TrySetResult(true);
+            }
+
+            await tcs.Task.WaitAsync(TimeSpan.FromMinutes(2));
+            subscription?.Dispose();
         }
 
         private void tryMirrorFallback(int setId, object lockObj, HashSet<int> failedSets)

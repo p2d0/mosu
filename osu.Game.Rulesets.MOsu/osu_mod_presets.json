@@ -12,12 +12,12 @@
   {
     "Name": "Tap aim 1/4",
     "Description": "Replace whole map with generated circles",
-    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"HD\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.5,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":2.08,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100,\"square_mod_full_map\":false,\"square_mod_count\":200}}]"
+    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"HD\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"stream_distance_multiplier\":2.08,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100}}]"
   },
   {
     "Name": "Tap aim 1/4 with breaks",
     "Description": "Like tap aim but with breaks every 25 circles",
-    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"HD\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.4,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":2.08,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100,\"square_mod_break\":true,\"square_mod_break_interval\":25,\"square_mod_break_objects\":6,\"square_mod_count\":200}}]"
+    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"HD\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"stream_distance_multiplier\":2.08,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100,\"square_mod_break\":true,\"square_mod_break_interval\":25,\"square_mod_break_objects\":6}}]"
   },
   {
     "Name": "Stream practice",

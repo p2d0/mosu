@@ -324,11 +324,11 @@
             "BeatmapHash": "836c7c2972556d0d317ecbed7fe16961",
             "RulesetShortName": "mosu",
             "BeatmapDifficultyName": "Marathon",
-            "TotalScore": 11481,
-            "Accuracy": 0.8027397260273973,
-            "MaxCombo": 32,
-            "Rank": "F",
-            "Date": "2025-10-13T12:11:10.5454226+00:00",
+            "TotalScore": 167174,
+            "Accuracy": 0.8723743300014486,
+            "MaxCombo": 102,
+            "Rank": "B",
+            "Date": "2026-05-26T10:08:01.877097+00:00",
             "Mods": [
               {
                 "acronym": "HD"
@@ -337,41 +337,46 @@
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
+                  "drain_rate": 6.0,
                   "extended_limits": true
                 }
               },
               {
                 "acronym": "RDV2",
                 "settings": {
+                  "aim_distance_multiplier": 7.25,
                   "power_jumps": true,
-                  "stream_distance_multiplier": 6.0,
-                  "power_streams": true,
-                  "seed": 1221807823
+                  "divisor": 3,
+                  "seed": 1094452087
                 }
               },
               {
-                "acronym": "NL"
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
               }
             ],
             "Statistics": {
               "None": 0,
-              "Miss": 44,
-              "Meh": 0,
-              "Ok": 42,
+              "Miss": 89,
+              "Meh": 12,
+              "Ok": 292,
               "Good": 0,
-              "Great": 279,
+              "Great": 1908,
               "Perfect": 0,
               "SmallTickMiss": 0,
               "SmallTickHit": 0,
               "LargeTickMiss": 0,
               "LargeTickHit": 0,
-              "SmallBonus": 11,
-              "LargeBonus": 2,
-              "IgnoreMiss": 7,
+              "SmallBonus": 156,
+              "LargeBonus": 18,
+              "IgnoreMiss": 121,
               "IgnoreHit": 0,
               "ComboBreak": 0,
               "SliderTailHit": 0
-            }
+            },
+            "CustomName": ""
           }
         ]
       },
@@ -381,53 +386,62 @@
         "BeatmapTitle": "Aoi Shiori",
         "BeatmapAuthor": "Galileo Galilei",
         "Scores": [
-            {
-                "BeatmapHash": "63daf4d00fbb75ecb43805eac4dc6b61",
-                "RulesetShortName": "mosu",
-                "BeatmapDifficultyName": "Hanabi",
-                "TotalScore": 106722,
-                "Accuracy": 0.9111050328227571,
-                "MaxCombo": 185,
-                "Rank": "A",
-                "Date": "2025-09-07T07:56:56.5698042+00:00",
-                "Mods": [
-                    {
-                        "acronym": "NF"
-                    },
-                    {
-                        "acronym": "HD"
-                    },
-                    {
-                        "acronym": "DA",
-                        "settings": {
-                            "approach_rate": 10.0,
-                            "overall_difficulty": 7.0
-                        }
-                    },
-                    {
-                        "acronym": "NL"
-                    }
-                ],
-                "Statistics": {
-                    "None": 0,
-                    "Miss": 46,
-                    "Meh": 27,
-                    "Ok": 141,
-                    "Good": 0,
-                    "Great": 1614,
-                    "Perfect": 0,
-                    "SmallTickMiss": 0,
-                    "SmallTickHit": 0,
-                    "LargeTickMiss": 0,
-                    "LargeTickHit": 0,
-                    "SmallBonus": 12,
-                    "LargeBonus": 3,
-                    "IgnoreMiss": 8,
-                    "IgnoreHit": 0,
-                    "ComboBreak": 0,
-                    "SliderTailHit": 0
+          {
+            "BeatmapHash": "63daf4d00fbb75ecb43805eac4dc6b61",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Hanabi",
+            "TotalScore": 212869,
+            "Accuracy": 0.9208394698085419,
+            "MaxCombo": 164,
+            "Rank": "A",
+            "Date": "2026-05-16T12:25:37.9386877+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
                 }
-            }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 640111709
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 92,
+              "Meh": 5,
+              "Ok": 17,
+              "Good": 0,
+              "Great": 1244,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 12,
+              "LargeBonus": 0,
+              "IgnoreMiss": 11,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
         ]
       },
       {
@@ -671,6 +685,237 @@
                     "SliderTailHit": 188
                 }
             }
+        ]
+      },
+      {
+        "BeatmapSetId": 1181400,
+        "BeatmapMD5Hash": "0e97d1ff79f06e33a3cff28bd9cefb46",
+        "BeatmapTitle": "Clavar La Espada",
+        "BeatmapAuthor": "Shiro Sagisu",
+        "Scores": [
+          {
+            "BeatmapHash": "0e97d1ff79f06e33a3cff28bd9cefb46",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Cero",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-26T13:05:46.9688863+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "power_jumps": true,
+                  "stream_distance_multiplier": 10.0,
+                  "power_streams": true,
+                  "seed": 803876450
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 5,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 2,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 6,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": "Insane"
+          },
+          {
+            "BeatmapHash": "0e97d1ff79f06e33a3cff28bd9cefb46",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Cero",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-28T10:06:58.8101567+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 15.45,
+                  "expo_jumps": true,
+                  "divisor": 4,
+                  "seed": 2074975088
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 5,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 2,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 6,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": "Hard"
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 1874648,
+        "BeatmapMD5Hash": "e2dd44e2bc4d1388fc3826dbb572ff92",
+        "BeatmapTitle": "Elden Ring",
+        "BeatmapAuthor": "Tsukasa Saitoh",
+        "Scores": [
+          {
+            "BeatmapHash": "e2dd44e2bc4d1388fc3826dbb572ff92",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Destruction",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-26T13:11:41.7001679+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "power_jumps": true,
+                  "stream_distance_multiplier": 30.0,
+                  "power_streams": true,
+                  "seed": 1961022586
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 2,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 8,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 2459945,
+        "BeatmapMD5Hash": "776eef9bbc89af9e18d9d75bf4949c34",
+        "BeatmapTitle": "Ava (Speed Up.)",
+        "BeatmapAuthor": "Famy",
+        "Scores": [
+          {
+            "BeatmapHash": "776eef9bbc89af9e18d9d75bf4949c34",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-06-26T14:22:26.2760622+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 5.96,
+                  "power_jumps": true,
+                  "divisor": 3,
+                  "seed": 1809738274
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 10,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
         ]
       },
       {
