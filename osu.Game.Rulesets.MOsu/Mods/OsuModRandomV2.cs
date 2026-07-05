@@ -71,9 +71,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public enum AngleEnum
         {
-            Ninety,
             Star,
-            FourtyFive
+            FourtyFive,
+            Ninety,
         }
 
         public float GetAngleValue()

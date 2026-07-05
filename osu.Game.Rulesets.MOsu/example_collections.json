@@ -703,7 +703,6 @@
                 "acronym": "RDV2",
                 "settings": {
                   "custom_angle": true,
-                  "angle": 1,
                   "power_jumps": true,
                   "stream_distance_multiplier": 9.0,
                   "power_streams": true,
@@ -872,7 +871,6 @@
                 "acronym": "RDV2",
                 "settings": {
                   "custom_angle": true,
-                  "angle": 1,
                   "power_jumps": true,
                   "stream_distance_multiplier": 9.0,
                   "power_streams": true,
@@ -981,7 +979,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "angle": 1,
+                  "custom_angle": true,
                   "power_jumps": true,
                   "stream_distance_multiplier": 9.0,
                   "power_streams": true,
