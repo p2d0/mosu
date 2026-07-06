@@ -156,7 +156,6 @@ global using OsuModWiggle = osu.Game.Rulesets.Osu.Mods.OsuModWiggle;
 global using OsuModFreezeFrame = osu.Game.Rulesets.Osu.Mods.OsuModFreezeFrame;
 global using OsuModHidden = osu.Game.Rulesets.Osu.Mods.OsuModHidden;
 global using OsuModClassic = osu.Game.Rulesets.Osu.Mods.OsuModClassic;
-global using OsuModRelax = osu.Game.Rulesets.Osu.Mods.OsuModRelax;
 global using OsuModStrictTracking = osu.Game.Rulesets.Osu.Mods.OsuModStrictTracking;
 global using OsuModTargetPractice = osu.Game.Rulesets.Osu.Mods.OsuModTargetPractice;
 global using OsuModTraceable = osu.Game.Rulesets.Osu.Mods.OsuModTraceable;
