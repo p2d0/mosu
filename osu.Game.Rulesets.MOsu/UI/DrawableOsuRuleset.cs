@@ -35,7 +35,6 @@ using System.Threading.Tasks;
 using osu.Game.Database;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Replays;
-using osu.Game.Rulesets.Osu.HUD;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -194,13 +193,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 };
             }
 
-            // Add star rating counter to HUD overlays
-            Overlays.Add(new ArgonStarRatingCounter
-            {
-                Anchor = Anchor.TopRight,
-                Origin = Anchor.TopRight,
-                Position = new Vector2(-80, 200),
-            });
+
 
             if (player != null && localUserManager != null){
                 player.OnShowingResults += async () => {
