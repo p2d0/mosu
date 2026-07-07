@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/a94b24b1-2ad0-4456-87fa-0d8f1d29181a
 - **Skip breaks** — button to skip break sections
 - **ModRandomV2** — randomizes hit object positions with configurable patterns
 - **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
+- **Live star rating** — HUD element showing cumulative star rating as you play, updating in real-time (like pp counter)
 - Mod preset import/export — share presets via JSON files
 - Collection import/export — back up and share beatmap collections
 - Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
