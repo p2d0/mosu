@@ -4,6 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Game.Database;
+using osu.Game.Screens;
+using osu.Game.Screens.Select;
+
 using osu.Framework.Bindables;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
@@ -23,7 +29,9 @@ using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Overlays.Settings;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Sprites;
@@ -47,6 +55,51 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public override LocalisableString Description => "It never gets boring!";
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(OsuModTargetPractice)).ToArray();
+
+
+
+        [SettingSource("Edit mod live in game", "", SettingControlType = typeof(PlayAutoplayButton))]
+        public Bindable<bool> PlayAutoplay { get; } = new BindableBool(false);
+
+        [SettingSource("Aim Distance Multiplier", "How much bigger the distance", SettingControlType = typeof(AimDistanceSetting))]
+        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
+        {
+            MinValue = 0.1f,
+            MaxValue = 10,
+            Precision = 0.01f
+        };
+
+        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance", SettingControlType = typeof(PowerJumpsCheckbox))]
+        public BindableBool PowerJumps { get; } = new BindableBool(false);
+
+        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsCheckbox))]
+        public BindableBool ExpoJumps { get; } = new BindableBool(false);
+
+        [SettingSource("Remove stacks", "Remove stacks")]
+        public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
+
+        [SettingSource("Stream Distance Multiplier", "How much bigger the distance", SettingControlType = typeof(StreamDistanceMultiplierSetting))]
+        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
+        {
+            MinValue = 0.1f,
+            MaxValue = 10,
+            Precision = 0.1f
+        };
+
+        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
+        public BindableBool PowerStreams { get; } = new BindableBool(false);
+
+        [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
+        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(true);
+
+        // 4. Divisor: Visible when DivideByDivisor is true
+        [SettingSource("Aim/Stream Divisor", "Divisor below which circles will be considered aim", SettingControlType = typeof(DivisorSetting))]
+        public BindableInt Divisor { get; } = new BindableInt(2)
+        {
+            MinValue = 1,
+            MaxValue = 16,
+            Default = 2,
+        };
 
         // 1. AngleSharpness: Hidden when CustomAngle is true
         [SettingSource("Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
@@ -93,47 +146,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
         {
             Default = AngleEnum.Star,
-        };
-
-
-        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.1f,
-            MaxValue = 30,
-            Precision = 0.01f
-        };
-
-        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance", SettingControlType = typeof(PowerJumpsCheckbox))]
-        public BindableBool PowerJumps { get; } = new BindableBool(false);
-
-        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsCheckbox))]
-        public BindableBool ExpoJumps { get; } = new BindableBool(false);
-
-        [SettingSource("Remove stacks", "Remove stacks")]
-        public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
-
-        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.1f,
-            MaxValue = 30,
-            Precision = 0.1f
-        };
-
-        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
-        public BindableBool PowerStreams { get; } = new BindableBool(false);
-
-        [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
-        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(true);
-
-        // 4. Divisor: Visible when DivideByDivisor is true
-        [SettingSource("Divisor", "Divisor selector", SettingControlType = typeof(DivisorSetting))]
-        public BindableInt Divisor { get; } = new BindableInt(2)
-        {
-            MinValue = 1,
-            MaxValue = 16,
-            Default = 2,
         };
 
         // 5. StreamDistance: Hidden when DivideByDivisor is true
@@ -225,6 +237,17 @@ namespace osu.Game.Rulesets.MOsu.Mods
         private static readonly float playfield_diagonal = OsuPlayfield.BASE_SIZE.LengthFast;
 
         private Random random = null!;
+        private Dictionary<IBeatmap, List<Vector2>> originalPositions = new Dictionary<IBeatmap, List<Vector2>>();
+
+        private List<Vector2> getOriginalPositions(IBeatmap beatmap)
+        {
+            if (!originalPositions.TryGetValue(beatmap, out var positions))
+            {
+                positions = beatmap.HitObjects.OfType<OsuHitObject>().Select(h => h.Position).ToList();
+                originalPositions[beatmap] = positions;
+            }
+            return positions;
+        }
 
         public void ApplyToBeatmap(IBeatmap beatmap)
         {
@@ -233,6 +256,12 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             if(SquareMod.Value)
                 makeMapSquare(beatmap);
+
+            // Restore original positions before reapplying
+            var origPositions = getOriginalPositions(beatmap);
+            var osuObjects = osuBeatmap.HitObjects.OfType<OsuHitObject>().ToList();
+            for (int i = 0; i < osuObjects.Count && i < origPositions.Count; i++)
+                osuObjects[i].Position = origPositions[i];
 
             Seed.Value ??= RNG.Next();
 
@@ -731,6 +760,38 @@ namespace osu.Game.Rulesets.MOsu.Mods
         }
 
         // Power jumps / Expo jumps: mutually exclusive
+        public partial class AimDistanceSetting : SettingsSlider<float>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    var updateMax = new Action(() =>
+                    {
+                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.ExpoJumps.Value ? 30f : 10f;
+                    });
+                    mod.ExpoJumps.BindValueChanged(_ => updateMax(), true);
+                }
+            }
+        }
+
+        public partial class StreamDistanceMultiplierSetting : SettingsSlider<float>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    var updateMax = new Action(() =>
+                    {
+                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.PowerStreams.Value ? 30f : 10f;
+                    });
+                    mod.PowerStreams.BindValueChanged(_ => updateMax(), true);
+                }
+            }
+        }
+
         public partial class PowerJumpsCheckbox : SettingsCheckbox
         {
             protected override void LoadComplete()
@@ -872,6 +933,102 @@ namespace osu.Game.Rulesets.MOsu.Mods
     public partial class SquareModObjectCountSliderBar : RoundedSliderBar<int>
     {
         public override LocalisableString TooltipText => Current.Value == 0 ? "No limit" : base.TooltipText;
+    }
+
+    public partial class PlayAutoplayButton : SettingsItem<bool>
+    {
+        private PlayButton playButton = null!;
+
+        protected override Drawable CreateControl() => playButton = new PlayButton
+        {
+            RelativeSizeAxes = Axes.X,
+        };
+
+        public override LocalisableString LabelText
+        {
+            get => playButton.Text;
+            set => playButton.Text = value;
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            playButton.SetMod(SettingSourceObject as OsuModRandomV2);
+        }
+
+        private partial class PlayButton : Container, IHasCurrentValue<bool>
+        {
+            private readonly Bindable<bool> current = new Bindable<bool>();
+            public Bindable<bool> Current
+            {
+                get => current;
+                set
+                {
+                    current.UnbindBindings();
+                    current.BindTo(value);
+                }
+            }
+
+            public LocalisableString Text
+            {
+                get => button.Text;
+                set => button.Text = value;
+            }
+
+            private RoundedButton button = null!;
+            private OsuModRandomV2? mod;
+
+            [Resolved]
+            private IPerformFromScreenRunner screenRunner { get; set; } = null!;
+
+            public PlayButton()
+            {
+                Height = 20;
+                Add(button = new RoundedButton
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Height = 20,
+                });
+            }
+
+            public void SetMod(OsuModRandomV2? mod)
+            {
+                this.mod = mod;
+            }
+
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                button.Action = () =>
+                {
+                    Current.Value = false;
+
+                    if (mod != null)
+                    {
+                        var autoplay = new OsuModAutoplay();
+                        screenRunner.PerformFromScreen(screen =>
+                        {
+                            var modsProp = screen.GetType().GetProperty("Mods");
+                            if (modsProp != null)
+                            {
+                                var modsList = modsProp.GetValue(screen);
+                                var valueProp = modsList?.GetType().GetProperty("Value");
+                                var currentMods = valueProp?.GetValue(modsList) as IReadOnlyList<Mod> ?? Array.Empty<Mod>();
+                                // Already has RandomV2 (it's the one showing settings), just add autoplay
+                                var newMods = currentMods.Concat(new Mod[] { autoplay }).ToList();
+                                // Remove existing autoplay if present
+                                newMods.RemoveAll(m => m is ModAutoplay);
+                                newMods.Add(autoplay);
+                                valueProp?.SetValue(modsList, newMods);
+                            }
+
+                            var onStart = screen.GetType().GetMethod("OnStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                            onStart?.Invoke(screen, null);
+                        }, new[] { typeof(SoloSongSelect) });
+                    }
+                };
+            }
+        }
     }
     }
 

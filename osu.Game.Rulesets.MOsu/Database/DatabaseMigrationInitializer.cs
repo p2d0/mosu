@@ -33,9 +33,8 @@ private const string NEW_SHORT_NAME = "mosu";
                     return;
                 }
 
-                migrateClientRealm(storagePath);
-
-                Logger.Log("[MOsu Migration] Migration finished.");
+                if (migrateClientRealm(storagePath))
+                    Logger.Log("[MOsu Migration] Migration finished, please restart the game for ruleset to load", level: LogLevel.Important);
             }
             catch (Exception ex)
             {
@@ -47,13 +46,13 @@ private const string NEW_SHORT_NAME = "mosu";
         thread.Start();
     }
 
-    private static void migrateClientRealm(string storagePath)
+    private static bool migrateClientRealm(string storagePath)
     {
         string? realmPath = findRealmFile(storagePath);
         if (realmPath == null)
         {
             Logger.Log("[MOsu Migration] client.realm not found.");
-            return;
+            return false;
         }
 
         Logger.Log($"[MOsu Migration] Using realm: {realmPath}");
@@ -77,7 +76,7 @@ private const string NEW_SHORT_NAME = "mosu";
         if (staleEntry == null && existingNewEntries.Count == 0)
         {
             Logger.Log("[MOsu Migration] Nothing to migrate.");
-            return;
+            return false;
         }
 
         realm.Write(() =>
@@ -162,6 +161,8 @@ private const string NEW_SHORT_NAME = "mosu";
                 realm.Remove(staleEntry);
             }
         });
+
+        return true;
     }
 
     private static string? findOsuStoragePath()

@@ -14,11 +14,15 @@ namespace osu.Game.Rulesets.MOsu.Tests
             Environment.SetEnvironmentVariable("OSU_DISABLE_ERROR_REPORTING", "1");
 
             bool auto = args.Contains("--auto");
+            string? filter = null;
+            int filterIndex = Array.IndexOf(args, "--filter");
+            if (filterIndex >= 0 && filterIndex + 1 < args.Length)
+                filter = args[filterIndex + 1];
 
             using (DesktopGameHost host = Host.GetSuitableDesktopHost(@"osu"))
             {
                 if (auto)
-                    host.Run(new AutomatedVisualTestGame());
+                    host.Run(new AutomatedVisualTestGame(filter));
                 else
                     host.Run(new OsuTestBrowser());
                 return 0;

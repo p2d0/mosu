@@ -7,7 +7,9 @@ using System.IO;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Logging;
 using osu.Framework.Graphics;
+using osu.Framework.Platform;
 using osu.Framework.Input;
 using osu.Game.Beatmaps;
 using osu.Game.Input.Handlers;
@@ -35,6 +37,7 @@ using System.Threading.Tasks;
 using osu.Game.Database;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Replays;
+using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -56,6 +59,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         [Resolved]
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+
         [Resolved]
         private GameplayClockContainer GameplayClockContainer { get; set; } = null!;
 
@@ -163,6 +167,12 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
             if (replayPlayer != null)
             {
+                replayPlayer.AddSettings(new SongProgressSettings());
+                // Add RandomV2 settings panel when the mod is active
+                if (Mods.OfType<OsuModRandomV2>().FirstOrDefault() is OsuModRandomV2 randomV2)
+                    replayPlayer.AddSettings(new RandomV2Settings(randomV2, Beatmap, Mods, () => ReplayScore?.Replay, replayPlayer.Mods));
+
+
                 ReplayAnalysisOverlay analysisOverlay;
                 PlayfieldAdjustmentContainer.Add(analysisOverlay = new ReplayAnalysisOverlay(replayPlayer.Score.Replay));
                 Overlays.Add(analysisOverlay.CreateProxy().With(p => p.Depth = float.NegativeInfinity));

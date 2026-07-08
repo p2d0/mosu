@@ -19,6 +19,7 @@ See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tre
    - No layout crashes or clipping
    - Compare against previous screenshots if refactoring UI
 4. Do not commit or finish until tests pass and screenshots are verified.
+5. You can add --filter "TestName" to only run one test
 
 ## Release Build
 
@@ -51,6 +52,7 @@ Each test scene file = one `[Test]` method = one screenshot. No multi-method tes
 - Expected content visible (usernames, scores, controls)
 - No layout crashes or clipping
 - Compare against previous screenshots if refactoring UI
+- If you're grepping the tests for errors `grep "\[error\]"`
 
 ## UI caveats
 

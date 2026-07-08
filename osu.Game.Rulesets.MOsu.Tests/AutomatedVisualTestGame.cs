@@ -24,7 +24,10 @@ namespace osu.Game.Rulesets.MOsu.Tests
 {
     public partial class AutomatedVisualTestGame : OsuGameBase
     {
+        private readonly string? testFilter;
         private DependencyContainer dependencies = null!;
+
+        public AutomatedVisualTestGame(string? filter = null) => testFilter = filter;
 
         protected override Storage CreateStorage(GameHost host, Storage defaultStorage)
             => new TemporaryNativeStorage($"visual-test-{Guid.NewGuid()}");
@@ -39,7 +42,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            Add(new ScreenshotTestRunner(new TestBrowser()));
+            Add(new ScreenshotTestRunner(new TestBrowser(), testFilter));
         }
     }
 
@@ -61,24 +64,30 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private int testIndex;
         private bool testTimedOut;
         private readonly List<Type> filteredTestTypes;
+        private readonly string? filter;
 
         private Type loadableTestType => testIndex >= 0 ? filteredTestTypes.ElementAtOrDefault(testIndex) : null;
 
         private static readonly string SCREENSHOT_DIR = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "screenshots"));
 
-        public ScreenshotTestRunner(TestBrowser browser)
+        public ScreenshotTestRunner(TestBrowser browser, string? filter = null)
         {
             this.browser = browser;
+            this.filter = filter;
             filteredTestTypes = browser.TestTypes
                 .Where(t => !typeof(PlayerTestScene).IsAssignableFrom(t)
                          && !typeof(Player).IsAssignableFrom(t)
                          && !typeof(ModTestScene).IsAssignableFrom(t))
                 .Where(t => t.Name != "TestSceneOsuGame")
+                .Where(t => filter == null || t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             int totalTests = filteredTestTypes.Sum(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Count(m => m.GetCustomAttribute<TestAttribute>() != null && m.Name != nameof(osu.Framework.Testing.TestScene.TestConstructor)));
-            Console.WriteLine($"[ScreenshotTestRunner] {filteredTestTypes.Count} test types, {totalTests} test methods");
+            if (filter != null)
+                Console.WriteLine($"[ScreenshotTestRunner] Filter: {filter} \u2192 {filteredTestTypes.Count} test types, {totalTests} test methods");
+            else
+                Console.WriteLine($"[ScreenshotTestRunner] {filteredTestTypes.Count} test types, {totalTests} test methods");
         }
 
         [Resolved]

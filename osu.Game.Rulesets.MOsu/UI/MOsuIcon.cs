@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Framework.Logging;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -15,9 +18,11 @@ using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Chat;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
+using osu.Game.Rulesets.Mods;
 using osuTK;
 using osuTK.Graphics;
 using System.Linq;
+using System.Reflection;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -143,6 +148,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                 game.Add(collectionImporter);
             }
 
+
+
             // --- 2. Setup Overlay ---
             // Check if it already exists in the container to prevent duplicates
             var existingOverlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
@@ -174,4 +181,5 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
         }
     }
+
 }
