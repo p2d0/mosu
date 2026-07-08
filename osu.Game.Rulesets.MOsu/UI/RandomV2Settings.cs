@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Linq.Expressions;
+using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Replays;
@@ -27,9 +27,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private readonly IReadOnlyList<Mod> mods;
         private readonly Func<Replay?> replayFunc;
         private readonly Bindable<IReadOnlyList<Mod>> songSelectMods;
-        private readonly List<Action> unsubscribers = new();
-        private bool reprocessPending;
-        private long lastReprocessTime;
+        private ScheduledDelegate? pendingReprocess;
 
         [Resolved]
         private GameHost host { get; set; } = null!;
@@ -51,52 +49,37 @@ namespace osu.Game.Rulesets.MOsu.UI
                 if (bindable == null)
                     continue;
 
-                var unsub = BindToReprocess(bindable);
-                if (unsub != null)
-                    unsubscribers.Add(unsub);
+                BindToReprocess(bindable);
             }
         }
 
-        private Action? BindToReprocess(object bindable)
+        private void BindToReprocess(object bindable)
         {
             var bindableType = bindable.GetType();
-
-            // Try non-generic BindValueChanged via reflection
             var bindMethod = bindableType.GetMethod("BindValueChanged");
             if (bindMethod == null)
-                return null;
+                return;
 
             var eventType = bindMethod.GetParameters()[0].ParameterType;
             var eventArgType = eventType.GetGenericArguments()[0];
 
-            var action = (Delegate)CreateHandler(eventType, eventArgType);
+            var action = CreateReprocessHandler(eventType, eventArgType);
             bindMethod.Invoke(bindable, new object[] { action, false });
-
-            // Build unsubscribe via reflection on UnbindValueChanged
-            var unbindMethod = bindableType.GetMethod("UnbindValueChanged", new[] { eventType });
-            if (unbindMethod == null)
-                return null;
-
-            return () => unbindMethod.Invoke(bindable, new object[] { action });
         }
 
-        private Delegate CreateHandler(Type actionType, Type eventType)
+        private Delegate CreateReprocessHandler(Type actionType, Type eventType)
         {
             var param = Expression.Parameter(eventType, "e");
             var reprocessCall = Expression.Call(
                 Expression.Constant(this),
                 typeof(RandomV2Settings).GetMethod(nameof(reprocess), BindingFlags.NonPublic | BindingFlags.Instance)!);
-            var lambda = Expression.Lambda(actionType, reprocessCall, param);
-            return lambda.Compile();
+            return Expression.Lambda(actionType, reprocessCall, param).Compile();
         }
 
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
             if (!isDisposing) return;
-
-            foreach (var unsub in unsubscribers)
-                unsub();
 
             GC.Collect();
 
@@ -106,49 +89,49 @@ namespace osu.Game.Rulesets.MOsu.UI
                 var targetMod = currentMods.OfType<OsuModRandomV2>().FirstOrDefault();
                 if (targetMod != null && targetMod != mod)
                 {
-                    targetMod.AimDistanceMultiplier.Value = mod.AimDistanceMultiplier.Value;
-                    targetMod.PowerJumps.Value = mod.PowerJumps.Value;
-                    targetMod.ExpoJumps.Value = mod.ExpoJumps.Value;
-                    targetMod.RemoveStacks.Value = mod.RemoveStacks.Value;
-                    targetMod.StreamDistanceMultiplier.Value = mod.StreamDistanceMultiplier.Value;
-                    targetMod.PowerStreams.Value = mod.PowerStreams.Value;
+                    foreach (var (_, prop) in mod.GetSettingsSourceProperties())
+                    {
+                        var sourceBindable = prop.GetValue(mod);
+                        var targetBindable = prop.GetValue(targetMod);
+                        if (sourceBindable == null || targetBindable == null)
+                            continue;
+
+                        var valueProp = sourceBindable.GetType().GetProperty("Value");
+                        if (valueProp == null)
+                            continue;
+
+                        var sourceValue = valueProp.GetValue(sourceBindable);
+                        valueProp.SetValue(targetBindable, sourceValue);
+                    }
                 }
             });
         }
 
         private void reprocess()
         {
-            if (reprocessPending)
-                return;
-
-            var now = Environment.TickCount64;
-            if (now - lastReprocessTime < 200)
-                return;
-            lastReprocessTime = now;
-
-            reprocessPending = true;
-
-            mod.ApplyToBeatmap(beatmap);
-
-            var replay = replayFunc();
-            if (replay == null)
+            if (pendingReprocess?.Completed != true)
             {
-                reprocessPending = false;
-                return;
+                pendingReprocess?.Cancel();
+                pendingReprocess = null;
             }
 
-            var autoplay = mods.OfType<ModAutoplay>().FirstOrDefault();
-            if (autoplay == null)
+            pendingReprocess = host.UpdateThread.Scheduler.AddDelayed(() =>
             {
-                reprocessPending = false;
-                return;
-            }
+                mod.ApplyToBeatmap(beatmap);
 
-            var newReplay = autoplay.CreateReplayData(beatmap, mods).Replay;
-            replay.Frames = newReplay.Frames;
+                var replay = replayFunc();
+                if (replay == null)
+                    return;
 
-            GC.Collect();
-            Schedule(() => reprocessPending = false);
+                var autoplay = mods.OfType<ModAutoplay>().FirstOrDefault();
+                if (autoplay == null)
+                    return;
+
+                var newReplay = autoplay.CreateReplayData(beatmap, mods).Replay;
+                replay.Frames = newReplay.Frames;
+
+                GC.Collect();
+            }, 100);
         }
     }
 }
