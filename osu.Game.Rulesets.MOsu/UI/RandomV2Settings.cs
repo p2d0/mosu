@@ -91,6 +91,9 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     foreach (var (_, prop) in mod.GetSettingsSourceProperties())
                     {
+                        if (prop.Name == nameof(ModRandom.Seed))
+                            continue;
+
                         var sourceBindable = prop.GetValue(mod);
                         var targetBindable = prop.GetValue(targetMod);
                         if (sourceBindable == null || targetBindable == null)
@@ -115,7 +118,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 pendingReprocess = null;
             }
 
-            pendingReprocess = host.UpdateThread.Scheduler.AddDelayed(() =>
+            pendingReprocess = Scheduler.AddDelayed(() =>
             {
                 mod.ApplyToBeatmap(beatmap);
 
@@ -131,7 +134,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 replay.Frames = newReplay.Frames;
 
                 GC.Collect();
-            }, 100);
+            }, 50);
         }
     }
 }
