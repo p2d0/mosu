@@ -79,6 +79,8 @@ private const string NEW_SHORT_NAME = "mosu";
             return false;
         }
 
+        bool migrated = false;
+
         realm.Write(() =>
         {
             // --- Deduplicate existing "mosu"
@@ -90,6 +92,7 @@ private const string NEW_SHORT_NAME = "mosu";
 
                 foreach (var dup in existingNewEntries.Skip(1))
                 {
+                    migrated = true;
                     Logger.Log("[MOsu Migration] Removing duplicate mosu entry.");
                     realm.Remove(dup);
                 }
@@ -97,6 +100,7 @@ private const string NEW_SHORT_NAME = "mosu";
 
             if (staleEntry != null)
             {
+                migrated = true;
                 Logger.Log("[MOsu Migration] Found stale entry, migrating...");
 
                 string instantiationInfo = staleEntry.InstantiationInfo;
@@ -161,6 +165,12 @@ private const string NEW_SHORT_NAME = "mosu";
                 realm.Remove(staleEntry);
             }
         });
+
+        if (!migrated)
+        {
+            Logger.Log("[MOsu Migration] Nothing to migrate.");
+            return false;
+        }
 
         return true;
     }

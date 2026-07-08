@@ -96,7 +96,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private void reprocess()
         {
             var now = Environment.TickCount64;
-            if (now - lastReprocessTime < 100)
+            if (now - lastReprocessTime < 150)
                 return;
             lastReprocessTime = now;
 
