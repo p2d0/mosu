@@ -27,7 +27,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         private readonly IReadOnlyList<Mod> mods;
         private readonly Func<Replay?> replayFunc;
         private readonly Bindable<IReadOnlyList<Mod>> songSelectMods;
-        private double lastReprocessTime;
+        private readonly List<Action> unsubscribers = new();
+        private bool reprocessPending;
+        private long lastReprocessTime;
 
         [Resolved]
         private GameHost host { get; set; } = null!;
@@ -49,17 +51,33 @@ namespace osu.Game.Rulesets.MOsu.UI
                 if (bindable == null)
                     continue;
 
-                var bindableType = bindable.GetType();
-                var bindMethod = bindableType.GetMethod("BindValueChanged");
-                if (bindMethod == null)
-                    continue;
-
-                var eventType = bindMethod.GetParameters()[0].ParameterType;
-                var eventArgType = eventType.GetGenericArguments()[0];
-
-                var action = (Delegate)CreateHandler(eventType, eventArgType);
-                bindMethod.Invoke(bindable, new object[] { action, false });
+                var unsub = BindToReprocess(bindable);
+                if (unsub != null)
+                    unsubscribers.Add(unsub);
             }
+        }
+
+        private Action? BindToReprocess(object bindable)
+        {
+            var bindableType = bindable.GetType();
+
+            // Try non-generic BindValueChanged via reflection
+            var bindMethod = bindableType.GetMethod("BindValueChanged");
+            if (bindMethod == null)
+                return null;
+
+            var eventType = bindMethod.GetParameters()[0].ParameterType;
+            var eventArgType = eventType.GetGenericArguments()[0];
+
+            var action = (Delegate)CreateHandler(eventType, eventArgType);
+            bindMethod.Invoke(bindable, new object[] { action, false });
+
+            // Build unsubscribe via reflection on UnbindValueChanged
+            var unbindMethod = bindableType.GetMethod("UnbindValueChanged", new[] { eventType });
+            if (unbindMethod == null)
+                return null;
+
+            return () => unbindMethod.Invoke(bindable, new object[] { action });
         }
 
         private Delegate CreateHandler(Type actionType, Type eventType)
@@ -76,6 +94,11 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             base.Dispose(isDisposing);
             if (!isDisposing) return;
+
+            foreach (var unsub in unsubscribers)
+                unsub();
+
+            GC.Collect();
 
             host.UpdateThread.Scheduler.Add(() =>
             {
@@ -95,21 +118,37 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void reprocess()
         {
+            if (reprocessPending)
+                return;
+
             var now = Environment.TickCount64;
-            if (now - lastReprocessTime < 150)
+            if (now - lastReprocessTime < 200)
                 return;
             lastReprocessTime = now;
+
+            reprocessPending = true;
 
             mod.ApplyToBeatmap(beatmap);
 
             var replay = replayFunc();
-            if (replay == null) return;
+            if (replay == null)
+            {
+                reprocessPending = false;
+                return;
+            }
 
             var autoplay = mods.OfType<ModAutoplay>().FirstOrDefault();
-            if (autoplay == null) return;
+            if (autoplay == null)
+            {
+                reprocessPending = false;
+                return;
+            }
 
             var newReplay = autoplay.CreateReplayData(beatmap, mods).Replay;
             replay.Frames = newReplay.Frames;
+
+            GC.Collect();
+            Schedule(() => reprocessPending = false);
         }
     }
 }
