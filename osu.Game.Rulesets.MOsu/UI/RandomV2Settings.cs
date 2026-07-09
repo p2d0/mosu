@@ -28,6 +28,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private readonly Func<Replay?> replayFunc;
         private readonly Bindable<IReadOnlyList<Mod>> songSelectMods;
         private ScheduledDelegate? pendingReprocess;
+        private readonly List<(object bindable, Delegate handler)> boundHandlers = new List<(object, Delegate)>();
 
         [Resolved]
         private GameHost host { get; set; } = null!;
@@ -65,6 +66,8 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             var action = CreateReprocessHandler(eventType, eventArgType);
             bindMethod.Invoke(bindable, new object[] { action, false });
+
+            boundHandlers.Add((bindable, action));
         }
 
         private Delegate CreateReprocessHandler(Type actionType, Type eventType)
@@ -80,6 +83,13 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             base.Dispose(isDisposing);
             if (!isDisposing) return;
+
+            foreach (var (bindable, handler) in boundHandlers)
+            {
+                var eventInfo = bindable.GetType().GetEvent("ValueChanged");
+                eventInfo?.RemoveEventHandler(bindable, handler);
+            }
+            boundHandlers.Clear();
 
             GC.Collect();
 

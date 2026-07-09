@@ -165,6 +165,12 @@ namespace osu.Game.Rulesets.MOsu.UI
             isPaused.BindTo(gameplayClock.IsPaused);
         }
 
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            isPaused.UnbindAll();
+        }
+
         protected override void Update()
         {
             base.Update();
