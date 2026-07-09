@@ -237,17 +237,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         private static readonly float playfield_diagonal = OsuPlayfield.BASE_SIZE.LengthFast;
 
         private Random random = null!;
-        private Dictionary<IBeatmap, List<Vector2>> originalPositions = new Dictionary<IBeatmap, List<Vector2>>();
-
-        private List<Vector2> getOriginalPositions(IBeatmap beatmap)
-        {
-            if (!originalPositions.TryGetValue(beatmap, out var positions))
-            {
-                positions = beatmap.HitObjects.OfType<OsuHitObject>().Select(h => h.Position).ToList();
-                originalPositions[beatmap] = positions;
-            }
-            return positions;
-        }
 
         public void ApplyToBeatmap(IBeatmap beatmap)
         {
@@ -256,12 +245,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             if(SquareMod.Value)
                 makeMapSquare(beatmap);
-
-            // Restore original positions before reapplying
-            var origPositions = getOriginalPositions(beatmap);
-            var osuObjects = osuBeatmap.HitObjects.OfType<OsuHitObject>().ToList();
-            for (int i = 0; i < osuObjects.Count && i < origPositions.Count; i++)
-                osuObjects[i].Position = origPositions[i];
 
             Seed.Value ??= RNG.Next();
 
@@ -351,7 +334,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // Logger.Log($"Distance from previous i={i} {positionInfos[i].DistanceFromPrevious}");
                     // Logger.Log($"RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
                 }
-            }
+            }
 
             osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,true,ExtendPlayArea.Value,InfinitePlayArea.Value);
             // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
