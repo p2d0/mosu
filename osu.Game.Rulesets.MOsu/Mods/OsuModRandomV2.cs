@@ -413,7 +413,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 // Logger.Log($"Divisor {osuBeatmap.ControlPointInfo.GetClosestBeatDivisor(positionInfos.HitObject.StartTime)}");
                 var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
                 if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
-                    Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
+                    // Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
                     // NOTE: The +1 feels hacky
                     var isStream = nextCircle.StartTime - circle.StartTime + 1 < beatLength / Divisor.Value;
                     if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
@@ -603,8 +603,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             if (!SquareModFullMap.Value)
                 firstTime += SquareModeOffset.Value * (osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / SquareModDivisor.Value);
-            else
-                Logger.Log("Making full map");
+            // else
+            //     Logger.Log("Making full map");
 
             var hitObjects = new List<OsuHitObject>();
             var spacing = SquareModDistance.Value; // The side length of the square
@@ -708,8 +708,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
             osuBeatmap.HitObjects = hitObjects;
 
             beatmap.Breaks.Clear();
-            Logger.Log($"Breaks: {beatmap.Breaks.Count}");
-            Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms");
+            // Logger.Log($"Breaks: {beatmap.Breaks.Count}");
+            // Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms");
         }
 
         public partial class AngleSharpnessSetting : SettingsSlider<float>

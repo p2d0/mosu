@@ -144,7 +144,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 replay.Frames = newReplay.Frames;
 
                 GC.Collect();
-            }, 50);
+            }, 10);
         }
     }
 }

@@ -169,8 +169,12 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 replayPlayer.AddSettings(new SongProgressSettings());
                 // Add RandomV2 settings panel when the mod is active
-                if (Mods.OfType<OsuModRandomV2>().FirstOrDefault() is OsuModRandomV2 randomV2)
+                if (Mods.OfType<OsuModRandomV2>().FirstOrDefault() is OsuModRandomV2 randomV2){
                     replayPlayer.AddSettings(new RandomV2Settings(randomV2, Beatmap, Mods, () => ReplayScore?.Replay, replayPlayer.Mods));
+                    // followpoints memory leak when changing settings during the game
+                    Playfield.FollowPoints.Clear();
+                    Playfield.FollowPoints.Alpha = 0;
+                }
 
 
                 ReplayAnalysisOverlay analysisOverlay;
