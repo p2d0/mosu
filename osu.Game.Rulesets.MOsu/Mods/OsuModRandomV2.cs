@@ -752,7 +752,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 {
                     var updateMax = new Action(() =>
                     {
-                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.ExpoJumps.Value ? 30f : 10f;
+                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.ExpoJumps.Value ? 50f : 10f;
                     });
                     mod.ExpoJumps.BindValueChanged(_ => updateMax(), true);
                 }
@@ -768,7 +768,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 {
                     var updateMax = new Action(() =>
                     {
-                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.PowerStreams.Value ? 30f : 10f;
+                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.PowerStreams.Value ? 50f : 10f;
                     });
                     mod.PowerStreams.BindValueChanged(_ => updateMax(), true);
                 }
