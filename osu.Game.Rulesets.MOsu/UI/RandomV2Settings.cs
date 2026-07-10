@@ -91,8 +91,6 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
             boundHandlers.Clear();
 
-            GC.Collect();
-
             host.UpdateThread.Scheduler.Add(() =>
             {
                 var currentMods = songSelectMods.Value;
@@ -143,7 +141,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 var newReplay = autoplay.CreateReplayData(beatmap, mods).Replay;
                 replay.Frames = newReplay.Frames;
 
-                GC.Collect();
             }, 10);
         }
     }

@@ -37,6 +37,7 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
         public void AddFollowPoints(OsuHitObject hitObject)
         {
             addEntry(hitObject);
+
             var startTimeBindable = hitObject.StartTimeBindable.GetBoundCopy();
             startTimeBindable.ValueChanged += _ => onStartTimeChanged(hitObject);
             startTimeMap[hitObject] = startTimeBindable;
@@ -45,6 +46,7 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
         public void RemoveFollowPoints(OsuHitObject hitObject)
         {
             removeEntry(hitObject);
+
             startTimeMap[hitObject].UnbindAll();
             startTimeMap.Remove(hitObject);
         }
@@ -56,7 +58,8 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
             int index = lifetimeEntries.AddInPlace(newEntry, Comparer<MOsuFollowPointLifetimeEntry>.Create((e1, e2) =>
             {
                 int comp = e1.Start.StartTime.CompareTo(e2.Start.StartTime);
-                if (comp != 0) return comp;
+                if (comp != 0)
+                    return comp;
                 return -1;
             }));
 
@@ -74,8 +77,10 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
         private void removeEntry(OsuHitObject hitObject)
         {
             int index = lifetimeEntries.FindIndex(e => e.Start == hitObject);
+
             var entry = lifetimeEntries[index];
             entry.UnbindEvents();
+
             lifetimeEntries.RemoveAt(index);
             Remove(entry);
 
@@ -100,11 +105,10 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
             foreach (var entry in lifetimeEntries)
                 entry.UnbindEvents();
             lifetimeEntries.Clear();
         }
-
-
     }
 }

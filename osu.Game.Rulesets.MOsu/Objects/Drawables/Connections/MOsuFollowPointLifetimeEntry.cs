@@ -96,7 +96,7 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
 
             // Don't reset LifetimeEnd to double.MaxValue if it's already finite.
             // The connection sets a proper LifetimeEnd once follow points are spawned.
-            // Resetting it on every position change (e.g. RandomV2 reprocess) resurrects
+            // Resetting it on every position change (e.g. RandomV2Settings reprocess) resurrects
             // past entries in the LifetimeEntryManager, causing overspawning.
             if (LifetimeEnd == double.MaxValue)
                 LifetimeEnd = End.StartTime + End.TimeFadeIn;
