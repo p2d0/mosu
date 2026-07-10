@@ -391,35 +391,58 @@ namespace osu.Game.Rulesets.MOsu.Mods
         private float getExpoJumpsDistance(float distance, float multiplier) {
             float M = multiplier;
 
-            // --- TUNABLE PARAMETERS ---
+            if (distance <= 0f) return 0f;
+            if (M <= 1.0f) return distance;
 
-            // 1. How much to amplify the base multiplier at zero distance.
-            // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
-            // Based on your example, 2.65 is a great starting point.
+            float baseRapidGrowthCap = 800f;
+            float baseSlowHeadroomCap = 100f;
+            float slowDecayRate = 0.0005f;
+            float tuningFactor = 5.3f;
             float bonusAmplifier = 4f;
+            float transitionThresholdM = 10f;
 
-            // 2. How quickly the bonus effect decays with distance.
-            // A larger value means a faster drop-off.
-            // Based on your example, 0.023 is a great starting point.
-            float decayRate = 0.013f;
+            // Calculate the cap scaling factor so that at M = 10, the total cap scales by 1.2x (yielding 600).
+            // baseline M = 4 has scale 1.0.
+            float capScale = 1f + (M - 4f) * 0.03333f;
+        
+            // Apply the dynamic scale to both plateau caps
+            float rapidGrowthCap = baseRapidGrowthCap * capScale;
+            float slowHeadroomCap = baseSlowHeadroomCap * capScale;
 
-            // --------------------------
+            // Calculate what the Expo Jumps initial slope would be at M = 10.
+            float expoSlopeAtTen = 1f + 9f * bonusAmplifier;
 
+            // Scale target steepness proportionally based on current multiplier M.
+            float targetInitialSlope = tuningFactor * M * (expoSlopeAtTen / 10f);
 
-            // Step 1: Calculate the maximum possible bonus (at distance = 0)
-            // We use (M - 1) because a multiplier of M=10 is a "bonus" of 9.
-            float maxBonus = (M - 1f) * bonusAmplifier;
+            // Solve for the rapid decay rate (k1) to guarantee the takeoff steepness matches:
+            // Slope = (H1 * k1) + (H2 * k2)  =>  k1 = (targetInitialSlope - (H2 * k2)) / H1
+            float targetRapidSlope = targetInitialSlope - (slowHeadroomCap * slowDecayRate);
+        
+            // Ensure k1 stays positive and stable
+            float k1 = MathF.Max(0.0001f, targetRapidSlope / rapidGrowthCap);
+            float k2 = slowDecayRate;
 
-            // Step 2: Calculate the decay factor based on distance
-            // MathF.Exp() is the e^x function. The negative sign makes it decay.
-            float decayFactor = MathF.Exp(-decayRate * distance);
+            // Phase 1: Rapidly climb towards the first plateau (H1). 
+            // Highly active at d = 50, but completely saturated/dead at d = 450.
+            float rapidPart = rapidGrowthCap * (1f - MathF.Exp(-k1 * distance));
 
-            // Step 3: Calculate the actual bonus for this distance
-            float currentBonus = maxBonus * decayFactor;
+            // Phase 2: Slowly crawl up the rest of the way towards the second plateau (H2).
+            // Operates as a super tiny, steady drift at d = 450.
+            float slowPart = slowHeadroomCap * (1f - MathF.Exp(-k2 * distance));
 
-            // Step 4: Apply the final multiplier
-            // The final multiplier is 1.0 (no change) plus the current bonus.
-            return distance * (1f + currentBonus);
+            float rawSaturatedDistance = rapidPart + slowPart;
+
+            // Smoothly blend from the raw linear distance (y = d) to the saturated distance (y = rawSaturatedDistance)
+            // as M goes from 1.0 to the transitionThresholdM (2.0) to avoid sharp steps in sensitivity.
+            if (M < transitionThresholdM) {
+                float t = (M - 1.0f) / (transitionThresholdM - 1.0f);
+                float blendFactor = t * t * (3.0f - 2.0f * t); // Smoothstep interpolation
+                return (1.0f - blendFactor) * distance + blendFactor * rawSaturatedDistance;
+            }
+
+            // Return the fully saturated curve value for multipliers >= transitionThresholdM (2.0)
+            return rawSaturatedDistance;
         }
 
         private bool isStream(OsuBeatmap osuBeatmap, List<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)

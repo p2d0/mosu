@@ -716,9 +716,8 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 10.0,
-                  "power_streams": true,
-                  "seed": 803876450
+                  "stream_distance_multiplier": 6.3,
+                  "power_streams": true
                 }
               }
             ],
@@ -759,17 +758,16 @@
               {
                 "acronym": "DA",
                 "settings": {
-                  "approach_rate": 10.3,
+                  "approach_rate": 10.0,
                   "extended_limits": true
                 }
               },
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 15.45,
+                  "aim_distance_multiplier": 8.00,
                   "expo_jumps": true,
-                  "divisor": 4,
-                  "seed": 2074975088
+                  "divisor": 4
                 }
               }
             ],
@@ -825,9 +823,8 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 30.0,
-                  "power_streams": true,
-                  "seed": 1961022586
+                  "stream_distance_multiplier": 6.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -949,9 +946,8 @@
                 "settings": {
                   "custom_angle": true,
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1005,7 +1001,7 @@
                             {
                                 "acronym": "RDV2",
                                 "settings": {
-                                    "stream_distance_multiplier": 8.6,
+                                    "stream_distance_multiplier": 4.4,
                                     "power_streams": true,
                                     "divisor": 3,
                                     "seed": 330951216
@@ -1058,9 +1054,8 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1117,9 +1112,8 @@
                 "settings": {
                   "custom_angle": true,
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1167,9 +1161,8 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1226,9 +1219,8 @@
                 "settings": {
                   "custom_angle": true,
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1276,9 +1268,8 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 9.0,
-                  "power_streams": true,
-                  "seed": 2036645692
+                  "stream_distance_multiplier": 5.0,
+                  "power_streams": true
                 }
               }
             ],
@@ -1332,7 +1323,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "stream_distance_multiplier": 11.0,
+                  "stream_distance_multiplier": 5.0,
                   "power_streams": true
                 }
               }
@@ -1619,8 +1610,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "aim_distance_multiplier": 7.0,
-                  "power_jumps": true,
-                  "seed": 1727151129
+                  "power_jumps": true
                 }
               },
               {
@@ -1964,11 +1954,11 @@
             "BeatmapHash": "222c2cd915e7738aefae34566d67ff5e",
             "RulesetShortName": "mosu",
             "BeatmapDifficultyName": "Cookiezi's Insane",
-            "TotalScore": 183219,
-            "Accuracy": 0.8754850088183421,
-            "MaxCombo": 58,
-            "Rank": "B",
-            "Date": "2026-05-30T15:09:16.0750032+00:00",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-07-10T09:22:00.6855824+00:00",
             "Mods": [
               {
                 "acronym": "HD"
@@ -1976,41 +1966,39 @@
               {
                 "acronym": "DA",
                 "settings": {
-                  "approach_rate": 10.0,
-                  "drain_rate": 1.9,
-                  "extended_limits": true
+                  "approach_rate": 10.0
                 }
               },
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 3.07,
-                  "stream_distance_multiplier": 8.1,
+                  "aim_distance_multiplier": 2.96,
+                  "stream_distance_multiplier": 4.1,
                   "power_streams": true,
-                  "stream_distance": 60,
-                  "seed": 1676184565
+                  "seed": 727272727
                 }
               }
             ],
             "Statistics": {
               "None": 0,
-              "Miss": 40,
-              "Meh": 3,
-              "Ok": 23,
+              "Miss": 12,
+              "Meh": 0,
+              "Ok": 0,
               "Good": 0,
-              "Great": 365,
+              "Great": 0,
               "Perfect": 0,
               "SmallTickMiss": 0,
               "SmallTickHit": 0,
-              "LargeTickMiss": 0,
-              "LargeTickHit": 35,
+              "LargeTickMiss": 1,
+              "LargeTickHit": 0,
               "SmallBonus": 0,
               "LargeBonus": 0,
-              "IgnoreMiss": 3,
-              "IgnoreHit": 75,
+              "IgnoreMiss": 6,
+              "IgnoreHit": 0,
               "ComboBreak": 0,
-              "SliderTailHit": 74
-            }
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
           }
         ]
       },
