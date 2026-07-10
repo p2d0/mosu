@@ -994,21 +994,28 @@ namespace osu.Game.Rulesets.MOsu.Mods
                         screenRunner.PerformFromScreen(screen =>
                         {
                             var modsProp = screen.GetType().GetProperty("Mods");
-                            if (modsProp != null)
-                            {
-                                var modsList = modsProp.GetValue(screen);
-                                var valueProp = modsList?.GetType().GetProperty("Value");
-                                var currentMods = valueProp?.GetValue(modsList) as IReadOnlyList<Mod> ?? Array.Empty<Mod>();
-                                // Already has RandomV2 (it's the one showing settings), just add autoplay
-                                var newMods = currentMods.Concat(new Mod[] { autoplay }).ToList();
-                                // Remove existing autoplay if present
-                                newMods.RemoveAll(m => m is ModAutoplay);
-                                newMods.Add(autoplay);
-                                valueProp?.SetValue(modsList, newMods);
-                            }
+                            if (modsProp == null) return;
 
+                            var modsList = modsProp.GetValue(screen);
+                            var valueProp = modsList?.GetType().GetProperty("Value");
+                            var currentMods = valueProp?.GetValue(modsList) as IReadOnlyList<Mod> ?? Array.Empty<Mod>();
+
+                            // Save original mods (without autoplay), matching SoloSongSelect.OnStart behaviour
+                            var savedMods = currentMods.Select(m => m.DeepClone()).ToArray();
+
+                            // Add autoplay mod (remove existing autoplay first)
+                            var newMods = currentMods.Where(m => !(m is ModAutoplay)).Concat(new[] { autoplay }).ToArray();
+                            valueProp?.SetValue(modsList, newMods);
+
+                            // Start the game via OnStart — this will save modsAtGameplayStart
+                            // (which now includes autoplay). We fix this by restoring savedMods
+                            // after OnStart runs, so revertMods will restore the correct mods.
                             var onStart = screen.GetType().GetMethod("OnStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                             onStart?.Invoke(screen, null);
+
+                            // Overwrite modsAtGameplayStart so revertMods restores original mods (without autoplay)
+                            var modsAtStartProp = screen.GetType().GetField("modsAtGameplayStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                            modsAtStartProp?.SetValue(screen, savedMods);
                         }, new[] { typeof(SoloSongSelect) });
                     }
                 };
