@@ -61,7 +61,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Edit mod live in game", "", SettingControlType = typeof(PlayAutoplayButton))]
         public Bindable<bool> PlayAutoplay { get; } = new BindableBool(false);
 
-        [SettingSource("Aim Distance Multiplier", "How much bigger the distance", SettingControlType = typeof(AimDistanceSetting))]
+        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
         public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
         {
             MinValue = 0.1f,
@@ -78,7 +78,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Remove stacks", "Remove stacks")]
         public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
 
-        [SettingSource("Stream Distance Multiplier", "How much bigger the distance", SettingControlType = typeof(StreamDistanceMultiplierSetting))]
+        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
         {
             MinValue = 0.1f,
@@ -371,12 +371,12 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // 1. How much to amplify the base multiplier at zero distance.
             // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
             // Based on your example, 2.65 is a great starting point.
-            float bonusAmplifier = 2.65f;
+            float bonusAmplifier = 4f;
 
             // 2. How quickly the bonus effect decays with distance.
             // A larger value means a faster drop-off.
             // Based on your example, 0.023 is a great starting point.
-            float decayRate = 0.023f;
+            float decayRate = 0.013f;
 
             // --------------------------
 
@@ -745,39 +745,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     {
                         if (val.NewValue) Show(); else Hide();
                     }, true);
-                }
-            }
-        }
-
-        // Power jumps / Expo jumps: mutually exclusive
-        public partial class AimDistanceSetting : SettingsSlider<float>
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    var updateMax = new Action(() =>
-                    {
-                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.ExpoJumps.Value ? 50f : 10f;
-                    });
-                    mod.ExpoJumps.BindValueChanged(_ => updateMax(), true);
-                }
-            }
-        }
-
-        public partial class StreamDistanceMultiplierSetting : SettingsSlider<float>
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    var updateMax = new Action(() =>
-                    {
-                        ((osu.Framework.Bindables.BindableNumber<float>)Current).MaxValue = mod.PowerStreams.Value ? 50f : 10f;
-                    });
-                    mod.PowerStreams.BindValueChanged(_ => updateMax(), true);
                 }
             }
         }
