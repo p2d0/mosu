@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,28 +12,29 @@ using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
-using osu.Framework.Localisation;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
-using osu.Game.Screens.Play;
-using osu.Game.Skinning;
 
-namespace osu.Game.Rulesets.Osu.HUD
+namespace osu.Game.Screens.Play.HUD
 {
-    public abstract partial class StarRatingCounter : RollingCounter<double>, ISerialisableDrawable
+    public abstract partial class PerformancePointsCounter : RollingCounter<int>
     {
         public bool UsesFixedAnchor { get; set; }
 
         [Resolved]
-        private GameplayState gameplayState { get; set; } = null!;
+        private ScoreProcessor scoreProcessor { get; set; }
+
+        [Resolved]
+        private GameplayState gameplayState { get; set; }
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -47,12 +50,21 @@ namespace osu.Game.Rulesets.Osu.HUD
         private ScheduledDelegate? debouncedRefresh;
 
         private JudgementResult lastJudgement;
+        private PerformanceCalculator performanceCalculator;
+        private ScoreInfo scoreInfo;
+
+        private Mod[] clonedMods;
 
         [BackgroundDependencyLoader]
         private void load()
         {
             if (gameplayState != null)
             {
+                performanceCalculator = gameplayState.Ruleset.CreatePerformanceCalculator();
+                clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
+
+                scoreInfo = new ScoreInfo(gameplayState.Score.ScoreInfo.BeatmapInfo, gameplayState.Score.ScoreInfo.Ruleset) { Mods = clonedMods };
+
                 modSettingChangeTracker = new ModSettingChangeTracker(gameplayState.Mods);
                 modSettingChangeTracker.SettingChanged += _ => refreshTimedAttributes();
 
@@ -70,16 +82,16 @@ namespace osu.Game.Rulesets.Osu.HUD
             debouncedRefresh = Scheduler.AddDelayed(() =>
             {
                 int generation = ++refreshGeneration;
-                var clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
+                clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
 
                 difficultyCache.GetTimedDifficultyAttributesAsync(beatmap.Value, gameplayState.Ruleset, clonedMods, loadCancellationSource.Token)
                                .ContinueWith(task => Schedule(() =>
                                {
-                                   // Skip stale results if a newer refresh is already in progress.
                                    if (generation != refreshGeneration)
                                        return;
 
                                    timedAttributes = task.GetResultSafely();
+
                                    IsValid = true;
 
                                    if (lastJudgement != null)
@@ -87,9 +99,6 @@ namespace osu.Game.Rulesets.Osu.HUD
                                }), TaskContinuationOptions.OnlyOnRanToCompletion);
             }, 100);
         }
-
-        [Resolved]
-        private ScoreProcessor scoreProcessor { get; set; }
 
         protected override void LoadComplete()
         {
@@ -111,20 +120,22 @@ namespace osu.Game.Rulesets.Osu.HUD
         {
             lastJudgement = judgement;
 
-            var starRating = getStarRatingAtTime(judgement);
+            var attrib = getAttributeAtTime(judgement);
 
-            if (starRating == null)
+            if (gameplayState == null || attrib == null || scoreProcessor == null)
             {
                 IsValid = false;
                 return;
             }
 
-            Current.Value = starRating.Value;
+            scoreInfo.Mods = clonedMods;
+            scoreProcessor.PopulateScore(scoreInfo);
+            Current.Value = (int)Math.Round(performanceCalculator?.Calculate(scoreInfo, attrib).Total ?? 0, MidpointRounding.AwayFromZero);
             IsValid = true;
         }
 
         [CanBeNull]
-        private double? getStarRatingAtTime(JudgementResult judgement)
+        private DifficultyAttributes getAttributeAtTime(JudgementResult judgement)
         {
             if (timedAttributes == null || timedAttributes.Count == 0)
                 return null;
@@ -133,7 +144,7 @@ namespace osu.Game.Rulesets.Osu.HUD
             if (attribIndex < 0)
                 attribIndex = ~attribIndex - 1;
 
-            return timedAttributes[Math.Clamp(attribIndex, 0, timedAttributes.Count - 1)].Attributes.StarRating;
+            return timedAttributes[Math.Clamp(attribIndex, 0, timedAttributes.Count - 1)].Attributes;
         }
 
         protected override void Dispose(bool isDisposing)
@@ -150,7 +161,5 @@ namespace osu.Game.Rulesets.Osu.HUD
             debouncedRefresh?.Cancel();
             loadCancellationSource?.Cancel();
         }
-
-        protected override LocalisableString FormatCount(double count) => count.ToString("0.00") + "*";
     }
 }

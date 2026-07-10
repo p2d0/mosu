@@ -92,6 +92,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                 eventInfo?.RemoveEventHandler(bindable, handler);
             }
             boundHandlers.Clear();
+
+            host.UpdateThread.Scheduler.Add(copySettingsToSongSelectMods);
         }
 
         private void reprocess()
