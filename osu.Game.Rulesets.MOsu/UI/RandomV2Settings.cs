@@ -8,11 +8,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Replays;
+using osu.Game.Screens.Play;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Mods;
@@ -90,32 +92,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 eventInfo?.RemoveEventHandler(bindable, handler);
             }
             boundHandlers.Clear();
-
-            host.UpdateThread.Scheduler.Add(() =>
-            {
-                var currentMods = songSelectMods.Value;
-                var targetMod = currentMods.OfType<OsuModRandomV2>().FirstOrDefault();
-                if (targetMod != null && targetMod != mod)
-                {
-                    foreach (var (_, prop) in mod.GetSettingsSourceProperties())
-                    {
-                        if (prop.Name == nameof(ModRandom.Seed))
-                            continue;
-
-                        var sourceBindable = prop.GetValue(mod);
-                        var targetBindable = prop.GetValue(targetMod);
-                        if (sourceBindable == null || targetBindable == null)
-                            continue;
-
-                        var valueProp = sourceBindable.GetType().GetProperty("Value");
-                        if (valueProp == null)
-                            continue;
-
-                        var sourceValue = valueProp.GetValue(sourceBindable);
-                        valueProp.SetValue(targetBindable, sourceValue);
-                    }
-                }
-            });
         }
 
         private void reprocess()
@@ -130,6 +106,10 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 mod.ApplyToBeatmap(beatmap);
 
+                // Copy settings back to song-select mods so BeatmapDifficultyCache's ModSettingChangeTracker picks up the change
+                // and recalculates difficulty (same mechanism as the mod customization panel).
+                copySettingsToSongSelectMods();
+
                 var replay = replayFunc();
                 if (replay == null)
                     return;
@@ -142,6 +122,32 @@ namespace osu.Game.Rulesets.MOsu.UI
                 replay.Frames = newReplay.Frames;
 
             }, 10);
+        }
+
+        private void copySettingsToSongSelectMods()
+        {
+            var currentMods = songSelectMods.Value;
+            var targetMod = currentMods.OfType<OsuModRandomV2>().FirstOrDefault();
+            if (targetMod == null || targetMod == mod)
+                return;
+
+            foreach (var (_, prop) in mod.GetSettingsSourceProperties())
+            {
+                if (prop.Name == nameof(ModRandom.Seed))
+                    continue;
+
+                var sourceBindable = prop.GetValue(mod);
+                var targetBindable = prop.GetValue(targetMod);
+                if (sourceBindable == null || targetBindable == null)
+                    continue;
+
+                var valueProp = sourceBindable.GetType().GetProperty("Value");
+                if (valueProp == null)
+                    continue;
+
+                var sourceValue = valueProp.GetValue(sourceBindable);
+                valueProp.SetValue(targetBindable, sourceValue);
+            }
         }
     }
 }
