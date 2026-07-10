@@ -246,6 +246,12 @@ namespace osu.Game.Rulesets.MOsu.Mods
             if(SquareMod.Value)
                 makeMapSquare(beatmap);
 
+            // Restore original positions before reapplying
+            var origPositions = beatmap.HitObjects.OfType<OsuHitObject>().Select(h => h.Position).ToList();
+            var osuObjects = osuBeatmap.HitObjects.OfType<OsuHitObject>().ToList();
+            for (int i = 0; i < osuObjects.Count && i < origPositions.Count; i++)
+                osuObjects[i].Position = origPositions[i];
+
             Seed.Value ??= RNG.Next();
 
             random = new Random((int)Seed.Value);
@@ -335,7 +341,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // Logger.Log($"RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
                 }
             }
-
 
             osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,true,ExtendPlayArea.Value,InfinitePlayArea.Value);
             // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
