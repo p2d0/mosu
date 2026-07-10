@@ -1005,20 +1005,34 @@ namespace osu.Game.Rulesets.MOsu.Mods
                             var valueProp = modsList?.GetType().GetProperty("Value");
                             var currentMods = valueProp?.GetValue(modsList) as IReadOnlyList<Mod> ?? Array.Empty<Mod>();
 
-                            // Save original mods (without autoplay), matching SoloSongSelect.OnStart behaviour
+                            // Save original mods, matching SoloSongSelect.OnStart behaviour
                             var savedMods = currentMods.Select(m => m.DeepClone()).ToArray();
 
-                            // Add autoplay mod (remove existing autoplay first)
-                            var newMods = currentMods.Where(m => !(m is ModAutoplay)).Concat(new[] { autoplay }).ToArray();
-                            valueProp?.SetValue(modsList, newMods);
+                            // Remove hidden (incompatible with autoplay preview)
+                            var newMods = currentMods.Where(m => !(m is ModHidden)).ToList();
 
-                            // Start the game via OnStart — this will save modsAtGameplayStart
-                            // (which now includes autoplay). We fix this by restoring savedMods
-                            // after OnStart runs, so revertMods will restore the correct mods.
+                            // Set AR to 5 via DifficultyAdjust
+                            var existingDA = newMods.OfType<OsuModDifficultyAdjust>().FirstOrDefault();
+                            OsuModDifficultyAdjust? daToUse = existingDA;
+                            if (existingDA != null)
+                            {
+                                existingDA.ApproachRate.Value = 4f;
+                            }
+                            else
+                            {
+                                daToUse = new OsuModDifficultyAdjust { ApproachRate = { Value = 4f } };
+                                newMods.Add(daToUse);
+                            }
+
+                            // Add autoplay
+                            newMods.Add(autoplay);
+                            valueProp?.SetValue(modsList, newMods.ToArray());
+
+                            // Start the game via OnStart
                             var onStart = screen.GetType().GetMethod("OnStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                             onStart?.Invoke(screen, null);
 
-                            // Overwrite modsAtGameplayStart so revertMods restores original mods (without autoplay)
+                            // Overwrite modsAtGameplayStart so revertMods restores original mods (without autoplay/AR change/HD removal)
                             var modsAtStartProp = screen.GetType().GetField("modsAtGameplayStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                             modsAtStartProp?.SetValue(screen, savedMods);
                         }, new[] { typeof(SoloSongSelect) });
