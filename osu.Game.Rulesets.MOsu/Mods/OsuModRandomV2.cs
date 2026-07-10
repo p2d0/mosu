@@ -234,7 +234,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         //     MaxValue = 1000,
         // };
 
-        private static readonly float playfield_diagonal = OsuPlayfield.BASE_SIZE.LengthFast;
+        private static readonly float playfield_diagonal = MOsuPlayfield.BASE_SIZE.LengthFast;
 
         private Random random = null!;
 
@@ -303,7 +303,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
                 if (i == 0)
                 {
-                    positionInfos[i].DistanceFromPrevious = (float)(random.NextDouble() * OsuPlayfield.BASE_SIZE.Y / 2);
+                    positionInfos[i].DistanceFromPrevious = (float)(random.NextDouble() * MOsuPlayfield.BASE_SIZE.Y / 2);
                     // Logger.Log($"DistanceFromPrevious i=0 {positionInfos[i].DistanceFromPrevious}");
                     positionInfos[i].RelativeAngle = (float)(random.NextDouble() * 2 * Math.PI - Math.PI);
                 }
@@ -334,7 +334,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // Logger.Log($"Distance from previous i={i} {positionInfos[i].DistanceFromPrevious}");
                     // Logger.Log($"RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
                 }
-            }
+            }
+
 
             osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,true,ExtendPlayArea.Value,InfinitePlayArea.Value);
             // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
@@ -347,6 +348,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             //         count++;
             //         Logger.Log($"Position is more than 50 off i={i} {positionInfos[i].DistanceFromPrevious} {updatedPositionInfos[i].DistanceFromPrevious}");
             //         Logger.Log($"Updated RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
+
             //     }
             //     totalDistanceDifferece += positionInfos[i].DistanceFromPrevious - updatedPositionInfos[i].DistanceFromPrevious;
             //     // Logger.Log($"Updated DistanceFromPrevious i={i} {positionInfos[i].DistanceFromPrevious}");

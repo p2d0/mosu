@@ -47,7 +47,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         public new OsuInputManager KeyBindingInputManager => (OsuInputManager)base.KeyBindingInputManager;
 
-        public new OsuPlayfield Playfield => (OsuPlayfield)base.Playfield;
+        public new MOsuPlayfield Playfield => (MOsuPlayfield)base.Playfield;
 
         protected new OsuRulesetConfigManager Config => (OsuRulesetConfigManager)base.Config;
 
@@ -171,9 +171,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 // Add RandomV2 settings panel when the mod is active
                 if (Mods.OfType<OsuModRandomV2>().FirstOrDefault() is OsuModRandomV2 randomV2){
                     replayPlayer.AddSettings(new RandomV2Settings(randomV2, Beatmap, Mods, () => ReplayScore?.Replay, replayPlayer.Mods));
-                    // followpoints memory leak when changing settings during the game
-                    Playfield.FollowPoints.Clear();
-                    Playfield.FollowPoints.Alpha = 0;
                 }
 
 
@@ -255,7 +252,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true; // always show the gameplay cursor
 
-        protected override Playfield CreatePlayfield() => new OsuPlayfield();
+        protected override Playfield CreatePlayfield() => new MOsuPlayfield();
 
         protected override PassThroughInputManager CreateInputManager() => new OsuInputManager(Ruleset.RulesetInfo);
 
