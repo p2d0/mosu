@@ -3,6 +3,8 @@
 
 // Global type aliases to share types from osu.Game.Rulesets.Osu instead of duplicating them in MOsu.
 
+
+global using OsuAction = osu.Game.Rulesets.Osu.OsuAction;
 global using AccuracyHeatmap = osu.Game.Rulesets.Osu.Statistics.AccuracyHeatmap;
 global using Aim = osu.Game.Rulesets.Osu.Difficulty.Skills.Aim;
 global using AimErrorMeter = osu.Game.Rulesets.Osu.HUD.AimErrorMeter;

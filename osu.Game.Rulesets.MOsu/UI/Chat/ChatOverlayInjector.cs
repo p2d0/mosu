@@ -40,6 +40,40 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             focusedOverlaysField = getFieldInHierarchy(type, "focusedOverlays");
         }
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            Schedule(PollAndInject);
+        }
+
+        private void PollAndInject()
+        {
+            if (hasInjected) return;
+
+            var overlayContent = overlayContentField?.GetValue(game) as Container;
+            var toolbarContainer = game.GetToolbarContainer();
+
+            if (overlayContent == null || toolbarContainer == null)
+            {
+                Schedule(PollAndInject);
+                return;
+            }
+
+            if (!injectOverlay(overlayContent))
+            {
+                Schedule(PollAndInject);
+                return;
+            }
+
+            if (!injectButton(toolbarContainer))
+            {
+                Schedule(PollAndInject);
+                return;
+            }
+
+            hasInjected = true;
+        }
+
         private static FieldInfo? getFieldInHierarchy(System.Type type, string fieldName)
         {
             while (type != null)
@@ -50,29 +84,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 type = type.BaseType!;
             }
             return null;
-        }
-
-        protected override void Update()
-        {
-            base.Update();
-
-            if (hasInjected) return;
-
-            var overlayContent = overlayContentField?.GetValue(game) as Container;
-            var toolbarContainer = game.GetToolbarContainer();
-
-            // Wait until both containers are ready
-            if (overlayContent == null || toolbarContainer == null) return;
-
-            // 1. Inject Overlay (returns false if old overlay not ready yet)
-            if (!injectOverlay(overlayContent))
-                return; // Try again next frame
-
-            // 2. Inject Toolbar Button (returns false if old button not ready yet)
-            if (!injectButton(toolbarContainer))
-                return; // Try again next frame
-
-            hasInjected = true;
         }
 
         private bool injectOverlay(Container targetContainer)

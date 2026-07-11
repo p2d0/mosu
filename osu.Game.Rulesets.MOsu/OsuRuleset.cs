@@ -1,8 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-global using OsuAction = osu.Game.Rulesets.Osu.OsuAction;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
-using osu.Framework.Logging;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -18,16 +17,17 @@ using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Chat;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
-using osu.Game.Rulesets.Mods;
 using osuTK;
 using osuTK.Graphics;
 using System.Linq;
-using System.Reflection;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
     public partial class MOsuIcon : CompositeDrawable
     {
+        // CreateIcon() is called many times by core. Only the first instance should run injection.
+        private static bool _injected;
+
         private readonly OsuRuleset ruleset;
 
         public MOsuIcon(OsuRuleset ruleset)
@@ -41,7 +41,6 @@ namespace osu.Game.Rulesets.MOsu.UI
         [BackgroundDependencyLoader]
         private void load()
         {
-            // 1. The Icon strictly handles visuals.
             InternalChildren = new Drawable[]
             {
                 new Circle
@@ -55,20 +54,30 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Origin = Anchor.Centre,
                     Colour = Color4.Black,
                     Text = "M",
-                    Font = OsuFont.Default.With(size: 32) // Make sure font size fits
-                },
-                // 2. We attach the Logic Manager as a child.
-                // It will run its lifecycle without cluttering the Icon code.
-                new MOsuSystemManager(ruleset),
-                // new BeatmapModsSelectInjector(),
-                new ChatOverlayInjector()
+                    Font = OsuFont.Default.With(size: 32)
+                }
             };
+
+            if (!_injected)
+            {
+                _injected = true;
+                Schedule(LoadInjection);
+            }
+        }
+
+        private void LoadInjection()
+        {
+            AddRangeInternal(new Drawable[]
+            {
+                new MOsuSystemManager(ruleset),
+                new ChatOverlayInjector()
+            });
         }
     }
 
     /// <summary>
-    /// Handles the injection of the UserProfileOverlay and Toolbar Buttons.
-    /// Invisible and runs in the background.
+    /// Handles injection of overlays and toolbar buttons.
+    /// All heavy work (Realm DB open, manager construction) runs off the game thread.
     /// </summary>
     internal partial class MOsuSystemManager : Component
     {
@@ -78,45 +87,28 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved]
         private GameHost host { get; set; } = null!;
 
-        // Resolve other dependencies needed for your UserManager
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
         private readonly OsuRuleset ruleset;
-        private bool isInitialized;
 
         public MOsuSystemManager(OsuRuleset ruleset)
         {
             this.ruleset = ruleset;
+            AlwaysPresent = true;
         }
 
-        protected override void Update()
+        protected override void LoadComplete()
         {
-            base.Update();
-
-            // 1. If we have already finished setup, stop running this logic.
-            if (isInitialized) return;
-
-            // 2. Poll the game state. We cannot inject until the game has created these containers.
-            // This replaces the dangerous "Scheduler.AddDelayed(1000)".
-            var waveContainer = game.GetWaveOverlayPlacementContainer();
-            var toolbarContainer = game.GetToolbarContainer();
-
-            // If the containers aren't ready yet, we simply wait for the next frame.
-            if (waveContainer == null || toolbarContainer == null) return;
-
-            // 3. Perform initialization safely.
-            InitializeSystem(waveContainer, toolbarContainer);
-
-            // 4. Mark as done so Update stops checking.
-            isInitialized = true;
+            base.LoadComplete();
+            Task.Run(InitializeAsync);
         }
 
-        private void InitializeSystem(Container waveContainer, FillFlowContainer toolbarContainer)
+        private async Task InitializeAsync()
         {
-            // --- 1. Setup MOsuRealmAccess first ---
+            // Heavy work off the game thread.
             var mosuRealm = host.Dependencies.Get<MOsuRealmAccess>();
             if (mosuRealm == null)
             {
@@ -124,7 +116,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 host.Dependencies.Cache(mosuRealm);
             }
 
-            // --- 1. Setup LocalUserManager (Singleton Logic) ---
             var userManager = host.Dependencies.Get<LocalUserManager>();
             if (userManager == null)
             {
@@ -132,54 +123,54 @@ namespace osu.Game.Rulesets.MOsu.UI
                 host.Dependencies.Cache(userManager);
             }
 
-            // --- 1.5 Setup Background Preset Import ---
-            if (host.Dependencies.Get<BackgroundPresetImportProcessor>() == null)
+            await Task.Yield();
+
+            Schedule(() =>
             {
-                var presetImporter = new BackgroundPresetImportProcessor();
-                host.Dependencies.Cache(presetImporter);
-                game.Add(presetImporter);
-            }
+                var waveContainer = game.GetWaveOverlayPlacementContainer();
+                var toolbarContainer = game.GetToolbarContainer();
 
-            // --- 1.6 Setup Background Collection Import ---
-            if (host.Dependencies.Get<BackgroundCollectionImportProcessor>() == null)
-            {
-                var collectionImporter = new BackgroundCollectionImportProcessor();
-                host.Dependencies.Cache(collectionImporter);
-                game.Add(collectionImporter);
-            }
-
-
-
-            // --- 2. Setup Overlay ---
-            // Check if it already exists in the container to prevent duplicates
-            var existingOverlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
-
-            if (existingOverlay == null)
-            {
-                // If checking dependencies, ensure we don't grab a disposed one from a previous session
-                existingOverlay = host.Dependencies.Get<LocalUserProfileOverlay>();
-
-                if (existingOverlay == null || existingOverlay.Parent == null)
+                if (waveContainer == null || toolbarContainer == null)
                 {
-                    existingOverlay = new LocalUserProfileOverlay();
-                    waveContainer.Add(existingOverlay);
-
-                    // Only cache if not already cached
-                    if (host.Dependencies.Get<LocalUserProfileOverlay>() == null)
-                        host.Dependencies.Cache(existingOverlay);
+                    Schedule(StepUI);
+                    return;
                 }
-            }
 
-            // --- 3. Setup Toolbar Button ---
-            // Check if our specific button type already exists
-            bool buttonExists = toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any();
+                StepUI();
 
-            if (!buttonExists)
-            {
-                var button = new ToolbarLocalUserButton();
-                toolbarContainer.Add(button);
-            }
+                void StepUI()
+                {
+                    if (host.Dependencies.Get<BackgroundPresetImportProcessor>() == null)
+                    {
+                        var presetImporter = new BackgroundPresetImportProcessor();
+                        host.Dependencies.Cache(presetImporter);
+                        game.Add(presetImporter);
+                    }
+
+                    if (host.Dependencies.Get<BackgroundCollectionImportProcessor>() == null)
+                    {
+                        var collectionImporter = new BackgroundCollectionImportProcessor();
+                        host.Dependencies.Cache(collectionImporter);
+                        game.Add(collectionImporter);
+                    }
+
+                    var existingOverlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+                    if (existingOverlay == null)
+                    {
+                        existingOverlay = host.Dependencies.Get<LocalUserProfileOverlay>();
+                        if (existingOverlay == null || existingOverlay.Parent == null)
+                        {
+                            existingOverlay = new LocalUserProfileOverlay();
+                            waveContainer.Add(existingOverlay);
+                            if (host.Dependencies.Get<LocalUserProfileOverlay>() == null)
+                                host.Dependencies.Cache(existingOverlay);
+                        }
+                    }
+
+                    if (!toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
+                        toolbarContainer.Add(new ToolbarLocalUserButton());
+                }
+            });
         }
     }
-
 }

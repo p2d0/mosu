@@ -1,3 +1,4 @@
+@LOCAL.md
 # AGENTS.md
 always start with /tdd skill
 
@@ -5,7 +6,7 @@ This is a standalone ruleset project using NuGet package references to `ppy.osu.
 
 ## Source reference
 
-See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine. (read @LOCAL.md immediately)
+See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tree on this machine.
 
 ## Workflow
 
