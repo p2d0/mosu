@@ -24,21 +24,12 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Beatmaps;
-using osu.Game.Rulesets.Osu.Configuration;
-using osu.Game.Rulesets.MOsu.Difficulty;
-using osu.Game.Rulesets.Osu.Edit;
-using osu.Game.Rulesets.Osu.Edit.Setup;
 using osu.Game.Rulesets.MOsu.Mods;
-using osu.Game.Rulesets.Osu.Objects;
-using osu.Game.Rulesets.Osu.Replays;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
-using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Rulesets.MOsu.Skinning.Legacy;
-using osu.Game.Rulesets.Osu.Statistics;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Replays.Types;
 using osu.Game.Rulesets.Scoring;
-using osu.Game.Rulesets.Scoring.Legacy;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
 using osu.Game.Screens.Edit.Setup;
@@ -46,14 +37,6 @@ using osu.Game.Screens.Ranking.Statistics;
 using osu.Game.Skinning;
 using osu.Game.Utils;
 using osuTK;
-using osu.Framework.Platform;
-using osu.Framework.Allocation;
-using osu.Game.Online.API;
-using osu.Game.Database;
-using osu.Game.Rulesets.MOsu.UI.Toolbar;
-using osu.Game.Rulesets.MOsu.UI.LocalUser;
-using osu.Framework.Graphics.Shapes;
-using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.MOsu
 {
@@ -381,8 +364,6 @@ namespace osu.Game.Rulesets.MOsu
 
             return null;
         }
-
-        public ILegacyScoreSimulator CreateLegacyScoreSimulator() => new OsuLegacyScoreSimulator();
 
         public override IConvertibleReplayFrame CreateConvertibleReplayFrame() => new OsuReplayFrame();
 
