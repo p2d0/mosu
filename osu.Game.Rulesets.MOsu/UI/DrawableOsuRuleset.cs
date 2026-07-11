@@ -27,7 +27,6 @@ using osuTK;
 using osu.Framework.Input.Events;
 using osuTK.Input;
 using osu.Framework.Logging;
-using osu.Game.Rulesets.MOsu.Scoring;
 using osu.Game.Input.Bindings;
 using osu.Framework.Input.Bindings;
 using osu.Game.Audio;

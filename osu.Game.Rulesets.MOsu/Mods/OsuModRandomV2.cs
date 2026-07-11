@@ -68,7 +68,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         {
             MinValue = 0.1f,
             MaxValue = 10,
-            Precision = 0.01f
+            Precision = 0.1f
         };
 
         [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance", SettingControlType = typeof(PowerJumpsCheckbox))]

@@ -31,7 +31,6 @@ using osu.Game.Rulesets.Osu.Edit.Setup;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Replays;
-using osu.Game.Rulesets.MOsu.Scoring;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
 using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Rulesets.MOsu.Skinning.Legacy;
