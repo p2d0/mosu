@@ -728,7 +728,13 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 // Set the final, snapped start time for the new circle.
                 circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(nextStartTime);
                 circle.TimePreempt = firstHitObject.TimePreempt;
-                circle.TimeFadeIn = firstHitObject.TimeFadeIn;
+                // Copy TimeFadeIn from the first HitCircle (not Slider, since Hidden skips Sliders).
+                var firstCircle = beatmap.HitObjects.OfType<HitCircle>().FirstOrDefault();
+                if (firstCircle != null)
+                    circle.TimeFadeIn = firstCircle.TimeFadeIn;
+
+                if (hitObjects.Count < 3)
+                    Logger.Log($"[SquareMod] circle[{hitObjects.Count}]: StartTime={circle.StartTime:N0} TimePreempt={circle.TimePreempt:N0} TimeFadeIn={circle.TimeFadeIn:N0} firstHitObject type={firstHitObject.GetType().Name} firstCircle.TimeFadeIn={firstCircle?.TimeFadeIn ?? -1:N0}");
 
                 hitObjects.Add(circle);
 
