@@ -11,6 +11,8 @@ https://github.com/user-attachments/assets/a94b24b1-2ad0-4456-87fa-0d8f1d29181a
 - **Local PP** — calculates and tracks performance points locally (with local profiles)
 - **Skip breaks** — button to skip break sections
 - **ModRandomV2** — randomizes hit object positions with configurable patterns
+  - Make any map an aim practice map
+  - Make any map a stream practice map
 - **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
 - **Live star rating** — HUD element showing cumulative star rating as you play, updating in real-time (like pp counter)
 - Mod preset import/export — share presets via JSON files
