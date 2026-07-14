@@ -1,6 +1,5 @@
 @LOCAL.md
 # AGENTS.md
-always start with /tdd skill
 
 This is a standalone ruleset project using NuGet package references to `ppy.osu.Game` and `ppy.osu.Game.Rulesets.Osu`.
 

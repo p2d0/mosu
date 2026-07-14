@@ -211,7 +211,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         {
             MinValue = 0,
             MaxValue = 5000,
-            Precision = 50,
+            Precision = 1,
             Default = 0,
         };
 
