@@ -51,6 +51,11 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         private void load(OverlayColourProvider colours)
         {
             this.colours = colours;
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
             populateCards();
         }
 

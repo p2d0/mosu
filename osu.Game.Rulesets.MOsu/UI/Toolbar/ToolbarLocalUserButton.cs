@@ -1,6 +1,7 @@
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Platform;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -36,7 +37,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
         private IAPIProvider api { get; set; } = null!;
 
         [Resolved]
-        private LocalUserProfileOverlay overlay { get; set; } = null!;
+        private GameHost host { get; set; } = null!;
+
+        private LocalUserProfileOverlay? overlay;
 
         public ToolbarLocalUserButton()
         {
@@ -102,7 +105,8 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
         // 3. Handle Click (Open LocalUserProfileOverlay)
         protected override bool OnClick(ClickEvent e)
         {
-            overlay.ToggleVisibilityUser(api.LocalUser.Value, ruleset.Value);
+            overlay ??= host.Dependencies.Get<LocalUserProfileOverlay>();
+            overlay?.ToggleVisibilityUser(api.LocalUser.Value, ruleset.Value);
             return true;
         }
 

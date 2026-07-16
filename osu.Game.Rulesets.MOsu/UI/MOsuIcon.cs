@@ -79,7 +79,7 @@ namespace osu.Game.Rulesets.MOsu.UI
     /// Handles injection of overlays and toolbar buttons.
     /// All heavy work (Realm DB open, manager construction) runs off the game thread.
     /// </summary>
-    internal partial class MOsuSystemManager : Component
+    internal partial class MOsuSystemManager : CompositeDrawable
     {
         [Resolved]
         private OsuGame game { get; set; } = null!;
@@ -154,19 +154,27 @@ namespace osu.Game.Rulesets.MOsu.UI
                         game.Add(collectionImporter);
                     }
 
-                    var existingOverlay = waveContainer!.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
-                    if (existingOverlay == null)
+                    // Pre-load overlay on bg thread.
+                    var overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
+                    if (overlay == null)
                     {
-                        existingOverlay = host.Dependencies.Get<LocalUserProfileOverlay>();
-                        if (existingOverlay == null || existingOverlay.Parent == null)
+                        overlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+                    }
+                    if (overlay == null)
+                    {
+                        overlay = new LocalUserProfileOverlay();
+                        LoadComponentAsync(overlay, o =>
                         {
-                            existingOverlay = new LocalUserProfileOverlay();
-                            waveContainer.Add(existingOverlay);
-                            if (host.Dependencies.Get<LocalUserProfileOverlay>() == null)
-                                host.Dependencies.Cache(existingOverlay);
-                        }
+                            waveContainer.Add(o);
+                            host.Dependencies.Cache(o);
+                        });
+                    }
+                    else
+                    {
+                        host.Dependencies.Cache(overlay);
                     }
 
+                    // Add button immediately.
                     if (toolbarContainer != null && !toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
                         toolbarContainer.Add(new ToolbarLocalUserButton());
                 }
