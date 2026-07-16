@@ -421,7 +421,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             const string resourceName = "osu.Game.Rulesets.MOsu.example_collections.json";
 
             // Try the ruleset assembly first, then fall back to test assembly
-            var assemblies = new[] { assembly, typeof(OsuSettingsSubsection).Assembly };
+            var assemblies = new[] { assembly, typeof(osu.Game.Rulesets.MOsu.UI.OsuSettingsSubsection).Assembly };
 
             foreach (var asm in assemblies)
             {

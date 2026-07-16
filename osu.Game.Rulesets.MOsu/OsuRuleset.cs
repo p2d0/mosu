@@ -365,7 +365,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IConvertibleReplayFrame CreateConvertibleReplayFrame() => new OsuReplayFrame();
 
-        public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new OsuRulesetConfigManager(settings, RulesetInfo);
+        public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new OsuRulesetConfigManager(settings, new RulesetInfo { ShortName = osu.Game.Rulesets.Osu.OsuRuleset.SHORT_NAME });
 
         public override IEnumerable<HitResult> GetValidHitResults()
         {

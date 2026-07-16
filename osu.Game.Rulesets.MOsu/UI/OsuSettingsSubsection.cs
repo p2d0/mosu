@@ -15,17 +15,15 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
-using osu.Game.Configuration;
+using osu.Framework.Graphics.Sprites;
 using osu.Game.Database;
 using osu.Game.Graphics;
-using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
-using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.UI;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Localisation;
 using osuTK;
 using osu.Game.Graphics.Sprites;
 using System.Linq.Expressions;
@@ -87,44 +85,20 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             // game.GetToolbarContainer().Add(new ToolbarLocalUserButton());
 
-            var config = (OsuRulesetConfigManager)Config;
             Children = new Drawable[]
             {
-                new SettingsCheckbox
+                new OsuSpriteText
                 {
-                    LabelText = RulesetSettingsStrings.SnakingInSliders,
-                    Current = config.GetBindable<bool>(OsuRulesetSetting.SnakingInSliders)
+                    Text = "Presets",
+                    Margin = new MarginPadding { Left = 15 },
+                    Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
-                new SettingsCheckbox
-                {
-                    ClassicDefault = false,
-                    LabelText = RulesetSettingsStrings.SnakingOutSliders,
-                    Current = config.GetBindable<bool>(OsuRulesetSetting.SnakingOutSliders)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = RulesetSettingsStrings.CursorTrail,
-                    Current = config.GetBindable<bool>(OsuRulesetSetting.ShowCursorTrail)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = RulesetSettingsStrings.CursorRipples,
-                    Current = config.GetBindable<bool>(OsuRulesetSetting.ShowCursorRipples)
-                },
-                new SettingsEnumDropdown<PlayfieldBorderStyle>
-                {
-                    LabelText = RulesetSettingsStrings.PlayfieldBorderStyle,
-                    Current = config.GetBindable<PlayfieldBorderStyle>(OsuRulesetSetting.PlayfieldBorderStyle),
-                },
-                // --- Preset Export ---
                 new SettingsButtonV2
                 {
                     Text = "Export presets to file",
                     TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
                 },
-                
-                // --- Preset Import (Popup) ---
                 new ImportPresetButton(),
                 new SettingsButtonV2
                 {
@@ -138,7 +112,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 new OsuSpriteText
                 {
                     Text = "Collections",
-                    Margin = new MarginPadding { Top = 20, Bottom = 5 },
+                    Margin = new MarginPadding { Left = 15 },
                     Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
                 new SettingsCheckbox
