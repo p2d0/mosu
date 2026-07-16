@@ -182,6 +182,14 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Default = 50
         };
 
+        [SettingSource("BreakDistance", "Break Distance", SettingControlType = typeof(SquareModIntSetting))]
+        public BindableInt BreakDistance { get; } = new BindableInt(50)
+        {
+            MinValue = 1,
+            MaxValue = 200,
+            Default = 50
+        };
+
         [SettingSource("Include breaks?", "Add breaks", SettingControlType = typeof(SquareModBoolSetting))]
         public Bindable<bool> SquareModBreak { get; } = new BindableBool(false);
 
@@ -655,26 +663,34 @@ namespace osu.Game.Rulesets.MOsu.Mods
             do
             {
                 int cornerIndex = hitObjects.Count % 4;
+                float currentSpacing = spacing;
                 Vector2 position;
 
-                // Determine the position based on which corner we are on
-                switch (cornerIndex)
+                if (hitObjects.Count == 0)
                 {
-                    case 0: // Bottom-left
-                        position = new Vector2(0, 0);
-                        break;
-                    case 1: // Bottom-right
-                        position = new Vector2(spacing, 0);
-                        break;
-                    case 2: // Top-right
-                        position = new Vector2(spacing, spacing);
-                        break;
-                    case 3: // Top-left
-                        position = new Vector2(0, spacing);
-                        break;
-                    default: // This case will never be reached with % 4
-                        position = Vector2.Zero;
-                        break;
+                    position = Vector2.Zero;
+                }
+                else
+                {
+                    Vector2 prevPosition = hitObjects[hitObjects.Count - 1].Position;
+                    switch (cornerIndex)
+                    {
+                        case 1:
+                            position = prevPosition + new Vector2(currentSpacing, 0);
+                            break;
+                        case 2:
+                            position = prevPosition + new Vector2(0, currentSpacing);
+                            break;
+                        case 3:
+                            position = prevPosition + new Vector2(-currentSpacing, 0);
+                            break;
+                        case 0:
+                            position = prevPosition + new Vector2(0, -currentSpacing);
+                            break;
+                        default:
+                            position = Vector2.Zero;
+                            break;
+                    }
                 }
 
                 var circle = new HitCircle
@@ -722,6 +738,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     else if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
                     {
                         nextStartTime += beatLength * SquareModBreakObjects.Value;
+                        circle.Position += new Vector2(BreakDistance.Value,BreakDistance.Value);
                     }
                 }
 
