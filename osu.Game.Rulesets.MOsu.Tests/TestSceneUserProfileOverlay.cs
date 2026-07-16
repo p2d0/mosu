@@ -55,7 +55,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     r.RemoveAll<ScoreInfo>();
                     r.RemoveAll<BeatmapInfo>();
 
-                    var rs = r.Find<RulesetInfo>(ruleset.RulesetInfo.ShortName);
+                    var rs = r.Find<RulesetInfo>(ruleset.RulesetInfo.ShortName!);
 
                     r.Add(createScore(r, rs, "PlayerOne", "Difficulty 1", 150.5, ScoreRank.S, DateTimeOffset.Now.AddDays(-1)));
                     r.Add(createScore(r, rs, "PlayerOne", "Difficulty 2", 120.3, ScoreRank.A, DateTimeOffset.Now.AddDays(-2)));
@@ -115,12 +115,12 @@ namespace osu.Game.Rulesets.MOsu.Tests
             CaptureScreenshot("ProfileSwitching");
         }
 
-        private static ScoreInfo createScore(Realms.Realm r, RulesetInfo rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)
+        private static ScoreInfo createScore(Realms.Realm r, RulesetInfo? rs, string username, string difficultyName, double pp, ScoreRank rank, DateTimeOffset date)
         {
             var beatmap = new BeatmapInfo
             {
                 DifficultyName = difficultyName,
-                Ruleset = r.Find<RulesetInfo>(rs.ShortName) ?? rs,
+                Ruleset = r.Find<RulesetInfo>(rs!.ShortName!) ?? rs,
                 Difficulty = new BeatmapDifficulty
                 {
                     OverallDifficulty = 5,

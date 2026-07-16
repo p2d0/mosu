@@ -23,20 +23,20 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
     public partial class ToolbarLocalUserButton : ToolbarOverlayToggleButton
     {
         // private UpdateableAvatar avatar;
-        internal OsuSpriteText usernameText;
-        internal OsuSpriteText ppText;
+        internal OsuSpriteText usernameText = null!;
+        internal OsuSpriteText ppText = null!;
 
         [Resolved]
-        private IBindable<RulesetInfo> ruleset { get; set; }
+        private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
         [Resolved]
-        private LocalUserManager statisticsProvider { get; set; }
+        private LocalUserManager statisticsProvider { get; set; } = null!;
 
         [Resolved]
-        private IAPIProvider api { get; set; }
+        private IAPIProvider api { get; set; } = null!;
 
         [Resolved]
-        private LocalUserProfileOverlay overlay { get; set; }
+        private LocalUserProfileOverlay overlay { get; set; } = null!;
 
         public ToolbarLocalUserButton()
         {

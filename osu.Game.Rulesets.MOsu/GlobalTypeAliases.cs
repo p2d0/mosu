@@ -7,7 +7,6 @@
 global using OsuAction = osu.Game.Rulesets.Osu.OsuAction;
 global using AccuracyHeatmap = osu.Game.Rulesets.Osu.Statistics.AccuracyHeatmap;
 global using Aim = osu.Game.Rulesets.Osu.Difficulty.Skills.Aim;
-global using AimErrorMeter = osu.Game.Rulesets.Osu.HUD.AimErrorMeter;
 global using AimEvaluator = osu.Game.Rulesets.Osu.Difficulty.Evaluators.AimEvaluator;
 global using AnalysisFrameEntry = osu.Game.Rulesets.Osu.UI.ReplayAnalysis.AnalysisFrameEntry;
 global using AnalysisMarker = osu.Game.Rulesets.Osu.UI.ReplayAnalysis.AnalysisMarker;

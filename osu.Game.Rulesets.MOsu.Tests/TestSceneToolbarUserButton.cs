@@ -79,7 +79,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     var beatmap = new BeatmapInfo
                     {
                         DifficultyName = "Test Difficulty",
-                        Ruleset = r.Find<RulesetInfo>(rs.ShortName) ?? rs,
+                        Ruleset = r.Find<RulesetInfo>(rs!.ShortName!) ?? rs,
                         Difficulty = new BeatmapDifficulty { OverallDifficulty = 5, CircleSize = 4, ApproachRate = 5, DrainRate = 5 },
                         Metadata = new BeatmapMetadata { Title = "Test Beatmap", Artist = "Test Artist" },
                     };

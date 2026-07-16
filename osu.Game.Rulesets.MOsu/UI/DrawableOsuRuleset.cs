@@ -26,7 +26,6 @@ using osu.Game.Screens.Play;
 using osuTK;
 using osu.Framework.Input.Events;
 using osuTK.Input;
-using osu.Framework.Logging;
 using osu.Game.Input.Bindings;
 using osu.Framework.Input.Bindings;
 using osu.Game.Audio;
@@ -53,7 +52,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         public DrawableOsuRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod>? mods = null)
             : base(ruleset, beatmap, mods)
         {
-            this.playableBeatmap = beatmap;
+            this.playableBeatmap = beatmap!;
         }
 
         [Resolved]
@@ -63,7 +62,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private GameplayClockContainer GameplayClockContainer { get; set; } = null!;
 
         [Resolved]
-        private BeatmapDifficultyCache difficultyCache { get; set; }
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
 
         // public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
@@ -107,8 +106,8 @@ namespace osu.Game.Rulesets.MOsu.UI
         // }
 
         private ScheduledDelegate? frameStablePlaybackResetDelegate;
-        private IBeatmap playableBeatmap;
-        private static readonly PropertyInfo frameStablePlaybackProperty =
+        private IBeatmap playableBeatmap = null!;
+        private static readonly PropertyInfo? frameStablePlaybackProperty =
             typeof(DrawableRuleset).GetProperty("FrameStablePlayback", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private void SafeSeek(double time)
@@ -121,28 +120,29 @@ namespace osu.Game.Rulesets.MOsu.UI
                 frameStablePlaybackResetDelegate.RunTask();
 
             // Read current FrameStablePlayback state via reflection
-            bool wasFrameStable = (bool)frameStablePlaybackProperty.GetValue(this);
+            PropertyInfo prop = frameStablePlaybackProperty;
+            bool wasFrameStable = (bool)prop.GetValue(this)!;
 
             // Disable frame-stable playback
-            frameStablePlaybackProperty.SetValue(this, false);
+            prop.SetValue(this, false);
 
             // Perform the seek
             GameplayClockContainer.Seek(time);
 
             // Schedule restore of frame-stable playback after children process
             frameStablePlaybackResetDelegate = ScheduleAfterChildren(() =>
-                                                                     frameStablePlaybackProperty.SetValue(this, wasFrameStable));
+                                                                     prop.SetValue(this, wasFrameStable));
         }
 
 
-                private ScoreManager scoreManager;
+                private ScoreManager scoreManager = null!;
                 private LocalUserManager localUserManager = null!;
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager? localUserManager, ScoreManager? scoreManager)
         {
             this.scoreManager = scoreManager!;
-            this.localUserManager = localUserManager;
+            this.localUserManager = localUserManager!;
 
             // Attach dummy replay file to mosu scores that have no files,
             // so the delete button appears in the leaderboard context menu.

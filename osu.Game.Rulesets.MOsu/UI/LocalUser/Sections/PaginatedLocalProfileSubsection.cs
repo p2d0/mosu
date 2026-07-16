@@ -123,7 +123,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections
             //     taskResult = await CreateTask(User.Value);
             // }
 
-            Logger.Log($"Total items count: {taskResult.Count}", level: LogLevel.Debug);
+            Logger.Log($"Total items count: {taskResult?.Count ?? 0}", level: LogLevel.Debug);
             loadCancellation = new CancellationTokenSource();
 
             CurrentPage = CurrentPage?.TakeNext(ItemsPerPage) ?? new PaginationParameters(InitialItemsCount);
@@ -133,7 +133,10 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections
 
         protected virtual void UpdateItems(CancellationTokenSource cancellationTokenSource) => Schedule(() =>
         {
-            if (!taskResult.Any() && CurrentPage?.Offset == 0)
+            if (taskResult == null || CurrentPage == null)
+                return;
+
+            if (!taskResult.Any() && CurrentPage.Value.Offset == 0)
             {
                 moreButton.Hide();
                 moreButton.IsLoading = false;
@@ -147,7 +150,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections
             var paginatedItems = taskResult.Skip(CurrentPage.Value.Offset).Take(CurrentPage.Value.Limit).ToList();
             Logger.Log($"Paginated items count: {paginatedItems.Count}", level: LogLevel.Debug);
 
-            bool hasMore = taskResult.Count > CurrentPage?.Limit;
+            bool hasMore = taskResult.Count > CurrentPage.Value.Limit;
             Logger.Log($"Has more: {hasMore}", level: LogLevel.Debug);
 
             OnItemsReceived(paginatedItems);
@@ -169,7 +172,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections
         {
         }
 
-        protected abstract Task<List<TModel>> CreateTask(UserProfileData user);
+        protected abstract Task<List<TModel>> CreateTask(UserProfileData? user);
 
         protected abstract Drawable? CreateDrawableItem(TModel model);
 

@@ -61,7 +61,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             base.OnItemsReceived(items);
         }
 
-        protected override async Task<List<ScoreInfo>> CreateTask(UserProfileData user) {
+        protected override async Task<List<ScoreInfo>> CreateTask(UserProfileData? user) {
+            if (user == null) return new List<ScoreInfo>();
             Logger.Log($"Loading local scores for {user.User.Id} {user.User.Username}, ruleset: {user.Ruleset.ShortName}", level: LogLevel.Debug);
             return await getScores(user).ConfigureAwait(false);
         }

@@ -26,7 +26,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         public required BreakTracker BreakTracker { get; init; }
 
-        public Action RequestSkip;
+        public Action RequestSkip = null!;
 
         private readonly SkipButton skipButton;
         private readonly IBindable<Period?> currentPeriod = new Bindable<Period?>();

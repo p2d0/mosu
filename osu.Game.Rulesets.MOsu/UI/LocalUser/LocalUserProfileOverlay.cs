@@ -10,7 +10,6 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
-using osu.Framework.Logging;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Cursor;
@@ -38,7 +37,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         private readonly LoadingLayer loadingLayer;
 
         private ProfileSection? lastSection;
-        private GetUserRequest? userReq;
+
 
         [Resolved]
         private LocalUserManager localUserManager { get; set; } = null!;
@@ -150,7 +149,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         public async void fetchAndSetContentForLocalUser(IUser userToShow, IRulesetInfo? userRuleset)
         {
-            userReq?.Cancel();
             loadingLayer.Show();
 
             try

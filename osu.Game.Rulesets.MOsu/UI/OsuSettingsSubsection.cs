@@ -27,7 +27,6 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Localisation;
 using osuTK;
-using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.Sprites;
 using System.Linq.Expressions;
 using Realms;
@@ -44,13 +43,7 @@ using osu.Game.Collections;
 using osu.Game.Scoring;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Scoring;
-using osu.Framework.Allocation;
-using osu.Framework.Graphics;
-using osu.Framework.Localisation;
-using osu.Framework.Platform;
 using osu.Framework.Screens;
-using osu.Game.Localisation;
-using osu.Game.Screens;
 using osu.Game.Models;
 using osu.Game.Graphics.UserInterfaceV2;
 
@@ -84,8 +77,6 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             this.ruleset = ruleset;
         }
-        private LocalUserProfileOverlay? localUserProfileOverlay;
-        private ChangelogOverlay? changelogOverlay;
         // private ToolbarLocalUserButton? localUserButton;
 
         [BackgroundDependencyLoader]
@@ -293,7 +284,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                                     var entry = new CollectionBeatmapEntry
                                     {
-                                        BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                                        BeatmapSetId = beatmap.BeatmapSet!.OnlineID,
                                         BeatmapMD5Hash = hash,
                                         BeatmapTitle = beatmap.Metadata.Title,
                                         BeatmapAuthor = beatmap.Metadata.Artist,
@@ -309,7 +300,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                                     {
                                         entry.Scores.Add(new ScoreExportDto
                                         {
-                                            BeatmapHash = s.BeatmapInfo.MD5Hash,
+                                            BeatmapHash = s.BeatmapInfo!.MD5Hash,
                                             RulesetShortName = s.Ruleset.ShortName,
                                             BeatmapDifficultyName = s.BeatmapInfo.DifficultyName,
                                             TotalScore = s.TotalScore,
@@ -361,7 +352,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                                     dto.Beatmaps.Add(new CollectionBeatmapEntry
                                     {
-                                        BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                                        BeatmapSetId = beatmap.BeatmapSet!.OnlineID,
                                         BeatmapMD5Hash = hash,
                                         BeatmapTitle = beatmap.Metadata.Title,
                                         BeatmapAuthor = beatmap.Metadata.Artist,

@@ -20,8 +20,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class TestSceneRandomV2Settings : TestSceneMOsuBase
     {
         private RandomV2Settings settingsPanel = null!;
-        private OsuModRandomV2 mod;
-        private OsuBeatmap beatmap;
+        private OsuModRandomV2 mod = null!;
+        private OsuBeatmap beatmap = null!;
 
         [Test]
         public void TestRandomV2SettingsPanelLoads()

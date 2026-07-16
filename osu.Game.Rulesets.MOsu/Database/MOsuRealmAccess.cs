@@ -602,6 +602,8 @@ namespace osu.Game.Rulesets.MOsu.Database
             {
                 // case 2: ...
                 // break;
+                default:
+                    break;
             }
         }
 

@@ -39,10 +39,10 @@ namespace osu.Game.Rulesets.MOsu.UI
         public override bool HideOverlaysOnEnter => true;
         public override bool DisallowExternalBeatmapRulesetChanges => true;
 
-        private OsuFileSelector fileSelector;
-        private Container contentContainer;
-        private TextFlowContainer currentFileText;
-        private RoundedButton importButton;
+        private OsuFileSelector fileSelector = null!;
+        private Container contentContainer = null!;
+        private TextFlowContainer currentFileText = null!;
+        private RoundedButton importButton = null!;
 
         private const float duration = 300;
         private const float button_height = 50;
@@ -159,7 +159,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             currentFileText.Text = selectedFile.NewValue?.Name ?? "Select a .json file";
         }
 
-        private void importFile(string path)
+        private void importFile(string? path)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
@@ -386,7 +386,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                         if (resolved >= pendingSets.Count)
                         {
-                            realmSubscription.Dispose();
+                            realmSubscription?.Dispose();
                             Schedule(() =>
                             {
                                 notification.Text = $"Downloaded {importedCount} maps.";

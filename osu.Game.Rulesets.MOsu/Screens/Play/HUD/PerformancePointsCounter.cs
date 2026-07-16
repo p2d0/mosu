@@ -1,8 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,10 +29,10 @@ namespace osu.Game.Screens.Play.HUD
         public bool UsesFixedAnchor { get; set; }
 
         [Resolved]
-        private ScoreProcessor scoreProcessor { get; set; }
+        private ScoreProcessor scoreProcessor { get; set; } = null!;
 
         [Resolved]
-        private GameplayState gameplayState { get; set; }
+        private GameplayState gameplayState { get; set; } = null!;
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -43,24 +41,24 @@ namespace osu.Game.Screens.Play.HUD
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
         [CanBeNull]
-        private List<TimedDifficultyAttributes> timedAttributes;
+        private List<TimedDifficultyAttributes> timedAttributes = null!;
 
         private readonly CancellationTokenSource loadCancellationSource = new CancellationTokenSource();
         private ModSettingChangeTracker? modSettingChangeTracker;
         private ScheduledDelegate? debouncedRefresh;
 
-        private JudgementResult lastJudgement;
-        private PerformanceCalculator performanceCalculator;
-        private ScoreInfo scoreInfo;
+        private JudgementResult lastJudgement = null!;
+        private PerformanceCalculator performanceCalculator = null!;
+        private ScoreInfo scoreInfo = null!;
 
-        private Mod[] clonedMods;
+        private Mod[] clonedMods = null!;
 
         [BackgroundDependencyLoader]
         private void load()
         {
             if (gameplayState != null)
             {
-                performanceCalculator = gameplayState.Ruleset.CreatePerformanceCalculator();
+                performanceCalculator = gameplayState.Ruleset.CreatePerformanceCalculator()!;
                 clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
 
                 scoreInfo = new ScoreInfo(gameplayState.Score.ScoreInfo.BeatmapInfo, gameplayState.Score.ScoreInfo.Ruleset) { Mods = clonedMods };
@@ -135,7 +133,7 @@ namespace osu.Game.Screens.Play.HUD
         }
 
         [CanBeNull]
-        private DifficultyAttributes getAttributeAtTime(JudgementResult judgement)
+        private DifficultyAttributes? getAttributeAtTime(JudgementResult judgement)
         {
             if (timedAttributes == null || timedAttributes.Count == 0)
                 return null;

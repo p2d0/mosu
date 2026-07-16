@@ -40,13 +40,13 @@ namespace osu.Game.Rulesets.Osu.HUD
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
         [CanBeNull]
-        private List<TimedDifficultyAttributes> timedAttributes;
+        private List<TimedDifficultyAttributes> timedAttributes = null!;
 
         private readonly CancellationTokenSource loadCancellationSource = new CancellationTokenSource();
         private ModSettingChangeTracker? modSettingChangeTracker;
         private ScheduledDelegate? debouncedRefresh;
 
-        private JudgementResult lastJudgement;
+        private JudgementResult lastJudgement = null!;
 
         [BackgroundDependencyLoader]
         private void load()
@@ -89,7 +89,7 @@ namespace osu.Game.Rulesets.Osu.HUD
         }
 
         [Resolved]
-        private ScoreProcessor scoreProcessor { get; set; }
+        private ScoreProcessor scoreProcessor { get; set; } = null!;
 
         protected override void LoadComplete()
         {

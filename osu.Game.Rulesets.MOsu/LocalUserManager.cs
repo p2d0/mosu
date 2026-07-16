@@ -27,7 +27,7 @@ namespace osu.Game.Rulesets.MOsu
         // NOTE all in one for now
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
 
-        private string cacheKey(RulesetInfo ruleset)
+        private string? cacheKey(RulesetInfo ruleset)
         {
             if (ruleset == null)
                 return null;
@@ -53,7 +53,7 @@ namespace osu.Game.Rulesets.MOsu
                     p.IsActive = p.Name == name;
             });
             ProfileChanged?.Invoke(name);
-            RefreshStatisticsAsync(ruleset.RulesetInfo);
+            _ = RefreshStatisticsAsync(ruleset.RulesetInfo);
         }
 
         public List<LocalProfile> GetProfiles()
@@ -211,6 +211,7 @@ namespace osu.Game.Rulesets.MOsu
         public void UpdateStatistics(UserStatistics newStatistics, RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
         {
             var key = cacheKey(ruleset);
+            if (key == null) return;
             var oldStatistics = statisticsCache.GetValueOrDefault(key);
             statisticsCache[key] = newStatistics;
 
@@ -349,7 +350,7 @@ namespace osu.Game.Rulesets.MOsu
                         },
                         PlayCount = allScores.Count,
                         TotalScore = allScores.Sum(s => s.TotalScore),
-                        PlayTime = (int)allScores.Sum(s => s.BeatmapInfo.Length) / 3600,
+                        PlayTime = (int)allScores.Sum(s => s.BeatmapInfo!.Length) / 3600,
                         MaxCombo = allScores.Any() ? allScores.Max(s => s.MaxCombo) : 0,
                         GradesCount = new UserStatistics.Grades
                         {

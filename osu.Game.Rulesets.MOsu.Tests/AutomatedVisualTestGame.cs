@@ -66,7 +66,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private readonly List<Type> filteredTestTypes;
         private readonly string? filter;
 
-        private Type loadableTestType => testIndex >= 0 ? filteredTestTypes.ElementAtOrDefault(testIndex) : null;
+        private Type? loadableTestType => testIndex >= 0 ? filteredTestTypes.ElementAtOrDefault(testIndex) : null;
 
         private static readonly string SCREENSHOT_DIR = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "screenshots"));
 

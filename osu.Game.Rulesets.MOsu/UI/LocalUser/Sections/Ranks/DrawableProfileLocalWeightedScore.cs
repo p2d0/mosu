@@ -17,7 +17,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
     {
         private readonly double weight;
 
-        public DrawableProfileLocalWeightedScore(ScoreInfo score, double weight, Ruleset ruleset = null)
+        public DrawableProfileLocalWeightedScore(ScoreInfo score, double weight, Ruleset? ruleset = null)
             : base(score, ruleset)
         {
             this.weight = weight;

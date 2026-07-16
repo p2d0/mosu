@@ -44,7 +44,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
         private const float performance_background_shear = 0.45f;
 
         protected readonly ScoreInfo Score;
-        private readonly Ruleset rulesetInstance;
+        private readonly Ruleset? rulesetInstance;
 
         [Resolved]
         private OsuColour colours { get; set; } = null!;
@@ -52,7 +52,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        public DrawableProfileLocalScore(ScoreInfo score, Ruleset rulesetInstance = null)
+        public DrawableProfileLocalScore(ScoreInfo score, Ruleset? rulesetInstance = null)
         {
             Score = score;
             this.rulesetInstance = rulesetInstance;
@@ -317,21 +317,21 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             IScoreInfo ScoreInfo;
             private readonly IBeatmapInfo? beatmap;
 
-            [Resolved(CanBeNull = true)]
-            private BeatmapManager BeatmapManager {get; set;}
+            [Resolved]
+            private BeatmapManager? BeatmapManager {get; set;}
 
-            [Resolved(CanBeNull = true)]
+            [Resolved]
             private IPerformFromScreenRunner? performer { get; set; }
 
-            [Resolved(CanBeNull = true)]
-            private DifficultyRecommender difficultyRecommender { get; set; }
+            [Resolved]
+            private DifficultyRecommender? difficultyRecommender { get; set; }
 
-            [Resolved(CanBeNull = true)]
-            private ScoreManager scoreManager { get; set; }
+            [Resolved]
+            private ScoreManager? scoreManager { get; set; }
 
-            [Resolved(CanBeNull = true)]
-            private LocalUserManager localUserManager { get; set; }
-            [Resolved(CanBeNull = true)]
+            [Resolved]
+            private LocalUserManager? localUserManager { get; set; }
+            [Resolved]
             private LocalUserProfileOverlay? overlay { get; set; }
 
 
@@ -376,7 +376,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
 
                 Action = () =>
                 {
-                    PresentBeatmap(beatmap.BeatmapSet, s => beatmap.Equals(s));
+                    if (beatmap.BeatmapSet != null)
+                        PresentBeatmap(beatmap.BeatmapSet, s => beatmap.Equals(s));
                     overlay?.Hide();
                 };
 
@@ -387,12 +388,12 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                 };
             }
 
-            public void PresentBeatmap(IBeatmapSetInfo beatmapSet, Predicate<BeatmapInfo> difficultyCriteria = null)
+            public void PresentBeatmap(IBeatmapSetInfo beatmapSet, Predicate<BeatmapInfo>? difficultyCriteria = null)
             {
                 if (BeatmapManager == null) return;
 
                 Logger.Log($"Beginning {nameof(PresentBeatmap)} with beatmap {beatmapSet}");
-                Live<BeatmapSetInfo> databasedSet = null;
+                Live<BeatmapSetInfo>? databasedSet = null;
 
                 if (beatmapSet.OnlineID > 0)
                     databasedSet = BeatmapManager.QueryBeatmapSet(s => s.OnlineID == beatmapSet.OnlineID && !s.DeletePending);

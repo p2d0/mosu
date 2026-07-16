@@ -11,12 +11,9 @@ using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Screens;
 using osu.Game.Screens.Select;
-
-using osu.Framework.Bindables;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Framework.Logging;
-using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
@@ -34,10 +31,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
-using osu.Game.Overlays.Settings;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics.Sprites;
-using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Overlays.Settings;
 
@@ -46,7 +40,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
     /// <summary>
     /// Mod that randomises the positions of the <see cref="HitObject"/>s
     /// </summary>
-    public class OsuModRandomV2 : ModRandom, IApplicableToBeatmap, IApplicableToDrawableRuleset<OsuHitObject>
+    public partial class OsuModRandomV2 : ModRandom, IApplicableToBeatmap, IApplicableToDrawableRuleset<OsuHitObject>
     {
 
         public override string Name => "RandomV2";
@@ -716,7 +710,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 else
                 {
                     // Get the previously placed circle.
-                    var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle.StartTime).BeatLength / SquareModDivisor.Value;
+                    var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle!.StartTime)!.BeatLength / SquareModDivisor.Value;
                     // The default next start time is one beatLength after the previous circle.
                     nextStartTime = previousCircle.StartTime + beatLength;
 

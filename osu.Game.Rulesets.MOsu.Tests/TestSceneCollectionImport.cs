@@ -340,21 +340,21 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
                         var entry = new CollectionBeatmapEntry
                         {
-                            BeatmapSetId = beatmap.BeatmapSet.OnlineID,
+                            BeatmapSetId = beatmap.BeatmapSet!.OnlineID!,
                             BeatmapMD5Hash = hash,
                             Scores = new List<ScoreExportDto>()
                         };
 
                         var scores = r.All<ScoreInfo>().ToList()
-                            .Where(s => s.BeatmapInfo.MD5Hash == hash && !s.DeletePending)
+                            .Where(s => s.BeatmapInfo!.MD5Hash == hash && !s.DeletePending)
                             .ToList();
 
                         foreach (var s in scores)
                         {
                             entry.Scores.Add(new ScoreExportDto
                             {
-                                BeatmapHash = s.BeatmapInfo.MD5Hash,
-                                RulesetShortName = s.Ruleset.ShortName,
+                                BeatmapHash = s.BeatmapInfo!.MD5Hash,
+                                RulesetShortName = s.Ruleset!.ShortName!,
                                 TotalScore = s.TotalScore,
                                 Accuracy = s.Accuracy,
                                 MaxCombo = s.MaxCombo,

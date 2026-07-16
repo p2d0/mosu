@@ -134,9 +134,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             // Instantiate and add the new MOsu ChatOverlay at the old position (in the SAME parent)
             newOverlay = new ChatOverlay
             {
-                Depth = oldOverlay.Depth,
+                Depth = oldOverlay!.Depth,
             };
-            (parent ?? targetContainer).Add(newOverlay);
+            (parent ?? targetContainer)?.Add(newOverlay);
 
             // Re-add children that were after the old overlay
             if (parent != null)

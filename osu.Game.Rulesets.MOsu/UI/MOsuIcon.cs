@@ -154,7 +154,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         game.Add(collectionImporter);
                     }
 
-                    var existingOverlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+                    var existingOverlay = waveContainer!.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
                     if (existingOverlay == null)
                     {
                         existingOverlay = host.Dependencies.Get<LocalUserProfileOverlay>();
@@ -167,7 +167,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         }
                     }
 
-                    if (!toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
+                    if (toolbarContainer != null && !toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
                         toolbarContainer.Add(new ToolbarLocalUserButton());
                 }
             });
