@@ -631,25 +631,26 @@ namespace osu.Game.Rulesets.MOsu.Mods
             return previousObjectStartedCombo && random.NextDouble() < 0.6f;
         }
 
-        private Slider createKickslider(double startTime, double duration, Vector2 position, OsuBeatmap osuBeatmap, OsuHitObject firstHitObject)
+        private Slider createKickslider(double startTime, double duration, Vector2 position, OsuBeatmap osuBeatmap, OsuHitObject firstHitObject, double beatLength)
         {
             int repeatCount = SquareModBreakObjects.Value - 1;
+            var timingPoint = osuBeatmap.ControlPointInfo.TimingPointAt(startTime);
+            double velocity = 100 * osuBeatmap.Difficulty.SliderMultiplier / beatLength;
+            double targetDistance = (duration * velocity) / (repeatCount + 1);
+
             var slider = new Slider
             {
                 Position = position,
                 RepeatCount = repeatCount,
                 StartTime = startTime,
-                SliderVelocityMultiplier = 0.5f,
                 Path = new SliderPath(new[]
                 {
                     new PathControlPoint(new Vector2(0, 0)),
-                    new PathControlPoint(new Vector2(25, 0))
+                    new PathControlPoint(new Vector2((float)targetDistance, 0))
                 })
             };
             slider.Samples = firstHitObject.Samples;
             slider.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
-            // Adjust distance so the slider spans the desired duration: Duration = SpanCount * Distance / Velocity
-            // slider.Path.ExpectedDistance.Value = slider.Velocity * duration / slider.SpanCount();
             return slider;
         }
 
@@ -737,6 +738,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 {
                     // Get the previously placed circle.
                     var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle!.StartTime)!.BeatLength / SquareModDivisor.Value;
+                    var fullBeatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle!.StartTime)!.BeatLength;
                     // The default next start time is one beatLength after the previous circle.
                     nextStartTime = previousCircle.StartTime + beatLength;
 
@@ -749,9 +751,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
                             double breakDuration = beatLength * SquareModBreakObjects.Value;
                             if (SquareModKickslider.Value)
                             {
-                                var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position, osuBeatmap, firstHitObject);
+                                var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing,0), osuBeatmap, firstHitObject, fullBeatLength);
                                 hitObjects.Add(kickslider);
-                                nextStartTime = kickslider.EndTime;
+                                nextStartTime = kickslider.EndTime + beatLength;
                             }
                             else
                             {
@@ -769,10 +771,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
                         double breakDuration = beatLength * SquareModBreakObjects.Value;
                         if (SquareModKickslider.Value)
                         {
-                            var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(BreakDistance.Value, BreakDistance.Value), osuBeatmap, firstHitObject);
+                            var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing,0), osuBeatmap, firstHitObject, fullBeatLength);
                             hitObjects.Add(kickslider);
-                            nextStartTime = kickslider.EndTime;
-                            circle.Position += new Vector2(BreakDistance.Value, BreakDistance.Value);
+                            nextStartTime = kickslider.EndTime + beatLength;
                         }
                         else
                         {

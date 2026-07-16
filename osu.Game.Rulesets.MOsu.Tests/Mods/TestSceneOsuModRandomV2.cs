@@ -34,10 +34,10 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
             {
                 SquareMod = { Value = true },
                 SquareModDivisor = { Value = 4 },
-                SquareModDistance = { Value = 40 },
+                SquareModDistance = { Value = 30 },
                 SquareModBreak = { Value = true },
                 SquareModBreakInterval = { Value = 6 },
-                BreakDistance = { Value = 6 },
+                BreakDistance = { Value = 60 },
                 SquareModBreakObjects = { Value = 3 },
                 SquareModCount = { Value = 200 },
                 SquareModKickslider = { Value = true }
