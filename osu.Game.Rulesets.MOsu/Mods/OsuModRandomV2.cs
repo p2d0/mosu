@@ -17,6 +17,7 @@ using osu.Framework.Logging;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.UI;
@@ -230,6 +231,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         [SettingSource("Increasing?", "3 then 6 then 9 circles ec", SettingControlType = typeof(SquareModBoolSetting))]
         public Bindable<bool> SquareModIncreasing { get; } = new BindableBool(false);
+
+        [SettingSource("Kickslider", "Replace break gap with a repeating slider", SettingControlType = typeof(SquareModBoolSetting))]
+        public Bindable<bool> SquareModKickslider { get; } = new BindableBool(false);
 
         // [SettingSource("Square Distance", "Square distance")]
         // public BindableInt SquareDistance { get; } = new BindableInt(200)
@@ -627,6 +631,28 @@ namespace osu.Game.Rulesets.MOsu.Mods
             return previousObjectStartedCombo && random.NextDouble() < 0.6f;
         }
 
+        private Slider createKickslider(double startTime, double duration, Vector2 position, OsuBeatmap osuBeatmap, OsuHitObject firstHitObject)
+        {
+            int repeatCount = SquareModBreakObjects.Value - 1;
+            var slider = new Slider
+            {
+                Position = position,
+                RepeatCount = repeatCount,
+                StartTime = startTime,
+                SliderVelocityMultiplier = 0.5f,
+                Path = new SliderPath(new[]
+                {
+                    new PathControlPoint(new Vector2(0, 0)),
+                    new PathControlPoint(new Vector2(25, 0))
+                })
+            };
+            slider.Samples = firstHitObject.Samples;
+            slider.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
+            // Adjust distance so the slider spans the desired duration: Duration = SpanCount * Distance / Velocity
+            // slider.Path.ExpectedDistance.Value = slider.Velocity * duration / slider.SpanCount();
+            return slider;
+        }
+
         private void makeMapSquare(IBeatmap beatmap)
         {
             // The 'is' pattern matching already declares and assigns osuBeatmap if the cast is successful.
@@ -720,8 +746,17 @@ namespace osu.Game.Rulesets.MOsu.Mods
                         // Check if the number of circles placed since the last break has reached the current interval.
                         if (circlesSinceLastBreak >= breakInterval)
                         {
-                            // Add the extra break time. Assuming '3 circles' break means using SquareModBreakObjects.
-                            nextStartTime += beatLength * SquareModBreakObjects.Value;
+                            double breakDuration = beatLength * SquareModBreakObjects.Value;
+                            if (SquareModKickslider.Value)
+                            {
+                                var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position, osuBeatmap, firstHitObject);
+                                hitObjects.Add(kickslider);
+                                nextStartTime = kickslider.EndTime;
+                            }
+                            else
+                            {
+                                nextStartTime += breakDuration;
+                            }
                             // Increase the interval for the next break.
                             breakInterval += breakIncreaseAmount;
                             // Reset the counter.
@@ -731,8 +766,19 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // Fallback to the original, consistent break logic if increasing mode is off.
                     else if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
                     {
-                        nextStartTime += beatLength * SquareModBreakObjects.Value;
-                        circle.Position += new Vector2(BreakDistance.Value,BreakDistance.Value);
+                        double breakDuration = beatLength * SquareModBreakObjects.Value;
+                        if (SquareModKickslider.Value)
+                        {
+                            var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(BreakDistance.Value, BreakDistance.Value), osuBeatmap, firstHitObject);
+                            hitObjects.Add(kickslider);
+                            nextStartTime = kickslider.EndTime;
+                            circle.Position += new Vector2(BreakDistance.Value, BreakDistance.Value);
+                        }
+                        else
+                        {
+                            nextStartTime += breakDuration;
+                            circle.Position += new Vector2(BreakDistance.Value, BreakDistance.Value);
+                        }
                     }
                 }
 

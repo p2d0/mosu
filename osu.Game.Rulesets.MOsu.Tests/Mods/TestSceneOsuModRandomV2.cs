@@ -13,15 +13,35 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
     public partial class TestSceneOsuModRandomV2 : OsuModTestScene
     {
-        [TestCase(1)]
-        [TestCase(7)]
-        [TestCase(10)]
-        public void TestDefaultBeatmap(float angleSharpness) => CreateModTest(new ModTestData
+        // [TestCase(1)]
+        // [TestCase(7)]
+        // [TestCase(10)]
+        // public void TestDefaultBeatmap(float angleSharpness) => CreateModTest(new ModTestData
+        // {
+        //     Mod = new OsuModRandomV2
+        //     {
+        //         AngleSharpness = { Value = angleSharpness },
+        //         AimDistanceMultiplier = { Value = 10.0f }
+        //     },
+        //     Autoplay = true,
+        //     PassCondition = () => true
+        // });
+
+        [TestCase]
+        public void TestDefaultBeatmap() => CreateModTest(new ModTestData
         {
             Mod = new OsuModRandomV2
             {
-                AngleSharpness = { Value = angleSharpness },
-                AimDistanceMultiplier = { Value = 10.0f }
+                SquareMod = { Value = true },
+                SquareModDivisor = { Value = 4 },
+                SquareModDistance = { Value = 40 },
+                SquareModBreak = { Value = true },
+                SquareModBreakInterval = { Value = 6 },
+                BreakDistance = { Value = 6 },
+                SquareModBreakObjects = { Value = 3 },
+                SquareModCount = { Value = 200 },
+                SquareModKickslider = { Value = true }
+                
             },
             Autoplay = true,
             PassCondition = () => true

@@ -46,7 +46,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             this.songSelectMods = songSelectMods;
 
             var excludedProperties = new HashSet<string> { "SquareMod", "SquareModDivisor", "SquareModDistance", "SquareModBreakDistance",
-                "SquareModBreak", "SquareModBreakInterval", "SquareModBreakObjects", "SquareModFullMap", "SquareModeOffset", "SquareModCount", "SquareModIncreasing", "Seed" };
+                "SquareModBreak", "SquareModBreakInterval", "SquareModBreakObjects", "SquareModFullMap", "SquareModeOffset", "SquareModCount", "SquareModIncreasing", "SquareModKickslider", "Seed" };
             foreach (var (attr, prop) in mod.GetSettingsSourceProperties())
             {
                 var bindable = prop.GetValue(mod);
