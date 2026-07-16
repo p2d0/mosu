@@ -33,6 +33,7 @@ using osu.Framework.Threading;
 using System.Reflection;
 using System.Threading.Tasks;
 using osu.Game.Database;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Replays;
 using osu.Framework.Screens;
@@ -53,6 +54,15 @@ namespace osu.Game.Rulesets.MOsu.UI
             : base(ruleset, beatmap, mods)
         {
             this.playableBeatmap = beatmap!;
+        }
+
+        protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
+        {
+            var dependencies = base.CreateChildDependencies(parent);
+            var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
+            if (osuConfig != null)
+                ((DependencyContainer)dependencies).Cache(osuConfig);
+            return dependencies;
         }
 
         [Resolved]
@@ -176,9 +186,10 @@ namespace osu.Game.Rulesets.MOsu.UI
                 ReplayAnalysisOverlay analysisOverlay;
                 PlayfieldAdjustmentContainer.Add(analysisOverlay = new ReplayAnalysisOverlay(replayPlayer.Score.Replay));
                 Overlays.Add(analysisOverlay.CreateProxy().With(p => p.Depth = float.NegativeInfinity));
-                replayPlayer.AddSettings(new ReplayAnalysisSettings(Config));
+                var osuConfig = (OsuRulesetConfigManager?)Dependencies.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
+                replayPlayer.AddSettings(new ReplayAnalysisSettings(osuConfig!));
 
-                cursorHideEnabled = Config.GetBindable<bool>(OsuRulesetSetting.ReplayCursorHideEnabled);
+                cursorHideEnabled = osuConfig!.GetBindable<bool>(OsuRulesetSetting.ReplayCursorHideEnabled);
 
                 // I have little faith in this working (other things touch cursor visibility) but haven't broken it yet.
                 // Let's wait for someone to report an issue before spending too much time on it.

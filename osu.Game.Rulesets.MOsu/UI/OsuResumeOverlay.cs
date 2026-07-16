@@ -10,10 +10,10 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
-using osu.Game.Rulesets.Osu.UI.Cursor;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
 using osuTK.Graphics;
+using osu.Game.Rulesets.MOsu.UI.Cursor;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -36,11 +36,12 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             OsuResumeOverlayInputBlocker? inputBlocker = null;
 
-            var drawableOsuRuleset = (DrawableOsuRuleset?)drawableRuleset;
+            var drawableOsuRuleset = (UI.DrawableOsuRuleset?)drawableRuleset;
 
             if (drawableOsuRuleset != null)
             {
-                drawableOsuRuleset.Overlays.Add(inputBlocker = new OsuResumeOverlayInputBlocker());
+                var osuPlayfield = drawableOsuRuleset.Playfield;
+                osuPlayfield.AttachResumeOverlayInputBlocker(inputBlocker = new OsuResumeOverlayInputBlocker());
             }
 
             Add(cursorScaleContainer = new Container

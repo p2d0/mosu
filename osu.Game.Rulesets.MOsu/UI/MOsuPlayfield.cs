@@ -17,6 +17,7 @@ using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Objects.Drawables.Connections;
 using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Configuration;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osu.Game.Rulesets.Osu.UI.Cursor;
@@ -116,9 +117,10 @@ namespace osu.Game.Rulesets.MOsu.UI
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuRulesetConfigManager? config, IBeatmap? beatmap)
+        private void load(IRulesetConfigCache configCache, IBeatmap? beatmap)
         {
-            config?.BindWith(OsuRulesetSetting.PlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
+            var osuConfig = (OsuRulesetConfigManager?)configCache.GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
+            osuConfig?.BindWith(OsuRulesetSetting.PlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
 
             var osuBeatmap = (OsuBeatmap?)beatmap;
             RegisterPool<HitCircle, DrawableHitCircle>(20, 100);
