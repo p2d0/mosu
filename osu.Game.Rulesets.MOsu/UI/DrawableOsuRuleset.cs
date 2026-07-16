@@ -134,29 +134,28 @@ namespace osu.Game.Rulesets.MOsu.UI
                 frameStablePlaybackResetDelegate.RunTask();
 
             // Read current FrameStablePlayback state via reflection
-            PropertyInfo prop = frameStablePlaybackProperty;
-            bool wasFrameStable = (bool)prop.GetValue(this)!;
+            bool wasFrameStable = (bool)frameStablePlaybackProperty.GetValue(this);
 
             // Disable frame-stable playback
-            prop.SetValue(this, false);
+            frameStablePlaybackProperty.SetValue(this, false);
 
             // Perform the seek
             GameplayClockContainer.Seek(time);
 
             // Schedule restore of frame-stable playback after children process
             frameStablePlaybackResetDelegate = ScheduleAfterChildren(() =>
-                                                                     prop.SetValue(this, wasFrameStable));
+                                                                     frameStablePlaybackProperty.SetValue(this, wasFrameStable));
         }
 
 
-                private ScoreManager scoreManager = null!;
+                private ScoreManager scoreManager;
                 private LocalUserManager localUserManager = null!;
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager? localUserManager, ScoreManager? scoreManager)
         {
             this.scoreManager = scoreManager!;
-            this.localUserManager = localUserManager!;
+            this.localUserManager = localUserManager;
 
             // Attach dummy replay file to mosu scores that have no files,
             // so the delete button appears in the leaderboard context menu.
