@@ -143,8 +143,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
         {
             ToggleVisibility();
 
-            // Schedule the data fetch
-            Schedule(() => fetchAndSetContentForLocalUser(userToShow, userRuleset));
+            // Only reload data when showing (State flips immediately, IsPresent lags during animation).
+            if (State.Value == Visibility.Visible)
+                Schedule(() => fetchAndSetContentForLocalUser(userToShow, userRuleset));
         }
 
         public async void fetchAndSetContentForLocalUser(IUser userToShow, IRulesetInfo? userRuleset)
