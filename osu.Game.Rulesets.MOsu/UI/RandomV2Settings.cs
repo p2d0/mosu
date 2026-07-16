@@ -18,6 +18,7 @@ using osu.Game.Screens.Play;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Overlays.Settings;
 using osu.Game.Screens.Play.PlayerSettings;
 
 namespace osu.Game.Rulesets.MOsu.UI
@@ -44,16 +45,24 @@ namespace osu.Game.Rulesets.MOsu.UI
             this.replayFunc = replayFunc;
             this.songSelectMods = songSelectMods;
 
-            AddRange(mod.CreateSettingsControls().Where(c => c.GetType().Name != "PlayAutoplayButton"));
-
+            var excludedProperties = new HashSet<string> { "SquareMod", "SquareModDivisor", "SquareModDistance", "SquareModBreakDistance",
+                "SquareModBreak", "SquareModBreakInterval", "SquareModBreakObjects", "SquareModFullMap", "SquareModeOffset", "SquareModCount", "SquareModIncreasing", "Seed" };
             foreach (var (attr, prop) in mod.GetSettingsSourceProperties())
             {
                 var bindable = prop.GetValue(mod);
                 if (bindable == null)
                     continue;
 
+                if (excludedProperties.Contains(prop.Name))
+                    continue;
+
                 BindToReprocess(bindable);
             }
+
+            AddRange(mod.CreateSettingsControls().Where(c => c.GetType().Name != "PlayAutoplayButton"
+                && !c.GetType().Name.Contains("SquareMod")
+                && c.GetType().Name != "SettingsNumberBox"
+                && (c as SettingsItem<bool>)?.LabelText.ToString() != "Generate circles"));
         }
 
         private void BindToReprocess(object bindable)

@@ -58,10 +58,14 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
         {
-            var dependencies = base.CreateChildDependencies(parent);
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
+            var dependencies = base.CreateChildDependencies(parent);
             if (osuConfig != null)
-                ((DependencyContainer)dependencies).Cache(osuConfig);
+            {
+                var wrapper = new DependencyContainer(dependencies);
+                wrapper.Cache(osuConfig);
+                return wrapper;
+            }
             return dependencies;
         }
 
