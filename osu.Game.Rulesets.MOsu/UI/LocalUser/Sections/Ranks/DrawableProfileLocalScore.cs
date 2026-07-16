@@ -9,7 +9,6 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
@@ -22,8 +21,6 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Profile.Sections;
-using osu.Game.Resources.Localisation.Web;
-using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
@@ -434,7 +431,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                     }
                 }, validScreens: new[]
                 {
-                    typeof(SongSelect), typeof(Screens.Select.SongSelect), typeof(IHandlePresentBeatmap)
+                    typeof(SongSelect), typeof(osu.Game.Screens.Select.SongSelect), typeof(IHandlePresentBeatmap)
                 });
             }
 

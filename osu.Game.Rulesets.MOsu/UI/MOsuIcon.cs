@@ -158,14 +158,14 @@ namespace osu.Game.Rulesets.MOsu.UI
                     var overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
                     if (overlay == null)
                     {
-                        overlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+                        overlay = waveContainer?.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
                     }
                     if (overlay == null)
                     {
                         overlay = new LocalUserProfileOverlay();
                         LoadComponentAsync(overlay, o =>
                         {
-                            waveContainer.Add(o);
+                            waveContainer?.Add(o);
                             host.Dependencies.Cache(o);
                         });
                     }

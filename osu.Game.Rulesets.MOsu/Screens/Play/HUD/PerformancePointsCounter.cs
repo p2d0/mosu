@@ -21,8 +21,9 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
+using osu.Game.Screens.Play;
 
-namespace osu.Game.Screens.Play.HUD
+namespace osu.Game.Rulesets.MOsu.Screens.Play.HUD
 {
     public abstract partial class PerformancePointsCounter : RollingCounter<int>
     {

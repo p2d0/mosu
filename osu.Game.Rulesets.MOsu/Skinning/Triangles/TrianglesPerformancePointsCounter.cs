@@ -13,7 +13,7 @@ using osu.Game.Screens.Play.HUD;
 using osu.Game.Skinning;
 using osuTK;
 
-namespace osu.Game.Skinning.Triangles
+namespace osu.Game.Rulesets.MOsu.Skinning.Triangles
 {
     public partial class TrianglesPerformancePointsCounter : PerformancePointsCounter, ISerialisableDrawable
     {

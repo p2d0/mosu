@@ -27,7 +27,7 @@ using osuTK;
 using osuTK.Graphics;
 using Container = osu.Framework.Graphics.Containers.Container;
 
-namespace osu.Game.Rulesets.Osu.HUD
+namespace osu.Game.Rulesets.MOsu.HUD
 {
     [Cached]
     public partial class AimErrorMeter : HitErrorMeter
