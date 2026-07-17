@@ -1972,7 +1972,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 2.96,
+                  "aim_distance_multiplier": 3.4,
                   "stream_distance_multiplier": 4.1,
                   "power_streams": true,
                   "seed": 727272727
