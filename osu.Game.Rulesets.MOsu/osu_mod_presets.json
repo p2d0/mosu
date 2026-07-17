@@ -11,18 +11,23 @@
   },
   {
     "Name": "SuperAim 1/4",
-    "Description": "Like superaim but increases distance of 'streams'",
+    "Description": "Like superaim but increases distance of everything ≥1/4 beat",
     "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"power_jumps\":true,\"stream_distance_multiplier\":10.0,\"power_streams\":true,\"divide_by_divisor\":true}},{\"acronym\":\"NL\"}]"
   },
   {
     "Name": "Tap aim 1/4",
-    "Description": "Replace whole map with generated circles",
+    "Description": "Replace the whole map with generated circles",
     "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"custom_angle\":true,\"stream_distance_multiplier\":2.00,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100}}]"
   },
   {
     "Name": "Tap aim 1/4 with breaks",
     "Description": "Like tap aim but with breaks every 25 circles",
     "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"custom_angle\":true,\"stream_distance_multiplier\":2.00,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100,\"square_mod_break\":true,\"square_mod_break_interval\":25,\"square_mod_break_objects\":6}}]"
+  },
+  {
+    "Name": "Tap aim 1/4 increasing",
+    "Description": "Start with 3 and add 1 circle after each break",
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":1.5,\"power_jumps\":true,\"divisor\":4,\"custom_angle\":true,\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":100,\"square_mod_break\":true,\"square_mod_break_interval\":30,\"square_mod_break_objects\":6,\"square_mod_increasing\":true}}]"
   },
   {
     "Name": "Stream practice",
@@ -32,17 +37,17 @@
   {
     "Name": "Stream practice 16x",
     "Description": "Streams with 16 circles at a time",
-      "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_break_interval\":16,\"square_mod_break_objects\":6,\"square_mod_kickslider\":true}}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_break_interval\":16,\"square_mod_break_objects\":6,\"square_mod_kickslider\":true}}]"
   },
   {
     "Name": "Stream practice 8x",
     "Description": "Streams with 8 circles at a time",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_kickslider\":true}}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_break_interval\":8,\"square_mod_break_objects\":6,\"square_mod_kickslider\":true}}]"
   },
   {
-    "Name": "Stream practice 8 → ∞",
-    "Description": "Start with 8 circle streams and increase each stream by 3",
-      "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_kickslider\":true, \"increasing\":true}}]"
+    "Name": "Stream practice 3 → ∞",
+    "Description": "Start with 3 circle streams and increase each stream by 3",
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0,\"overall_difficulty\":8.0}},{\"acronym\":\"RDV2\",\"settings\":{\"square_mod\":true,\"square_mod_divisor\":4,\"square_mod_distance\":40,\"square_mod_break\":true,\"square_mod_break_interval\":8,\"square_mod_break_objects\":6,\"square_mod_kickslider\":true, \"square_mod_increasing\": true}}]"
   },
   {
     "Name": "Triples practice",
