@@ -58,6 +58,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Edit mod live in game", "", SettingControlType = typeof(PlayAutoplayButton))]
         public Bindable<bool> PlayAutoplay { get; } = new BindableBool(false);
 
+        [SettingSource("Remove stacks", "Remove stacks")]
+        public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
+
         [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
         public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
         {
@@ -66,14 +69,9 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance", SettingControlType = typeof(PowerJumpsCheckbox))]
-        public BindableBool PowerJumps { get; } = new BindableBool(false);
 
-        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsCheckbox))]
+        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases")]
         public BindableBool ExpoJumps { get; } = new BindableBool(false);
-
-        [SettingSource("Remove stacks", "Remove stacks")]
-        public Bindable<bool> RemoveStacks { get; } = new BindableBool(false);
 
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
@@ -86,11 +84,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
         public BindableBool PowerStreams { get; } = new BindableBool(false);
 
-        [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
-        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(true);
-
-        // 4. Divisor: Visible when DivideByDivisor is true
-        [SettingSource("Aim/Stream Divisor", "Divisor below which circles will be considered aim", SettingControlType = typeof(DivisorSetting))]
+        [SettingSource("Aim/Stream Divisor", "Divisor below which circles will be considered aim")]
         public BindableInt Divisor { get; } = new BindableInt(2)
         {
             MinValue = 1,
@@ -98,23 +92,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Default = 2,
         };
 
-        // 1. AngleSharpness: Hidden when CustomAngle is true
-        [SettingSource("Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
-        public BindableFloat AngleSharpness { get; } = new BindableFloat(7)
-        {
-            MinValue = 1,
-            MaxValue = 10,
-            Precision = 0.1f
-        };
-
-        // 2. StreamAngleSharpness: Hidden when CustomAngle is true
-        [SettingSource("Stream Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
-        public BindableFloat StreamAngleSharpness { get; } = new BindableFloat(7)
-        {
-            MinValue = 1,
-            MaxValue = 10,
-            Precision = 0.1f
-        };
 
         [SettingSource("Custom angle", "Custom angle")]
         public Bindable<bool> CustomAngle { get; } = new BindableBool(false);
@@ -124,6 +101,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Star,
             FourtyFive,
             Ninety,
+            Custom
         }
 
         public float GetAngleValue()
@@ -145,26 +123,27 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Default = AngleEnum.Star,
         };
 
-        // 5. StreamDistance: Hidden when DivideByDivisor is true
-        [SettingSource("Stream Distance", "How much bigger the distance", SettingControlType = typeof(StreamDistanceSetting))]
-        public BindableInt StreamDistance { get; } = new BindableInt(100)
+        // 1. AngleSharpness: Hidden when CustomAngle is true
+        [SettingSource("Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
+        public BindableFloat AngleSharpness { get; } = new BindableFloat(7)
         {
-            MinValue = 25,
-            MaxValue = 500,
+            MinValue = 1,
+            MaxValue = 10,
+            Precision = 0.1f
+        };
+
+        // 2. StreamAngleSharpness: Hidden when CustomAngle is true
+        [SettingSource("Stream Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
+        public BindableFloat StreamAngleSharpness { get; } = new BindableFloat(7)
+        {
+            MinValue = 1,
+            MaxValue = 10,
+            Precision = 0.1f
         };
 
         public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
 
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
-
-
-
-        // [SettingSource("Square Distance", "Square distance")]
-        // public BindableInt SquareDistance { get; } = new BindableInt(200)
-        // {
-        //     MinValue = 100,
-        //     MaxValue = 1000,
-        // };
 
         private static readonly float playfield_diagonal = MOsuPlayfield.BASE_SIZE.LengthFast;
 
@@ -226,9 +205,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 };
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
-                    if(PowerStreams.Value){
+                    if(PowerStreams.Value)
                         positionInfos[i].DistanceFromPrevious = getExpoJumpsDistance(positionInfos[i].DistanceFromPrevious, StreamDistanceMultiplier.Value);
-                    }
                     else
                         positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
                 }
@@ -237,12 +215,10 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     // if(CustomAngle.Value)
                     //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
                     // else
-                    if(PowerJumps.Value)
-                        positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
-                    else if (ExpoJumps.Value)
+                    if (ExpoJumps.Value)
                         positionInfos[i].DistanceFromPrevious = getExpoJumpsDistance(positionInfos[i].DistanceFromPrevious, AimDistanceMultiplier.Value);
                     else
-                        positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
+                        positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
 
                     // if(AimDistanceMultiplier.Value >= 1)
                     //     positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
@@ -376,21 +352,14 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         private bool isStream(OsuBeatmap osuBeatmap, List<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)
         {
-            if(DivideByDivisor.Value) {
-                // Logger.Log($"Divisor {osuBeatmap.ControlPointInfo.GetClosestBeatDivisor(positionInfos.HitObject.StartTime)}");
-                var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
-                if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
-                    // Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
-                    // NOTE: The +1 feels hacky
-                    var isStream = nextCircle.StartTime - circle.StartTime + 1 < beatLength / Divisor.Value;
-                    if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
-                        return circle.StartTime - previousCircle.StartTime + 1 < beatLength / Divisor.Value;
-                }
-
-                return true;
+            var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
+            if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
+                var isStream = nextCircle.StartTime - circle.StartTime + 1 < beatLength / Divisor.Value;
+                if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
+                    return circle.StartTime - previousCircle.StartTime + 1 < beatLength / Divisor.Value;
             }
-            else
-                return (originalDistance < StreamDistance.Value);
+
+            return true;
         }
 
         // private int Moved = 0;
@@ -492,7 +461,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             float relativeAngle = (float)Math.PI - angle;
             // Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
 
-            if(CustomAngle.Value)
+            if(CustomAngle.Value && Angle.Value != AngleEnum.Custom)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -519,7 +488,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             float relativeAngle = (float)Math.PI - angle;
 
-            if(CustomAngle.Value)
+            if(CustomAngle.Value && Angle.Value != AngleEnum.Custom)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -528,7 +497,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         /// <returns>Whether a new section should be started at the current <see cref="OsuHitObject"/>.</returns>
         private bool shouldStartNewSection(OsuBeatmap beatmap, IReadOnlyList<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
         {
-            if(CustomAngle.Value)
+            if (Angle.Value == AngleEnum.Custom)
                 return false;
             if (i == 0)
                 return true;
@@ -561,15 +530,14 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 base.LoadComplete();
                 if (SettingSourceObject is OsuModRandomV2 mod)
                 {
-                    mod.CustomAngle.BindValueChanged(val =>
+                    mod.Angle.BindValueChanged(val =>
                     {
-                        if (val.NewValue) Hide(); else Show();
+                        if (val.NewValue == AngleEnum.Custom) Show(); else Hide();
                     }, true);
                 }
             }
         }
 
-        // 2. Logic: Visible if CustomAngle is True
         public partial class AngleEnumSetting : SettingsEnumDropdown<AngleEnum>
         {
             protected override void LoadComplete()
@@ -580,68 +548,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     mod.CustomAngle.BindValueChanged(val =>
                     {
                         if (val.NewValue) Show(); else Hide();
-                    }, true);
-                }
-            }
-        }
-
-        // 3. Logic: Visible if DivideByDivisor is True
-        public partial class DivisorSetting : SettingsSlider<int>
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    mod.DivideByDivisor.BindValueChanged(val =>
-                    {
-                        if (val.NewValue) Show(); else Hide();
-                    }, true);
-                }
-            }
-        }
-
-        public partial class PowerJumpsCheckbox : SettingsCheckbox
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    mod.ExpoJumps.BindValueChanged(val =>
-                    {
-                        if (val.NewValue) Hide(); else Show();
-                    }, true);
-                }
-            }
-        }
-
-        public partial class ExpoJumpsCheckbox : SettingsCheckbox
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    mod.PowerJumps.BindValueChanged(val =>
-                    {
-                        if (val.NewValue) Hide(); else Show();
-                    }, true);
-                }
-            }
-        }
-
-        // 4. Logic: Hidden if DivideByDivisor is True
-        public partial class StreamDistanceSetting : SettingsSlider<int>
-        {
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-                if (SettingSourceObject is OsuModRandomV2 mod)
-                {
-                    mod.DivideByDivisor.BindValueChanged(val =>
-                    {
-                        if (val.NewValue) Hide(); else Show();
                     }, true);
                 }
             }

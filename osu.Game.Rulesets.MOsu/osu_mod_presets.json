@@ -2,17 +2,17 @@
   {
     "Name": "Aim",
     "Description": "",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":5.96,\"power_jumps\":true,\"divisor\":3}}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":5.96,\"divisor\":3}}]"
   },
   {
     "Name": "SuperAim",
     "Description": "",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":5.96,\"power_jumps\":true,\"divide_by_divisor\":true,\"divisor\":3}},{\"acronym\":\"NL\",\"settings\":{\"beat_divisor\":2}}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":5.96,\"divisor\":3}},{\"acronym\":\"NL\",\"settings\":{\"beat_divisor\":2}}]"
   },
   {
     "Name": "SuperAim 1/4",
     "Description": "Like superaim but increases distance of everything ≥1/4 beat",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"power_jumps\":true,\"stream_distance_multiplier\":10.0,\"power_streams\":true,\"divide_by_divisor\":true}},{\"acronym\":\"NL\"}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"stream_distance_multiplier\":10.0}},{\"acronym\":\"NL\"}]"
   },
   {
     "Name": "Tap aim 1/4",
