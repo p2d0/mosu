@@ -1731,11 +1731,15 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 7.96,
-                  "square_mod": true,
-                  "square_mod_distance": 100,
-                  "square_mod_count": 200,
-                  "seed": 323743834
+                  "aim_distance_multiplier": 7.96
+                }
+              },
+              {
+                "acronym": "CG",
+                "settings": {
+                  "distance": 100,
+                  "count": 200,
+                  "full_map": false
                 }
               }
             ],
