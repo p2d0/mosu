@@ -10,24 +10,24 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {
-    public partial class TestSceneExpoJumpsTooltip : OsuManualInputManagerTestScene
+    public partial class TestSceneExpoStreamsTooltip : OsuManualInputManagerTestScene
     {
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
 
         private void capture(string name)
         {
-            ScreenshotHelper.Capture(gameHost, $"ExpoJumpsTooltip_{name}");
+            ScreenshotHelper.Capture(gameHost, $"ExpoStreamsTooltip_{name}");
         }
 
         [Test]
         public void TestTooltipRenders()
         {
-            ExpoJumpsTooltip tooltip = null!;
+            ExpoStreamsTooltip tooltip = null!;
 
             AddStep("create tooltip", () =>
             {
-                tooltip = new ExpoJumpsTooltip("Larger jump spacing receives diminishing distance increases")
+                tooltip = new ExpoStreamsTooltip("Larger stream spacing receives diminishing distance increases")
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
@@ -50,11 +50,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [Test]
         public void TestSettingCheckbox()
         {
-            ExpoJumpsSetting setting = null!;
+            ExpoStreamsSetting setting = null!;
 
             AddStep("create setting", () =>
             {
-                setting = new ExpoJumpsSetting
+                setting = new ExpoStreamsSetting
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
@@ -77,7 +77,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [Test]
         public void TestTooltipWithHover()
         {
-            ExpoJumpsSetting setting = null!;
+            ExpoStreamsSetting setting = null!;
 
             AddStep("create in tooltip container", () =>
             {
@@ -87,7 +87,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     Child = new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Child = setting = new ExpoJumpsSetting
+                        Child = setting = new ExpoStreamsSetting
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,

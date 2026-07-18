@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         };
 
 
-        [SettingSource("Exponential jumps", "", SettingControlType = typeof(ExpoJumpsSetting))]
+        [SettingSource("Exponential jumps", "Larger jump spacing receives diminishing distance increases", SettingControlType = typeof(ExpoJumpsSetting))]
         public BindableBool ExpoJumps { get; } = new BindableBool(false);
 
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
+        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases", SettingControlType = typeof(ExpoStreamsSetting))]
         public BindableBool PowerStreams { get; } = new BindableBool(false);
 
         [SettingSource("Aim/Stream Divisor", "Divisor below which circles will be considered aim")]
