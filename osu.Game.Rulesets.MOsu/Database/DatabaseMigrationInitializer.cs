@@ -181,8 +181,9 @@ private const string NEW_SHORT_NAME = "mosu";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.Create);
-            baseDir = Path.Combine(localAppData, "osu");
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create);
+            Logger.Log($"[MOsu Migration] AppData (Roaming): {appData}");
+            baseDir = Path.Combine(appData, "osu");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
