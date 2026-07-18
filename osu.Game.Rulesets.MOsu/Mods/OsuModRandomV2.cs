@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         };
 
 
-        [SettingSource("Exponential jumps", "Larger jumps spacing receives diminishing distance increases")]
+        [SettingSource("Exponential jumps", "", SettingControlType = typeof(ExpoJumpsSetting))]
         public BindableBool ExpoJumps { get; } = new BindableBool(false);
 
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
