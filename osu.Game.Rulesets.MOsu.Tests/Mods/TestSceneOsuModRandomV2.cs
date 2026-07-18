@@ -28,20 +28,19 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
         // });
 
         [TestCase]
-        public void TestDefaultBeatmap() => CreateModTest(new ModTestData
+        public void TestCircleGeneration() => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandomV2
+            Mod = new OsuModCircleGeneration
             {
-                SquareMod = { Value = true },
-                SquareModDivisor = { Value = 4 },
-                SquareModDistance = { Value = 30 },
-                SquareModBreak = { Value = true },
-                SquareModBreakInterval = { Value = 6 },
+                Divisor = { Value = 4 },
+                Distance = { Value = 30 },
+                Break = { Value = true },
+                BreakInterval = { Value = 6 },
                 BreakDistance = { Value = 60 },
-                SquareModBreakObjects = { Value = 3 },
-                SquareModCount = { Value = 200 },
-                SquareModKickslider = { Value = true }
-                
+                BreakObjects = { Value = 3 },
+                Count = { Value = 200 },
+                Kickslider = { Value = true },
+                FullMap = { Value = false }
             },
             Autoplay = true,
             PassCondition = () => true

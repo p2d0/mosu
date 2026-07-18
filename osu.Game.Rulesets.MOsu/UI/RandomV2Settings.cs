@@ -45,8 +45,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             this.replayFunc = replayFunc;
             this.songSelectMods = songSelectMods;
 
-            var excludedProperties = new HashSet<string> { "SquareMod", "SquareModDivisor", "SquareModDistance", "SquareModBreakDistance",
-                "SquareModBreak", "SquareModBreakInterval", "SquareModBreakObjects", "SquareModFullMap", "SquareModeOffset", "SquareModCount", "SquareModIncreasing", "SquareModKickslider", "Seed" };
+            var excludedProperties = new HashSet<string> { "Seed" };
             foreach (var (attr, prop) in mod.GetSettingsSourceProperties())
             {
                 var bindable = prop.GetValue(mod);
@@ -60,9 +59,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
 
             AddRange(mod.CreateSettingsControls().Where(c => c.GetType().Name != "PlayAutoplayButton"
-                && !c.GetType().Name.Contains("SquareMod")
-                && c.GetType().Name != "SettingsNumberBox"
-                && (c as SettingsItem<bool>)?.LabelText.ToString() != "Generate circles"));
+                && c.GetType().Name != "SettingsNumberBox"));
         }
 
         private void BindToReprocess(object bindable)

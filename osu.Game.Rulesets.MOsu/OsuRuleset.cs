@@ -171,6 +171,7 @@ namespace osu.Game.Rulesets.MOsu
                         new OsuModTargetPractice(),
                         new OsuModDifficultyAdjust(),
                         new OsuModClassic(),
+                        new OsuModCircleGeneration(),
                         new OsuModRandomV2(),
                         new OsuModRandom(),
                         new OsuModSquare(),
