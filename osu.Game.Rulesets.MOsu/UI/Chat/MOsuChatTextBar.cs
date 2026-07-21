@@ -24,6 +24,29 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 {
     public partial class MOsuChatTextBar : osu.Game.Overlays.Chat.ChatTextBar, IHasContextMenu
     {
+        public event Action<string>? OnModsCommand;
+
+        protected override void LoadComplete()
+        {
+            // Hook into chatTextBox.OnCommit to intercept /mods and /md
+            var chatTextBoxField = typeof(osu.Game.Overlays.Chat.ChatTextBar).GetField("chatTextBox", BindingFlags.Instance | BindingFlags.NonPublic);
+            var chatTextBox = chatTextBoxField?.GetValue(this) as osu.Game.Overlays.Chat.ChatTextBox;
+
+            if (chatTextBox != null)
+            {
+                chatTextBox.OnCommit += (sender, _) =>
+                {
+                    if (sender.Text == "/mods" || sender.Text == "/md")
+                    {
+                        OnModsCommand?.Invoke(sender.Text);
+                        sender.Text = string.Empty;
+                    }
+                };
+            }
+
+            base.LoadComplete();
+        }
+
         [Resolved(CanBeNull = true)]
         private Bindable<IReadOnlyList<Mod>>? selectedMods { get; set; }
 
@@ -47,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             }
         }
 
-        private void sendCurrentMods()
+        public void sendCurrentMods()
         {
             if (selectedMods == null || currentRuleset == null || channelManager == null) return;
 

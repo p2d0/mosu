@@ -128,6 +128,12 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 };
             }
 
+            // Intercept /mods and /md commands
+            newTextBar.OnModsCommand += (message) =>
+            {
+                newTextBar.sendCurrentMods();
+            };
+
             var wrapper = new OsuContextMenuContainer
             {
                 RelativeSizeAxes = Axes.X,
@@ -228,18 +234,37 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 var chatLineFlow = chatLineFlowField?.GetValue(drawableChannel) as FillFlowContainer;
                 if (chatLineFlow == null) continue;
 
-                // Check for new ChatLines
-                foreach (var child in chatLineFlow.Children.ToArray())
+                // Collect replacements with their indices
+                var children = chatLineFlow.Children.ToArray();
+                var replacements = new List<(int index, osu.Game.Overlays.Chat.ChatLine old, MOsuChatLine @new)>();
+                for (int i = 0; i < children.Length; i++)
                 {
+                    var child = children[i];
                     if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine))
                     {
                         var moChatLine = new MOsuChatLine(chatLine.Message);
                         moChatLine.Depth = chatLine.Depth;
                         moChatLine.Anchor = chatLine.Anchor;
                         moChatLine.Origin = chatLine.Origin;
-                        chatLineFlow.Remove(child, true);
-                        chatLineFlow.Add(moChatLine);
-                        return; // One per frame to avoid issues
+                        replacements.Add((i, chatLine, moChatLine));
+                    }
+                }
+
+                if (replacements.Count == 0) continue;
+
+                // Clear and rebuild to preserve order
+                var allChildren = chatLineFlow.Children.ToArray();
+                chatLineFlow.Clear(false);
+
+                foreach (var child in allChildren)
+                {
+                    if (child is osu.Game.Overlays.Chat.ChatLine oldLine && replacements.Any(r => r.old == oldLine))
+                    {
+                        chatLineFlow.Add(replacements.First(r => r.old == oldLine).@new);
+                    }
+                    else
+                    {
+                        chatLineFlow.Add(child);
                     }
                 }
             }
