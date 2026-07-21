@@ -21,6 +21,14 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         private FieldInfo? chatOverlayField;
         private FieldInfo? overlayContentField;
         private FieldInfo? focusedOverlaysField;
+        private FieldInfo? newsField;
+        private FieldInfo? dashboardField;
+        private FieldInfo? beatmapListingField;
+        private FieldInfo? changelogOverlayField;
+        private FieldInfo? rankingsOverlayField;
+        private FieldInfo? wikiOverlayField;
+        private FieldInfo? settingsField;
+        private FieldInfo? notificationsField;
 
         private ChatOverlay? newOverlay;
         private bool hasInjected;
@@ -38,6 +46,14 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             chatOverlayField = getFieldInHierarchy(type, "chatOverlay");
             overlayContentField = getFieldInHierarchy(type, "overlayContent");
             focusedOverlaysField = getFieldInHierarchy(type, "focusedOverlays");
+            newsField = getFieldInHierarchy(type, "news");
+            dashboardField = getFieldInHierarchy(type, "dashboard");
+            beatmapListingField = getFieldInHierarchy(type, "beatmapListing");
+            changelogOverlayField = getFieldInHierarchy(type, "changelogOverlay");
+            rankingsOverlayField = getFieldInHierarchy(type, "rankingsOverlay");
+            wikiOverlayField = getFieldInHierarchy(type, "wikiOverlay");
+            settingsField = getFieldInHierarchy(type, "settings");
+            notificationsField = getFieldInHierarchy(type, "notifications");
         }
 
         protected override void LoadComplete()
@@ -84,6 +100,11 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 type = type.BaseType!;
             }
             return null;
+        }
+
+        private OverlayContainer? getOverlay(FieldInfo? field)
+        {
+            return field?.GetValue(game) as OverlayContainer;
         }
 
         private bool injectOverlay(Container targetContainer)
@@ -147,6 +168,45 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             // Update the chatOverlay field so OsuGame uses our custom overlay
             chatOverlayField?.SetValue(game, newOverlay);
+
+            // Set up state change handler to hide other single-display overlays (mimics OsuGame's singleDisplayOverlays behavior)
+            newOverlay.State.ValueChanged += state =>
+            {
+                if (state.NewValue != Visibility.Hidden)
+                {
+                    // Hide all other single-display overlays
+                    getOverlay(newsField)?.Hide();
+                    getOverlay(dashboardField)?.Hide();
+                    getOverlay(beatmapListingField)?.Hide();
+                    getOverlay(changelogOverlayField)?.Hide();
+                    getOverlay(rankingsOverlayField)?.Hide();
+                    getOverlay(wikiOverlayField)?.Hide();
+                    // Hide informational overlays
+                    getOverlay(settingsField)?.Hide();
+                    getOverlay(notificationsField)?.Hide();
+                }
+            };
+
+            // Update DI cache so UserPanel/MessageNotifier resolve our overlay
+            var depsField = game.GetType().BaseType?.GetField("dependencies", BindingFlags.Instance | BindingFlags.NonPublic);
+            var deps = depsField?.GetValue(game) as osu.Framework.Allocation.DependencyContainer;
+            if (deps != null)
+            {
+                var cacheField = typeof(osu.Framework.Allocation.DependencyContainer).GetField("cache", BindingFlags.Instance | BindingFlags.NonPublic);
+                var cache = cacheField?.GetValue(deps) as System.Collections.Generic.Dictionary<osu.Framework.Allocation.CacheInfo, object>;
+                if (cache != null)
+                {
+                    var typeField = typeof(osu.Framework.Allocation.CacheInfo).GetField("Type", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    foreach (var key in cache.Keys.ToList())
+                    {
+                        if (typeField?.GetValue(key) is System.Type t && t == typeof(osu.Game.Overlays.ChatOverlay))
+                        {
+                            cache[key] = newOverlay;
+                            break;
+                        }
+                    }
+                }
+            }
 
             // Register the new overlay in focusedOverlays so it handles ESC properly
             if (focusedOverlaysField != null)
