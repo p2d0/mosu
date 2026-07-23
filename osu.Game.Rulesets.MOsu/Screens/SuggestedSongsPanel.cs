@@ -6,12 +6,15 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics;
+using osu.Game.Screens.Select;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables.Cards;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
@@ -28,6 +31,10 @@ namespace osu.Game.Rulesets.MOsu.Screens
     {
         private ReverseChildIDFillFlowContainer<BeatmapCard> spotlightGrid;
         private ReverseChildIDFillFlowContainer<BeatmapCard> suggestionsGrid;
+        private ReverseChildIDFillFlowContainer<BeatmapCard> artistGrid;
+        private Container spotlightLoading;
+        private Container suggestionsLoading;
+        private Container artistLoading;
         private IAPIProvider api = null!;
         private RulesetInfo ruleset = null!;
         private BeatmapManager beatmapManager = null!;
@@ -64,12 +71,26 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             Colour = OsuColour.Gray(0.7f),
                         },
+                        spotlightLoading = new Container
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Height = 100,
+                            Children = new Drawable[]
+                            {
+                                new LoadingSpinner
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                },
+                            },
+                        },
                         spotlightGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
                             Spacing = new Vector2(10),
+                            Alpha = 0,
                         },
                         new OsuSpriteText
                         {
@@ -77,13 +98,54 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             Colour = OsuColour.Gray(0.7f),
                         },
+                        suggestionsLoading = new Container
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Height = 100,
+                            Children = new Drawable[]
+                            {
+                                new LoadingSpinner
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                },
+                            },
+                        },
                         suggestionsGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
                             Spacing = new Vector2(10),
+                            Alpha = 0,
+                        },
+                        new OsuSpriteText
+                        {
+                            Text = "Same Artist",
+                            Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
+                            Colour = OsuColour.Gray(0.7f),
+                        },
+                        artistLoading = new Container
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Height = 100,
+                            Children = new Drawable[]
+                            {
+                                new LoadingSpinner
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                },
+                            },
+                        },
+                        artistGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                            Direction = FillDirection.Full,
+                            Spacing = new Vector2(10),
                             Padding = new MarginPadding { Bottom = 200 },
+                            Alpha = 0,
                         },
                     },
                 },
@@ -93,6 +155,14 @@ namespace osu.Game.Rulesets.MOsu.Screens
         protected override void LoadComplete()
         {
             base.LoadComplete();
+            if (!api.IsLoggedIn)
+            {
+                Logger.Log("[MOsu] SuggestedSongsPanel: user not logged in, hiding", LoggingTarget.Runtime);
+                this.Hide();
+                this.AutoSizeAxes = Axes.None;
+                this.Height = 0;
+                return;
+            }
             Logger.Log("[MOsu] SuggestedSongsPanel.LoadComplete", LoggingTarget.Runtime);
             Schedule(() => fetchSuggestions());
         }
@@ -110,10 +180,13 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
                 var genre = toSearchGenre(response.Genre);
                 double starRating = response.Beatmaps.Max(b => b.StarRating);
-                double minStars = starRating - 0.5;
-                double maxStars = starRating + 0.5;
+                double minStars = starRating - 10;
+                double maxStars = starRating + 10;
+                double bpm = response.Beatmaps.Max(b => b.BPM);
+                double minBpm = bpm - 10;
+                double maxBpm = bpm + 10;
 
-                var query = $"favourites>1 stars>={minStars} stars<={maxStars}";
+                var query = $"favourites>1 stars>={minStars} stars<={maxStars} bpm>={minBpm} bpm<={maxBpm}";
                 Logger.Log($"[MOsu] Search query: {query}", LoggingTarget.Runtime);
 
                 // Spotlight search
@@ -160,8 +233,35 @@ namespace osu.Game.Rulesets.MOsu.Screens
                     Schedule(() => populateGrid(suggestionsGrid, searchResponse.BeatmapSets, onlineID));
                 };
                 searchRequest.Failure += e => Logger.Log($"[MOsu] Similar search failed: {e}", LoggingTarget.Runtime);
-
                 api.Queue(searchRequest);
+
+                // Same artist search
+                var artist = response.Artist;
+                var artistQuery = $"artist:\"{artist}\" favourites>1";
+                Logger.Log($"[MOsu] Artist search query: {artistQuery}", LoggingTarget.Runtime);
+
+                var artistRequest = new SearchBeatmapSetsRequest(
+                    query: artistQuery,
+                    ruleset: ruleset,
+                    general: null,
+                    searchCategory: SearchCategory.Any,
+                    sortCriteria: SortCriteria.Updated,
+                    sortDirection: SortDirection.Descending,
+                    genre: genre,
+                    language: SearchLanguage.Any,
+                    extra: null,
+                    ranks: null,
+                    played: SearchPlayed.Any,
+                    explicitContent: SearchExplicit.Hide);
+
+                artistRequest.Success += artistResponse =>
+                {
+                    Logger.Log($"[MOsu] Artist search success: {artistResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
+                    Schedule(() => populateGrid(artistGrid, artistResponse.BeatmapSets, onlineID));
+                };
+                artistRequest.Failure += e => Logger.Log($"[MOsu] Artist search failed: {e}", LoggingTarget.Runtime);
+
+                api.Queue(artistRequest);
             };
             getSetRequest.Failure += e => Logger.Log($"[MOsu] GetBeatmapSetRequest failed: {e}", LoggingTarget.Runtime);
 
@@ -206,6 +306,11 @@ namespace osu.Game.Rulesets.MOsu.Screens
                         var card = BeatmapCard.Create(set, BeatmapCardSize.Normal, allowExpansion: true);
                         grid.Add(card);
                     }
+
+                    // Hide loading, show grid
+                    Container loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
+                    loadingIndicator.FadeOut(200, Easing.OutQuint);
+                    grid.FadeIn(300, Easing.OutQuint);
                 });
             });
         }
