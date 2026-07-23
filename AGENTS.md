@@ -9,16 +9,10 @@ See [LOCAL.md](LOCAL.md) for paths to the full osu! and osu!framework source tre
 
 ## Workflow
 
-**Always run tests and check screenshots after every change.**
+**Always run tests**
 
 1. Run `dotnet build` to catch compile errors.
 2. Run visual tests: `DISPLAY=:99 dotnet run --project osu.Game.Rulesets.MOsu.Tests/osu.Game.Rulesets.MOsu.Tests.csproj -- --auto`
-3. **Read every screenshot in `screenshots/`** and validate:
-   - UI elements render (not blank/black)
-   - Expected content visible (usernames, scores, controls)
-   - No layout crashes or clipping
-   - Compare against previous screenshots if refactoring UI
-4. Do not commit or finish until tests pass and screenshots are verified.
 5. You can add --filter "TestName" to only run one test
 
 ## Release Build

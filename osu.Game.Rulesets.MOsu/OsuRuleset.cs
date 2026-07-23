@@ -23,6 +23,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.MOsu.Screens;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Replays.Types;
@@ -413,8 +414,9 @@ namespace osu.Game.Rulesets.MOsu
         {
             var timedHitEvents = score.HitEvents.Where(e => e.HitObject is HitCircle && !(e.HitObject is SliderTailCircle)).ToList();
 
-            return new[]
+            var items = new List<StatisticItem>
             {
+                new StatisticItem("Suggested Songs", () => new SuggestedSongsPanel(score)),
                 new StatisticItem("Performance Breakdown", () => new PerformanceBreakdownChart(score, playableBeatmap)
                 {
                     RelativeSizeAxes = Axes.X,
@@ -436,6 +438,13 @@ namespace osu.Game.Rulesets.MOsu
                     new UnstableRate(timedHitEvents)
                 }), true)
             };
+
+            // if (score.BeatmapInfo?.BeatmapSet?.OnlineID > 0)
+            // {
+            //     items.Add();
+            // }
+
+            return items.ToArray();
         }
 
         public override IEnumerable<Drawable> CreateEditorSetupSections() =>
