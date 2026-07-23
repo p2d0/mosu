@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -171,31 +172,42 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
         private void populateGrid(ReverseChildIDFillFlowContainer<BeatmapCard> grid, IEnumerable<APIBeatmapSet> beatmapSets, int excludeOnlineID)
         {
-            var downloadedIDs = beatmapManager.GetAllUsableBeatmapSets().Where(b => b.OnlineID > 0).Select(b => b.OnlineID).ToHashSet();
+            var beatmapSetsList = beatmapSets.ToList();
 
-            var filtered = beatmapSets
-                .Where(b => b.OnlineID != excludeOnlineID)
-                .Where(b => !downloadedIDs.Contains(b.OnlineID))
-                .ToList();
-
-            // Randomize if more than 9 results
-            if (filtered.Count > 9)
+            Task.Run(() =>
             {
-                for (int i = filtered.Count - 1; i > 0; i--)
+                var localSets = beatmapManager.GetAllUsableBeatmapSets();
+                var downloadedIDs = localSets.Where(b => b.OnlineID > 0).Select(b => b.OnlineID).ToHashSet();
+                var localTitles = localSets.Select(b => (b.Metadata.Title.ToLowerInvariant(), b.Metadata.Artist.ToLowerInvariant())).ToHashSet();
+
+                var filtered = beatmapSetsList
+                    .Where(b => b.OnlineID != excludeOnlineID)
+                    .Where(b => !downloadedIDs.Contains(b.OnlineID))
+                    .Where(b => !localTitles.Contains((b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())))
+                    .ToList();
+
+                // Randomize if more than 9 results
+                if (filtered.Count > 9)
                 {
-                    int j = random.Next(i + 1);
-                    (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
+                    for (int i = filtered.Count - 1; i > 0; i--)
+                    {
+                        int j = random.Next(i + 1);
+                        (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
+                    }
                 }
-            }
 
-            var results = filtered.Take(9).ToList();
-            Logger.Log($"[MOsu] populateGrid: {filtered.Count} filtered, showing {results.Count}", LoggingTarget.Runtime);
+                var results = filtered.Take(9).ToList();
+                Logger.Log($"[MOsu] populateGrid: {filtered.Count} filtered, showing {results.Count}", LoggingTarget.Runtime);
 
-            foreach (var set in results)
-            {
-                var card = BeatmapCard.Create(set, BeatmapCardSize.Normal, allowExpansion: true);
-                grid.Add(card);
-            }
+                Schedule(() =>
+                {
+                    foreach (var set in results)
+                    {
+                        var card = BeatmapCard.Create(set, BeatmapCardSize.Normal, allowExpansion: true);
+                        grid.Add(card);
+                    }
+                });
+            });
         }
 
         private static SearchGenre toSearchGenre(BeatmapSetOnlineGenre genre)
