@@ -82,7 +82,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         };
 
         [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases", SettingControlType = typeof(ExpoStreamsSetting))]
-        public BindableBool PowerStreams { get; } = new BindableBool(false);
+        public BindableBool ExpoStreams { get; } = new BindableBool(false);
 
         [SettingSource("Aim/Stream Divisor", "Divisor below which circles will be considered aim")]
         public BindableInt Divisor { get; } = new BindableInt(2)
@@ -205,7 +205,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 };
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
-                    if(PowerStreams.Value)
+                    if(ExpoStreams.Value)
                         positionInfos[i].DistanceFromPrevious = getExpoJumpsDistance(positionInfos[i].DistanceFromPrevious, StreamDistanceMultiplier.Value);
                     else
                         positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;

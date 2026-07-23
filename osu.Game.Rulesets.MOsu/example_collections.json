@@ -19,9 +19,6 @@
             "Date": "2026-05-26T10:12:28.2592653+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -33,8 +30,7 @@
                 "settings": {
                   "aim_distance_multiplier": 7.25,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 287545666
+                  "divisor": 3
                 }
               },
               {
@@ -86,9 +82,6 @@
                 "acronym": "NF"
               },
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 4.0,
@@ -100,8 +93,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "power_jumps": true,
-                  "stream_distance_multiplier": 12.0,
-                  "seed": 1167024759
+                  "stream_distance_multiplier": 12.0
                 }
               },
               {
@@ -147,9 +139,6 @@
             "Date": "2026-03-16T17:31:20.5213907+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -160,8 +149,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "aim_distance_multiplier": 3.44,
-                  "stream_distance": 69,
-                  "seed": 1103084814
+                  "stream_distance": 69
                 }
               }
             ],
@@ -204,9 +192,6 @@
             "Date": "2026-06-25T14:37:30.3320287+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -216,8 +201,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "aim_distance_multiplier": 10.0,
-                  "stream_distance_multiplier": 20.2,
-                  "seed": 700588496
+                  "stream_distance_multiplier": 20.2
                 }
               },
               {
@@ -266,9 +250,6 @@
             "Date": "2026-05-26T09:49:07.0348681+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -281,8 +262,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 431752442
+                  "divisor": 3
                 }
               },
               {
@@ -331,9 +311,6 @@
             "Date": "2026-05-26T10:08:01.877097+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -346,8 +323,7 @@
                 "settings": {
                   "aim_distance_multiplier": 7.25,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1094452087
+                  "divisor": 3
                 }
               },
               {
@@ -397,9 +373,6 @@
             "Date": "2026-05-16T12:25:37.9386877+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -410,8 +383,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 640111709
+                  "divisor": 3
                 }
               },
               {
@@ -464,9 +436,6 @@
                 "acronym": "NF"
               },
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -478,8 +447,7 @@
                 "settings": {
                   "aim_distance_multiplier": 4.97,
                   "power_jumps": true,
-                  "stream_distance_multiplier": 10.0,
-                  "seed": 303710747
+                  "stream_distance_multiplier": 10.0
                 }
               },
               {
@@ -528,9 +496,6 @@
             "Date": "2026-05-26T07:51:59.8685446+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -540,8 +505,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 4.15,
-                  "seed": 1073449839
+                  "aim_distance_multiplier": 4.15
                 }
               }
             ],
@@ -584,9 +548,6 @@
             "Date": "2026-05-17T15:00:37.7963416+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -598,8 +559,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1497492727
+                  "divisor": 3
                 }
               },
               {
@@ -660,8 +620,7 @@
                         "acronym": "RDV2",
                         "settings": {
                             "aim_distance_multiplier": 2.01,
-                            "stream_distance_multiplier": 6.0,
-                            "seed": 1030648395
+                            "stream_distance_multiplier": 6.0
                         }
                     }
                 ],
@@ -704,9 +663,6 @@
             "Date": "2026-06-26T13:05:46.9688863+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -717,7 +673,7 @@
                 "settings": {
                   "power_jumps": true,
                   "stream_distance_multiplier": 6.3,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -752,9 +708,6 @@
             "Rank": "F",
             "Date": "2026-06-28T10:06:58.8101567+00:00",
             "Mods": [
-              {
-                "acronym": "HD"
-              },
               {
                 "acronym": "DA",
                 "settings": {
@@ -811,9 +764,6 @@
             "Date": "2026-06-26T13:11:41.7001679+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -824,7 +774,7 @@
                 "settings": {
                   "power_jumps": true,
                   "stream_distance_multiplier": 6.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -868,9 +818,6 @@
             "Date": "2026-06-26T14:22:26.2760622+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -881,8 +828,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1809738274
+                  "divisor": 3
                 }
               },
               {
@@ -933,9 +879,6 @@
             "Date": "2026-06-26T17:47:51.7581837+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -947,7 +890,7 @@
                   "custom_angle": true,
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1002,9 +945,9 @@
                                 "acronym": "RDV2",
                                 "settings": {
                                     "stream_distance_multiplier": 4.4,
-                                    "power_streams": true,
-                                    "divisor": 3,
-                                    "seed": 330951216
+                                    "aim_distance_multiplier": 4.4,
+                                    "expo_streams": true,
+                                    "divisor": 3
                                 }
                             }
                         ],
@@ -1042,9 +985,6 @@
             "Date": "2026-06-26T17:48:25.5290862+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1055,7 +995,7 @@
                 "settings": {
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1099,9 +1039,6 @@
             "Date": "2026-06-26T14:01:32.2908388+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1113,7 +1050,7 @@
                   "custom_angle": true,
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1149,9 +1086,6 @@
             "Date": "2026-06-26T17:48:13.2908402+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1162,7 +1096,7 @@
                 "settings": {
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1206,9 +1140,6 @@
             "Date": "2026-06-26T14:14:27.6176753+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1220,7 +1151,7 @@
                   "custom_angle": true,
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1256,9 +1187,6 @@
             "Date": "2026-06-26T17:49:04.3012631+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1269,7 +1197,7 @@
                 "settings": {
                   "power_jumps": true,
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1312,9 +1240,6 @@
             "Date": "2026-06-26T17:44:59.6915845+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -1324,7 +1249,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "stream_distance_multiplier": 5.0,
-                  "power_streams": true
+                  "expo_streams": true
                 }
               }
             ],
@@ -1367,9 +1292,6 @@
             "Date": "2026-05-23T06:55:32.1142776+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -1380,8 +1302,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "aim_distance_multiplier": 3.0,
-                  "stream_distance": 25,
-                  "seed": 1329812736
+                  "stream_distance": 25
                 }
               }
             ],
@@ -1427,9 +1348,6 @@
                 "acronym": "NF"
               },
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -1439,8 +1357,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 7.15,
-                  "seed": 1259096725
+                  "aim_distance_multiplier": 7.15
                 }
               },
               {
@@ -1489,9 +1406,6 @@
             "Rank": "F",
             "Date": "2026-05-19T17:48:44.4926101+00:00",
             "Mods": [
-              {
-                "acronym": "HD"
-              },
               {
                 "acronym": "DA",
                 "settings": {
@@ -1595,9 +1509,6 @@
             "Date": "2026-05-22T09:06:42.8471319+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 4.0,
@@ -1660,9 +1571,6 @@
             "Date": "2026-05-31T06:50:23.6578243+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -1716,9 +1624,6 @@
             "Mods": [
               {
                 "acronym": "NF"
-              },
-              {
-                "acronym": "HD"
               },
               {
                 "acronym": "DA",
@@ -1782,9 +1687,6 @@
             "Date": "2026-05-20T11:26:31.0632929+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 5.0,
@@ -1797,8 +1699,7 @@
                 "settings": {
                   "aim_distance_multiplier": 10.0,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1487401140
+                  "divisor": 3
                 }
               },
               {
@@ -1861,8 +1762,7 @@
                         "settings": {
                             "aim_distance_multiplier": 3.68,
                             "power_jumps": true,
-                            "divisor": 4,
-                            "seed": 356614920
+                            "divisor": 4
                         }
                     }
                 ],
@@ -1905,9 +1805,6 @@
             "Date": "2026-05-17T14:24:48.6590862+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 4.0,
@@ -1918,8 +1815,7 @@
                 "acronym": "RDV2",
                 "settings": {
                   "aim_distance_multiplier": 3.02,
-                  "stream_distance_multiplier": 10.5,
-                  "seed": 620836183
+                  "stream_distance_multiplier": 10.5
                 }
               },
               {
@@ -1978,7 +1874,7 @@
                 "settings": {
                   "aim_distance_multiplier": 3.2,
                   "stream_distance_multiplier": 4.4,
-                  "power_streams": true,
+                  "expo_streams": true,
                   "seed": 7272727
                 }
               }
@@ -2026,9 +1922,6 @@
                 "acronym": "NF"
               },
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 4.0,
@@ -2042,8 +1935,7 @@
                 "settings": {
                   "aim_distance_multiplier": 8.43,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1743527931
+                  "divisor": 3
                 }
               },
               {
@@ -2092,9 +1984,6 @@
             "Date": "2026-06-04T09:18:20.1663718+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -2107,8 +1996,7 @@
                   "aim_distance_multiplier": 4.2,
                   "power_jumps": true,
                   "divisor": 4,
-                  "stream_distance": 50,
-                  "seed": 1918209043
+                  "stream_distance": 50
                 }
               }
             ],
@@ -2152,9 +2040,6 @@
             "Mods": [
               {
                 "acronym": "NF"
-              },
-              {
-                "acronym": "HD"
               },
               {
                 "acronym": "DA",
@@ -2220,9 +2105,6 @@
             "Date": "2026-06-02T10:01:12.5857009+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -2234,8 +2116,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 127803630
+                  "divisor": 3
                 }
               },
               {
@@ -2287,9 +2168,6 @@
                 "acronym": "NF"
               },
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0
@@ -2300,8 +2178,7 @@
                 "settings": {
                   "aim_distance_multiplier": 5.96,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1641505188
+                  "divisor": 3
                 }
               },
               {
@@ -2350,9 +2227,6 @@
             "Date": "2026-06-05T06:18:07.1198629+00:00",
             "Mods": [
               {
-                "acronym": "HD"
-              },
-              {
                 "acronym": "DA",
                 "settings": {
                   "approach_rate": 10.0,
@@ -2362,8 +2236,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "stream_distance_multiplier": 19.0,
-                  "seed": 180596413
+                  "stream_distance_multiplier": 19.0
                 }
               }
             ],
