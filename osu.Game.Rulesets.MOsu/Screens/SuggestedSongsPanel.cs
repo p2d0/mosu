@@ -281,13 +281,22 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
         private void queueSearchRequest(string query, SearchGeneral[] general, SearchGenre genre, SearchLanguage language, ReverseChildIDFillFlowContainer<BeatmapCard> grid, LoadingLayer loading, int currentSequence)
         {
+            var sortCriteria = random.Next(4) switch
+            {
+                0 => SortCriteria.Title,
+                1 => SortCriteria.Artist,
+                2 => SortCriteria.Updated,
+                _ => SortCriteria.Relevance
+            };
+            var sortDirection = random.Next(2) == 0 ? SortDirection.Descending : SortDirection.Ascending;
+
             var request = new SearchBeatmapSetsRequest(
                 query: query,
                 ruleset: ruleset,
                 general: general,
                 searchCategory: SearchCategory.Any,
-                sortCriteria: SortCriteria.Updated,
-                sortDirection: SortDirection.Descending,
+                sortCriteria: sortCriteria,
+                sortDirection: sortDirection,
                 genre: genre,
                 language: language,
                 extra: null,
