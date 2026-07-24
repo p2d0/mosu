@@ -29,7 +29,6 @@ using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Scoring;
 using osuTK;
-using Realms;
 
 namespace osu.Game.Rulesets.MOsu.Screens
 {
@@ -44,18 +43,19 @@ namespace osu.Game.Rulesets.MOsu.Screens
         private DifficultyRangeSlider starSlider;
         private CancellationTokenSource debounceSource;
         private int requestSequence;
-        private List<APIBeatmapSet> pendingSpotlightResults;
-        private List<APIBeatmapSet> pendingSuggestionsResults;
-        private List<APIBeatmapSet> pendingArtistResults;
-        private int pendingRequests;
         private int pendingOnlineID;
-        private int pendingSequence;
         private IAPIProvider api = null!;
         private RulesetInfo ruleset = null!;
         private BeatmapManager beatmapManager = null!;
         private IRulesetConfigCache configCache = null!;
-        private RealmAccess realmAccess = null!;
         private readonly ScoreInfo score;
+        private readonly Random random = new Random();
+
+        private class LocalLookupData
+        {
+            public HashSet<int> OnlineIDs;
+            public HashSet<(string, string)> TitleArtists;
+        }
 
         public SuggestedSongsPanel(ScoreInfo score)
         {
@@ -63,13 +63,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
         }
 
         [BackgroundDependencyLoader]
-        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache, RealmAccess realmAccess)
+        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache)
         {
             this.api = api;
             this.ruleset = rulesets.GetRuleset(score.BeatmapInfo?.Ruleset.ShortName ?? "osu") ?? rulesets.AvailableRulesets.First();
             this.beatmapManager = beatmapManager;
             this.configCache = configCache;
-            this.realmAccess = realmAccess;
 
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -201,7 +200,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
             requestSequence++;
             int currentSequence = requestSequence;
 
-            // Clear grids
+            // Clear grids and show loading spinners
             spotlightGrid.Clear();
             suggestionsGrid.Clear();
             artistGrid.Clear();
@@ -214,236 +213,159 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
             int onlineID = score.BeatmapInfo.BeatmapSet.OnlineID;
             Logger.Log($"[MOsu] SuggestedSongsPanel: fetching set {onlineID}", LoggingTarget.Runtime);
+            pendingOnlineID = onlineID;
 
-            // Fetch current beatmap info
-            var getSetRequest = new GetBeatmapSetRequest(onlineID);
-            getSetRequest.Success += response =>
+            // Extract tags on UI thread before going background
+            var localBeatmap = score.BeatmapInfo?.BeatmapSet?.Beatmaps.FirstOrDefault();
+            var rawTags = localBeatmap?.Metadata.Tags ?? "";
+
+            // Start local lookup immediately
+            var localLookupTask = Task.Run(() =>
             {
-                Logger.Log($"[MOsu] GetBeatmapSetRequest success: genre={response.Genre.Name}, stars={response.Beatmaps.Max(b => b.StarRating)}", LoggingTarget.Runtime);
-
-                var genre = toSearchGenre(response.Genre);
-                var language = toSearchLanguage(response.Language);
-                double bpm = response.Beatmaps.Max(b => b.BPM);
-                double minBpm = bpm - 10;
-                double maxBpm = bpm + 10;
-
-                // Star range from slider
-                double minStars = starSlider.LowerBound.Value;
-                double maxStars = starSlider.UpperBound.Value;
-                string starFilter = "";
-                if (minStars > 0)
-                    starFilter += $" stars>={minStars}";
-                if (!starSlider.UpperBound.IsDefault && maxStars > 0)
-                    starFilter += $" stars<={maxStars}";
-
-                // Extract genre tags from local beatmap
-                var localBeatmap = score.BeatmapInfo.BeatmapSet.Beatmaps.FirstOrDefault();
-                var rawTags = localBeatmap?.Metadata.Tags ?? "";
-                Logger.Log($"[MOsu] Raw tags: {rawTags}", LoggingTarget.Runtime);
-                var genreTags = extractGenreTags(rawTags);
-                Logger.Log($"[MOsu] Matched genre tags: {string.Join(", ", genreTags)} (count={genreTags.Count})", LoggingTarget.Runtime);
-                var genreQuery = genreTags.Count > 0 ? " " + string.Join(" ", genreTags.Select(t => $"\"{t}\"")) : "";
-
-                var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{starFilter}{genreQuery}";
-                Logger.Log($"[MOsu] Search query: {query}", LoggingTarget.Runtime);
-
-                // Collect results from all three requests, then do one Realm query
-                pendingSpotlightResults = null;
-                pendingSuggestionsResults = null;
-                pendingArtistResults = null;
-                pendingRequests = 3;
-                pendingOnlineID = onlineID;
-                pendingSequence = currentSequence;
-
-                // Spotlight search
-                var spotlightRequest = new SearchBeatmapSetsRequest(
-                    query: query,
-                    ruleset: ruleset,
-                    general: new[] { SearchGeneral.Spotlights },
-                    searchCategory: SearchCategory.Any,
-                    sortCriteria: SortCriteria.Updated,
-                    sortDirection: SortDirection.Descending,
-                    genre: genre,
-                    language: language,
-                    extra: null,
-                    ranks: null,
-                    played: SearchPlayed.Any,
-                    explicitContent: SearchExplicit.Show);
-
-                spotlightRequest.Success += spotlightResponse =>
+                var localSets = beatmapManager.GetAllUsableBeatmapSets();
+                return new LocalLookupData
                 {
-                    Logger.Log($"[MOsu] Spotlight search success: {spotlightResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() =>
-                    {
-                        pendingSpotlightResults = spotlightResponse.BeatmapSets.ToList();
-                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
-                            populateAllGrids();
-                    });
+                    OnlineIDs = localSets.Where(b => b.OnlineID > 0).Select(b => b.OnlineID).ToHashSet(),
+                    TitleArtists = localSets.Select(b => (b.Metadata.Title.ToLowerInvariant(), b.Metadata.Artist.ToLowerInvariant())).ToHashSet()
                 };
-                spotlightRequest.Failure += e => Logger.Log($"[MOsu] Spotlight search failed: {e}", LoggingTarget.Runtime);
-                api.Queue(spotlightRequest);
+            });
 
-                // Similar beats search
-                var searchRequest = new SearchBeatmapSetsRequest(
-                    query: query,
-                    ruleset: ruleset,
-                    general: null,
-                    searchCategory: SearchCategory.Any,
-                    sortCriteria: SortCriteria.Updated,
-                    sortDirection: SortDirection.Descending,
-                    genre: genre,
-                    language: language,
-                    extra: null,
-                    ranks: null,
-                    played: SearchPlayed.Any,
-                    explicitContent: SearchExplicit.Show);
-
-                searchRequest.Success += searchResponse =>
-                {
-                    Logger.Log($"[MOsu] Similar search success: {searchResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() =>
-                    {
-                        pendingSuggestionsResults = searchResponse.BeatmapSets.ToList();
-                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
-                            populateAllGrids();
-                    });
-                };
-                searchRequest.Failure += e => Logger.Log($"[MOsu] Similar search failed: {e}", LoggingTarget.Runtime);
-                api.Queue(searchRequest);
-
-                // Same artist search
-                var artist = response.Artist;
-                string artistStarFilter = "";
-                if (minStars > 0)
-                    artistStarFilter += $" stars>={minStars}";
-                if (!starSlider.UpperBound.IsDefault && maxStars > 0)
-                    artistStarFilter += $" stars<={maxStars}";
-                var artistQuery = $"artist:\"{artist}\" favourites>1{artistStarFilter}";
-                Logger.Log($"[MOsu] Artist search query: {artistQuery}", LoggingTarget.Runtime);
-
-                var artistRequest = new SearchBeatmapSetsRequest(
-                    query: artistQuery,
-                    ruleset: ruleset,
-                    general: null,
-                    searchCategory: SearchCategory.Any,
-                    sortCriteria: SortCriteria.Updated,
-                    sortDirection: SortDirection.Descending,
-                    genre: genre,
-                    language: SearchLanguage.Any,
-                    extra: null,
-                    ranks: null,
-                    played: SearchPlayed.Any,
-                    explicitContent: SearchExplicit.Show);
-
-                artistRequest.Success += artistResponse =>
-                {
-                    Logger.Log($"[MOsu] Artist search success: {artistResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() =>
-                    {
-                        pendingArtistResults = artistResponse.BeatmapSets.ToList();
-                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
-                            populateAllGrids();
-                    });
-                };
-                artistRequest.Failure += e => Logger.Log($"[MOsu] Artist search failed: {e}", LoggingTarget.Runtime);
-
-                api.Queue(artistRequest);
-            };
-            getSetRequest.Failure += e => Logger.Log($"[MOsu] GetBeatmapSetRequest failed: {e}", LoggingTarget.Runtime);
-
-            api.Queue(getSetRequest);
-        }
-
-        private void populateAllGrids()
-        {
-            var allResults = new List<(List<APIBeatmapSet> results, ReverseChildIDFillFlowContainer<BeatmapCard> grid)>();
-            if (pendingSpotlightResults != null)
-                allResults.Add((pendingSpotlightResults, spotlightGrid));
-            if (pendingSuggestionsResults != null)
-                allResults.Add((pendingSuggestionsResults, suggestionsGrid));
-            if (pendingArtistResults != null)
-                allResults.Add((pendingArtistResults, artistGrid));
-
-            var allSets = allResults.SelectMany(r => r.results).ToList();
-            var onlineIDs = allSets.Where(b => b.OnlineID > 0 && b.OnlineID != pendingOnlineID).Select(b => b.OnlineID).ToList();
-            var apiTitlesArtists = allSets.Select(b => (b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())).ToList();
-
-            Task.Run(() =>
+            // Run entire flow in background
+            Task.Run(async () =>
             {
-                var localOnlineIDs = new HashSet<int>();
-                var localTitleArtists = new HashSet<(string, string)>();
-
-                if (onlineIDs.Count > 0)
+                try
                 {
-                    var idsStr = string.Join(", ", onlineIDs);
-                    localOnlineIDs = realmAccess.Run(r =>
-                        r.All<BeatmapSetInfo>()
-                         .Filter($"OnlineID IN {{{idsStr}}} AND DeletePending == false")
-                         .ToList()
-                         .Select(b => b.OnlineID)
-                         .ToHashSet());
-                }
+                    var response = await getBeatmapSetAsync(onlineID);
+                    if (currentSequence != requestSequence) return;
 
-                if (apiTitlesArtists.Count > 0)
-                {
-                    var conditions = JoinWithOr(apiTitlesArtists
-                        .Select((ta, i) => $"({nameof(BeatmapInfo.Metadata)}.{nameof(BeatmapMetadata.Title)} == $" + (2*i) + $" AND {nameof(BeatmapInfo.Metadata)}.{nameof(BeatmapMetadata.Artist)} == $" + (2*i+1) + ")"));
+                    var genre = toSearchGenre(response.Genre);
+                    var language = toSearchLanguage(response.Language);
+                    double bpm = response.Beatmaps.Max(b => b.BPM);
+                    double minBpm = bpm - 10;
+                    double maxBpm = bpm + 10;
 
-                    var args = apiTitlesArtists.SelectMany(ta => new[] { ta.Item1, ta.Item2 }).Select(s => (QueryArgument)s).ToArray();
+                    double minStars = starSlider.LowerBound.Value;
+                    double maxStars = starSlider.UpperBound.Value;
+                    string starFilter = "";
+                    if (minStars > 0) starFilter += $" stars>={minStars}";
+                    if (!starSlider.UpperBound.IsDefault && maxStars > 0) starFilter += $" stars<={maxStars}";
 
-                    localTitleArtists = realmAccess.Run(r =>
-                        r.All<BeatmapInfo>()
-                         .Filter($"({conditions}) AND {nameof(BeatmapInfo.BeatmapSet)}.{nameof(BeatmapSetInfo.DeletePending)} == false", args)
-                         .ToList()
-                         .Select(b => (b.Metadata.Title.ToLowerInvariant(), b.Metadata.Artist.ToLowerInvariant()))
-                         .Distinct()
-                         .ToHashSet());
-                }
+                    var genreTags = extractGenreTags(rawTags);
+                    var genreQuery = genreTags.Count > 0 ? " " + string.Join(" ", genreTags.Select(t => $"\"{t}\"")) : "";
+                    var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{starFilter}{genreQuery}";
 
-                Schedule(() =>
-                {
-                    foreach (var (results, grid) in allResults)
+                    string artistStarFilter = "";
+                    if (minStars > 0) artistStarFilter += $" stars>={minStars}";
+                    if (!starSlider.UpperBound.IsDefault && maxStars > 0) artistStarFilter += $" stars<={maxStars}";
+                    var artistQuery = $"artist:\"{response.Artist}\" favourites>1{artistStarFilter}";
+
+                    // Fire all 3 API requests simultaneously
+                    var spotlightTask = performSearchAsync(query, new[] { SearchGeneral.Spotlights }, genre, language);
+                    var similarTask = performSearchAsync(query, null, genre, language);
+                    var artistTask = performSearchAsync(artistQuery, null, genre, SearchLanguage.Any);
+
+                    // Wait for ALL 3 APIs + local lookup
+                    await Task.WhenAll(localLookupTask, spotlightTask, similarTask, artistTask);
+                    if (currentSequence != requestSequence) return;
+
+                    var localData = localLookupTask.Result;
+
+                    var spotlightFiltered = filterResults(spotlightTask.Result, localData);
+                    var similarFiltered = filterResults(similarTask.Result, localData);
+                    var artistFiltered = filterResults(artistTask.Result, localData);
+
+                    // Marshal back to UI thread and reveal all at once
+                    Schedule(() =>
                     {
-                        var filtered = results
-                            .Where(b => b.OnlineID != pendingOnlineID)
-                            .Where(b => b.OnlineID <= 0 || !localOnlineIDs.Contains(b.OnlineID))
-                            .Where(b => !localTitleArtists.Contains((b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())))
-                            .ToList();
+                        if (currentSequence != requestSequence) return;
 
-                        if (filtered.Count > 12)
-                        {
-                            for (int i = filtered.Count - 1; i > 0; i--)
-                            {
-                                int j = random.Next(i + 1);
-                                (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
-                            }
-                        }
+                        populateGrid(spotlightGrid, spotlightFiltered);
+                        populateGrid(suggestionsGrid, similarFiltered);
+                        populateGrid(artistGrid, artistFiltered);
 
-                        var finalResults = filtered.Take(12).ToList();
-                        Logger.Log($"[MOsu] populateGrid: {filtered.Count} filtered, showing {finalResults.Count}", LoggingTarget.Runtime);
+                        spotlightLoading.Hide();
+                        suggestionsLoading.Hide();
+                        artistLoading.Hide();
 
-                        foreach (var set in finalResults)
-                        {
-                            var card = new CompactBeatmapCard(set, allowExpansion: true);
-                            grid.Add(card);
-                        }
-
-                        LoadingLayer loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
-                        loadingIndicator.Hide();
-                        grid.FadeIn(300, Easing.OutQuint);
-                    }
-                });
+                        spotlightGrid.FadeIn(300, Easing.OutQuint);
+                        suggestionsGrid.FadeIn(300, Easing.OutQuint);
+                        artistGrid.FadeIn(300, Easing.OutQuint);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Logger.Log($"[MOsu] SuggestedSongsPanel fetch failed: {e}", LoggingTarget.Runtime);
+                    Schedule(() =>
+                    {
+                        spotlightLoading.Hide();
+                        suggestionsLoading.Hide();
+                        artistLoading.Hide();
+                    });
+                }
             });
         }
 
-        private static readonly System.Random random = new System.Random();
-
-        private static string JoinWithOr(IEnumerable<string> conditions)
+        private Task<APIBeatmapSet> getBeatmapSetAsync(int onlineID)
         {
-            return string.Join(" OR ", conditions);
+            var tcs = new TaskCompletionSource<APIBeatmapSet>();
+            var request = new GetBeatmapSetRequest(onlineID);
+            request.Success += res => tcs.SetResult(res);
+            request.Failure += ex => tcs.SetException(ex);
+            api.Queue(request);
+            return tcs.Task;
         }
 
-private static readonly HashSet<string> knownGenres = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private Task<List<APIBeatmapSet>> performSearchAsync(string query, SearchGeneral[] general, SearchGenre genre, SearchLanguage language)
+        {
+            var tcs = new TaskCompletionSource<List<APIBeatmapSet>>();
+            var request = new SearchBeatmapSetsRequest(
+                query: query,
+                ruleset: ruleset,
+                general: general,
+                searchCategory: SearchCategory.Any,
+                sortCriteria: SortCriteria.Updated,
+                sortDirection: SortDirection.Descending,
+                genre: genre,
+                language: language,
+                extra: null,
+                ranks: null,
+                played: SearchPlayed.Any,
+                explicitContent: SearchExplicit.Show);
+
+            request.Success += res => tcs.SetResult(res.BeatmapSets.ToList());
+            request.Failure += ex => tcs.SetException(ex);
+            api.Queue(request);
+            return tcs.Task;
+        }
+
+        private List<APIBeatmapSet> filterResults(List<APIBeatmapSet> results, LocalLookupData localData)
+        {
+            var filtered = results
+                .Where(b => b.OnlineID != pendingOnlineID)
+                .Where(b => b.OnlineID <= 0 || !localData.OnlineIDs.Contains(b.OnlineID))
+                .Where(b => !localData.TitleArtists.Contains((b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())))
+                .ToList();
+
+            if (filtered.Count > 12)
+            {
+                for (int i = filtered.Count - 1; i > 0; i--)
+                {
+                    int j = random.Next(i + 1);
+                    (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
+                }
+            }
+            return filtered.Take(12).ToList();
+        }
+
+        private void populateGrid(ReverseChildIDFillFlowContainer<BeatmapCard> grid, List<APIBeatmapSet> sets)
+        {
+            foreach (var set in sets)
+            {
+                grid.Add(new CompactBeatmapCard(set, allowExpansion: true));
+            }
+        }
+
+        private static readonly HashSet<string> knownGenres = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             // pop & abbreviations
             "kpop", "k pop", "jpop", "j pop", "cpop", "c pop", "vpop", "v pop", "tpop", "t pop", "cantopop", "mandopop",
