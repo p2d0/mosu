@@ -37,11 +37,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
         private ReverseChildIDFillFlowContainer<BeatmapCard> spotlightGrid;
         private ReverseChildIDFillFlowContainer<BeatmapCard> suggestionsGrid;
         private ReverseChildIDFillFlowContainer<BeatmapCard> artistGrid;
-        private Container spotlightLoading;
-        private Container suggestionsLoading;
-        private Container artistLoading;
+        private LoadingLayer spotlightLoading;
+        private LoadingLayer suggestionsLoading;
+        private LoadingLayer artistLoading;
         private DifficultyRangeSlider starSlider;
         private CancellationTokenSource debounceSource;
+        private int requestSequence;
         private IAPIProvider api = null!;
         private RulesetInfo ruleset = null!;
         private BeatmapManager beatmapManager = null!;
@@ -85,25 +86,20 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             Colour = OsuColour.Gray(0.7f),
                         },
-                        spotlightLoading = new Container
+                        spotlightLoading = new LoadingLayer
                         {
                             RelativeSizeAxes = Axes.X,
                             Height = 100,
-                            Children = new Drawable[]
-                            {
-                                new LoadingSpinner
-                                {
-                                    Anchor = Anchor.Centre,
-                                    Origin = Anchor.Centre,
-                                },
-                            },
+                            Anchor = Anchor.TopLeft,
+                            Origin = Anchor.TopLeft,
+                            State = { Value = Visibility.Visible },
                         },
                         spotlightGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
-                            Spacing = new Vector2(10),
+                            Spacing = new Vector2(6),
                             Alpha = 0,
                         },
                         new OsuSpriteText
@@ -112,25 +108,20 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             Colour = OsuColour.Gray(0.7f),
                         },
-                        suggestionsLoading = new Container
+                        suggestionsLoading = new LoadingLayer
                         {
                             RelativeSizeAxes = Axes.X,
                             Height = 100,
-                            Children = new Drawable[]
-                            {
-                                new LoadingSpinner
-                                {
-                                    Anchor = Anchor.Centre,
-                                    Origin = Anchor.Centre,
-                                },
-                            },
+                            Anchor = Anchor.TopLeft,
+                            Origin = Anchor.TopLeft,
+                            State = { Value = Visibility.Visible },
                         },
                         suggestionsGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
-                            Spacing = new Vector2(10),
+                            Spacing = new Vector2(6),
                             Alpha = 0,
                         },
                         new OsuSpriteText
@@ -139,25 +130,20 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             Colour = OsuColour.Gray(0.7f),
                         },
-                        artistLoading = new Container
+                        artistLoading = new LoadingLayer
                         {
                             RelativeSizeAxes = Axes.X,
                             Height = 100,
-                            Children = new Drawable[]
-                            {
-                                new LoadingSpinner
-                                {
-                                    Anchor = Anchor.Centre,
-                                    Origin = Anchor.Centre,
-                                },
-                            },
+                            Anchor = Anchor.TopLeft,
+                            Origin = Anchor.TopLeft,
+                            State = { Value = Visibility.Visible },
                         },
                         artistGrid = new ReverseChildIDFillFlowContainer<BeatmapCard>
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
-                            Spacing = new Vector2(10),
+                            Spacing = new Vector2(6),
                             Padding = new MarginPadding { Bottom = 200 },
                             Alpha = 0,
                         },
@@ -203,13 +189,16 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
         private void fetchSuggestions()
         {
+            requestSequence++;
+            int currentSequence = requestSequence;
+
             // Clear grids
             spotlightGrid.Clear();
             suggestionsGrid.Clear();
             artistGrid.Clear();
-            spotlightGrid.Alpha = 0;
-            suggestionsGrid.Alpha = 0;
-            artistGrid.Alpha = 0;
+            spotlightGrid.Hide();
+            suggestionsGrid.Hide();
+            artistGrid.Hide();
             spotlightLoading.Show();
             suggestionsLoading.Show();
             artistLoading.Show();
@@ -267,7 +256,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 spotlightRequest.Success += spotlightResponse =>
                 {
                     Logger.Log($"[MOsu] Spotlight search success: {spotlightResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(spotlightGrid, spotlightResponse.BeatmapSets, onlineID));
+                    Schedule(() => populateGrid(spotlightGrid, spotlightResponse.BeatmapSets, onlineID, currentSequence));
                 };
                 spotlightRequest.Failure += e => Logger.Log($"[MOsu] Spotlight search failed: {e}", LoggingTarget.Runtime);
                 api.Queue(spotlightRequest);
@@ -290,14 +279,19 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 searchRequest.Success += searchResponse =>
                 {
                     Logger.Log($"[MOsu] Similar search success: {searchResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(suggestionsGrid, searchResponse.BeatmapSets, onlineID));
+                    Schedule(() => populateGrid(suggestionsGrid, searchResponse.BeatmapSets, onlineID, currentSequence));
                 };
                 searchRequest.Failure += e => Logger.Log($"[MOsu] Similar search failed: {e}", LoggingTarget.Runtime);
                 api.Queue(searchRequest);
 
                 // Same artist search
                 var artist = response.Artist;
-                var artistQuery = $"artist:\"{artist}\" favourites>1";
+                string artistStarFilter = "";
+                if (minStars > 0)
+                    artistStarFilter += $" stars>={minStars}";
+                if (!starSlider.UpperBound.IsDefault && maxStars > 0)
+                    artistStarFilter += $" stars<={maxStars}";
+                var artistQuery = $"artist:\"{artist}\" favourites>1{artistStarFilter}";
                 Logger.Log($"[MOsu] Artist search query: {artistQuery}", LoggingTarget.Runtime);
 
                 var artistRequest = new SearchBeatmapSetsRequest(
@@ -317,7 +311,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 artistRequest.Success += artistResponse =>
                 {
                     Logger.Log($"[MOsu] Artist search success: {artistResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(artistGrid, artistResponse.BeatmapSets, onlineID));
+                    Schedule(() => populateGrid(artistGrid, artistResponse.BeatmapSets, onlineID, currentSequence));
                 };
                 artistRequest.Failure += e => Logger.Log($"[MOsu] Artist search failed: {e}", LoggingTarget.Runtime);
 
@@ -519,8 +513,13 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             return matches;
         }
 
-        private void populateGrid(ReverseChildIDFillFlowContainer<BeatmapCard> grid, IEnumerable<APIBeatmapSet> beatmapSets, int excludeOnlineID)
+        private void populateGrid(ReverseChildIDFillFlowContainer<BeatmapCard> grid, IEnumerable<APIBeatmapSet> beatmapSets, int excludeOnlineID, int sequence)
         {
+            if (sequence != requestSequence)
+            {
+                Logger.Log($"[MOsu] populateGrid: stale response, ignoring", LoggingTarget.Runtime);
+                return;
+            }
             var beatmapSetsList = beatmapSets.ToList();
 
             Task.Run(() =>
@@ -552,13 +551,13 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
                 {
                     foreach (var set in results)
                     {
-                        var card = BeatmapCard.Create(set, BeatmapCardSize.Normal, allowExpansion: true);
+                        var card = new CompactBeatmapCard(set, allowExpansion: true);
                         grid.Add(card);
                     }
 
                     // Hide loading, show grid
-                    Container loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
-                    loadingIndicator.FadeOut(200, Easing.OutQuint);
+                    LoadingLayer loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
+                    loadingIndicator.Hide();
                     grid.FadeIn(300, Easing.OutQuint);
                 });
             });
