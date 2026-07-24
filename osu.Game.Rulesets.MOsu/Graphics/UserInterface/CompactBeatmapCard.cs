@@ -28,7 +28,7 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
         protected override Drawable IdleContent => idleBottomContent;
         protected override Drawable DownloadInProgressContent => downloadProgressBar;
 
-        public const float WIDTH = 340;
+        public const float WIDTH = 324;
         public const float HEIGHT = 80;
 
         [Cached]
