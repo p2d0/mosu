@@ -22,6 +22,7 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Screens;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
@@ -366,7 +367,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IConvertibleReplayFrame CreateConvertibleReplayFrame() => new OsuReplayFrame();
 
-        public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new OsuRulesetConfigManager(settings, RulesetInfo);
+        public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new MOsuRulesetConfigManager(settings, RulesetInfo);
 
         public override IEnumerable<HitResult> GetValidHitResults()
         {

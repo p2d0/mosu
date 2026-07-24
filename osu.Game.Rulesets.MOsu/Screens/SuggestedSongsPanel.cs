@@ -2,7 +2,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -15,6 +17,7 @@ using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Rulesets.MOsu.Graphics.UserInterface;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
@@ -22,6 +25,8 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.BeatmapListing;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Configuration;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Scoring;
 using osuTK;
 
@@ -35,9 +40,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
         private Container spotlightLoading;
         private Container suggestionsLoading;
         private Container artistLoading;
+        private DifficultyRangeSlider starSlider;
+        private CancellationTokenSource debounceSource;
         private IAPIProvider api = null!;
         private RulesetInfo ruleset = null!;
         private BeatmapManager beatmapManager = null!;
+        private IRulesetConfigCache configCache = null!;
         private readonly ScoreInfo score;
 
         public SuggestedSongsPanel(ScoreInfo score)
@@ -46,11 +54,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
         }
 
         [BackgroundDependencyLoader]
-        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager)
+        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache)
         {
             this.api = api;
             this.ruleset = rulesets.GetRuleset(score.BeatmapInfo?.Ruleset.ShortName ?? "osu") ?? rulesets.AvailableRulesets.First();
             this.beatmapManager = beatmapManager;
+            this.configCache = configCache;
 
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -65,6 +74,11 @@ namespace osu.Game.Rulesets.MOsu.Screens
                     Spacing = new Vector2(0, 15),
                     Children = new Drawable[]
                     {
+                        starSlider = new DifficultyRangeSlider
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            MinRange = 0,
+                        },
                         new OsuSpriteText
                         {
                             Text = "Spotlight",
@@ -164,11 +178,42 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 return;
             }
             Logger.Log("[MOsu] SuggestedSongsPanel.LoadComplete", LoggingTarget.Runtime);
+
+            var config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+            starSlider.LowerBound = config.GetBindable<double>(MOsuRulesetSetting.SuggestedSongsMinStars);
+            starSlider.UpperBound = config.GetBindable<double>(MOsuRulesetSetting.SuggestedSongsMaxStars);
+
+            starSlider.LowerBound.ValueChanged += _ => scheduleReload();
+            starSlider.UpperBound.ValueChanged += _ => scheduleReload();
+
             Schedule(() => fetchSuggestions());
+        }
+
+        private void scheduleReload()
+        {
+            debounceSource?.Cancel();
+            debounceSource = new CancellationTokenSource();
+            var token = debounceSource.Token;
+            Task.Delay(500).ContinueWith(_ =>
+            {
+                if (!token.IsCancellationRequested)
+                    Schedule(() => fetchSuggestions());
+            });
         }
 
         private void fetchSuggestions()
         {
+            // Clear grids
+            spotlightGrid.Clear();
+            suggestionsGrid.Clear();
+            artistGrid.Clear();
+            spotlightGrid.Alpha = 0;
+            suggestionsGrid.Alpha = 0;
+            artistGrid.Alpha = 0;
+            spotlightLoading.Show();
+            suggestionsLoading.Show();
+            artistLoading.Show();
+
             int onlineID = score.BeatmapInfo.BeatmapSet.OnlineID;
             Logger.Log($"[MOsu] SuggestedSongsPanel: fetching set {onlineID}", LoggingTarget.Runtime);
 
@@ -184,6 +229,15 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 double minBpm = bpm - 10;
                 double maxBpm = bpm + 10;
 
+                // Star range from slider
+                double minStars = starSlider.LowerBound.Value;
+                double maxStars = starSlider.UpperBound.Value;
+                string starFilter = "";
+                if (minStars > 0)
+                    starFilter += $" stars>={minStars}";
+                if (!starSlider.UpperBound.IsDefault && maxStars > 0)
+                    starFilter += $" stars<={maxStars}";
+
                 // Extract genre tags from local beatmap
                 var localBeatmap = score.BeatmapInfo.BeatmapSet.Beatmaps.FirstOrDefault();
                 var rawTags = localBeatmap?.Metadata.Tags ?? "";
@@ -192,7 +246,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 Logger.Log($"[MOsu] Matched genre tags: {string.Join(", ", genreTags)} (count={genreTags.Count})", LoggingTarget.Runtime);
                 var genreQuery = genreTags.Count > 0 ? " " + string.Join(" ", genreTags.Select(t => $"\"{t}\"")) : "";
 
-                var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{genreQuery}";
+                var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{starFilter}{genreQuery}";
                 Logger.Log($"[MOsu] Search query: {query}", LoggingTarget.Runtime);
 
                 // Spotlight search
