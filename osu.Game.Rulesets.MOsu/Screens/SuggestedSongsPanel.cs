@@ -190,7 +190,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 Logger.Log($"[MOsu] Raw tags: {rawTags}", LoggingTarget.Runtime);
                 var genreTags = extractGenreTags(rawTags);
                 Logger.Log($"[MOsu] Matched genre tags: {string.Join(", ", genreTags)} (count={genreTags.Count})", LoggingTarget.Runtime);
-                var genreQuery = genreTags.Count > 0 ? " " + string.Join(" ", genreTags) : "";
+                var genreQuery = genreTags.Count > 0 ? " " + string.Join(" ", genreTags.Select(t => $"\"{t}\"")) : "";
 
                 var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{genreQuery}";
                 Logger.Log($"[MOsu] Search query: {query}", LoggingTarget.Runtime);
@@ -286,6 +286,12 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             "power pop", "noise pop", "city pop", "j idol", "shibuya kei",
             "kayokyoku", "enka", "electro pop", "dark pop", "krnb", "k rnb", "kindie", "k indie",
 
+            // vocaloid, virtual singer & internet culture
+            "vocaloid", "utau", "synthv", "synthesizer v", "cevio", "neutrino", "vocaloid rock",
+            "vocagloss", "vocaloid pop", "denpa", "denpa song", "vtuber", "vtuber music",
+            "touhou", "doujin music", "nightcore", "daycore", "sped up", "slowed and reverb",
+            "lofi hip hop", "bardcore", "otacore",
+
             // phonk, hip hop & abbreviations
             "phonk", "drift phonk", "brazilian phonk", "memphis phonk", "rare phonk",
             "wave phonk", "house phonk", "ambient phonk", "dungeon phonk", "metal phonk",
@@ -299,7 +305,7 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             "industrial hip hop", "jazz rap", "hardcore hip hop", "instrumental hip hop",
 
             // electronic, club & abbreviations
-            "house", "deep house", "tech house", "progressive house", "electro house",
+            "electronic", "house", "deep house", "tech house", "progressive house", "electro house",
             "acid house", "chicago house", "french house", "tropical house", "future house",
             "bass house", "ghetto house", "ghettotech", "slap house", "melodic house",
             "italo house", "tribal house", "techno", "detroit techno", "acid techno",
@@ -402,8 +408,7 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             "turbofolk", "manele", "chalga", "gagaku", "minyo",
             "protovapor", "bard song", "carnatic", "hindustani", "qawwali",
             "bhangra", "filmi", "indipop", "gamelan", "dangdut",
-            "budots", "luk thung", "mor lam", "vtuber music", "nightcore",
-            "sped up", "slowed and reverb", "lofi hip hop", "bardcore", "gothic country",
+            "budots", "luk thung", "mor lam", "gothic country",
             "dark cabaret", "steampunk", "zydeco", "cajun", "jug band",
             "witch house", "breakbeat", "breaks", "big beat", "nu skool breaks", "acid breaks",
             "jersey bounce", "drillstep", "dubstyle", "freeform hardcore", "moombahton",
@@ -414,12 +419,24 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             "scouse house", "symphonic black metal", "melodic deathcore", "cyber metal", "ndh", "neue deutsche harte",
             "electrogrind", "math metal", "pagan folk", "neoclassical darkwave", "martial industrial",
             "death industrial", "power noise", "hauntology", "hypnagogic pop", "vaporhop",
-            "vaportrap", "dreampunk"
+            "vaportrap", "dreampunk",
+
+            // osu!, rhythm games & Japanese niche
+            "jcore", "j-core", "j core", "hi-tech", "hitech", "hitech fullon",
+            "artcore", "future core", "kawaii bass", "kawaii future bass", "speed dance",
+            "otoge", "bemani", "hard renaissance", "splittercore",
+            "halftime", "crossbreed", "gabba", "donk",
+            "anisong", "anime ost", "game ost", "doujin", "doujin soft",
+            "vocaloid metal", "chaoz", "j-metal", "j metal",
+            "melodic speed metal", "technical metal", "visual kei",
+            "vke", "speed up"
         };
 
         private static HashSet<string> extractGenreTags(string tags)
         {
-            var tagWords = tags.Split(new[] { ' ', ',', '|' }, StringSplitOptions.RemoveEmptyEntries)
+            // Normalize hyphens to spaces, then split
+            var normalizedTags = tags.Replace('-', ' ').Replace('_', ' ');
+            var tagWords = normalizedTags.Split(new[] { ' ', ',', '|' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(t => t.Trim().ToLowerInvariant())
                 .ToArray();
             var matches = new HashSet<string>();
