@@ -29,6 +29,7 @@ using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Scoring;
 using osuTK;
+using Realms;
 
 namespace osu.Game.Rulesets.MOsu.Screens
 {
@@ -43,10 +44,17 @@ namespace osu.Game.Rulesets.MOsu.Screens
         private DifficultyRangeSlider starSlider;
         private CancellationTokenSource debounceSource;
         private int requestSequence;
+        private List<APIBeatmapSet> pendingSpotlightResults;
+        private List<APIBeatmapSet> pendingSuggestionsResults;
+        private List<APIBeatmapSet> pendingArtistResults;
+        private int pendingRequests;
+        private int pendingOnlineID;
+        private int pendingSequence;
         private IAPIProvider api = null!;
         private RulesetInfo ruleset = null!;
         private BeatmapManager beatmapManager = null!;
         private IRulesetConfigCache configCache = null!;
+        private RealmAccess realmAccess = null!;
         private readonly ScoreInfo score;
 
         public SuggestedSongsPanel(ScoreInfo score)
@@ -55,12 +63,13 @@ namespace osu.Game.Rulesets.MOsu.Screens
         }
 
         [BackgroundDependencyLoader]
-        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache)
+        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache, RealmAccess realmAccess)
         {
             this.api = api;
             this.ruleset = rulesets.GetRuleset(score.BeatmapInfo?.Ruleset.ShortName ?? "osu") ?? rulesets.AvailableRulesets.First();
             this.beatmapManager = beatmapManager;
             this.configCache = configCache;
+            this.realmAccess = realmAccess;
 
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -238,6 +247,14 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 var query = $"favourites>1 bpm>={minBpm} bpm<={maxBpm}{starFilter}{genreQuery}";
                 Logger.Log($"[MOsu] Search query: {query}", LoggingTarget.Runtime);
 
+                // Collect results from all three requests, then do one Realm query
+                pendingSpotlightResults = null;
+                pendingSuggestionsResults = null;
+                pendingArtistResults = null;
+                pendingRequests = 3;
+                pendingOnlineID = onlineID;
+                pendingSequence = currentSequence;
+
                 // Spotlight search
                 var spotlightRequest = new SearchBeatmapSetsRequest(
                     query: query,
@@ -256,7 +273,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 spotlightRequest.Success += spotlightResponse =>
                 {
                     Logger.Log($"[MOsu] Spotlight search success: {spotlightResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(spotlightGrid, spotlightResponse.BeatmapSets, onlineID, currentSequence));
+                    Schedule(() =>
+                    {
+                        pendingSpotlightResults = spotlightResponse.BeatmapSets.ToList();
+                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
+                            populateAllGrids();
+                    });
                 };
                 spotlightRequest.Failure += e => Logger.Log($"[MOsu] Spotlight search failed: {e}", LoggingTarget.Runtime);
                 api.Queue(spotlightRequest);
@@ -279,7 +301,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 searchRequest.Success += searchResponse =>
                 {
                     Logger.Log($"[MOsu] Similar search success: {searchResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(suggestionsGrid, searchResponse.BeatmapSets, onlineID, currentSequence));
+                    Schedule(() =>
+                    {
+                        pendingSuggestionsResults = searchResponse.BeatmapSets.ToList();
+                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
+                            populateAllGrids();
+                    });
                 };
                 searchRequest.Failure += e => Logger.Log($"[MOsu] Similar search failed: {e}", LoggingTarget.Runtime);
                 api.Queue(searchRequest);
@@ -311,7 +338,12 @@ namespace osu.Game.Rulesets.MOsu.Screens
                 artistRequest.Success += artistResponse =>
                 {
                     Logger.Log($"[MOsu] Artist search success: {artistResponse.BeatmapSets.Count()} results", LoggingTarget.Runtime);
-                    Schedule(() => populateGrid(artistGrid, artistResponse.BeatmapSets, onlineID, currentSequence));
+                    Schedule(() =>
+                    {
+                        pendingArtistResults = artistResponse.BeatmapSets.ToList();
+                        if (--pendingRequests == 0 && pendingSequence == currentSequence)
+                            populateAllGrids();
+                    });
                 };
                 artistRequest.Failure += e => Logger.Log($"[MOsu] Artist search failed: {e}", LoggingTarget.Runtime);
 
@@ -322,7 +354,94 @@ namespace osu.Game.Rulesets.MOsu.Screens
             api.Queue(getSetRequest);
         }
 
+        private void populateAllGrids()
+        {
+            var allResults = new List<(List<APIBeatmapSet> results, ReverseChildIDFillFlowContainer<BeatmapCard> grid)>();
+            if (pendingSpotlightResults != null)
+                allResults.Add((pendingSpotlightResults, spotlightGrid));
+            if (pendingSuggestionsResults != null)
+                allResults.Add((pendingSuggestionsResults, suggestionsGrid));
+            if (pendingArtistResults != null)
+                allResults.Add((pendingArtistResults, artistGrid));
+
+            var allSets = allResults.SelectMany(r => r.results).ToList();
+            var onlineIDs = allSets.Where(b => b.OnlineID > 0 && b.OnlineID != pendingOnlineID).Select(b => b.OnlineID).ToList();
+            var apiTitlesArtists = allSets.Select(b => (b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())).ToList();
+
+            Task.Run(() =>
+            {
+                var localOnlineIDs = new HashSet<int>();
+                var localTitleArtists = new HashSet<(string, string)>();
+
+                if (onlineIDs.Count > 0)
+                {
+                    var idsStr = string.Join(", ", onlineIDs);
+                    localOnlineIDs = realmAccess.Run(r =>
+                        r.All<BeatmapSetInfo>()
+                         .Filter($"OnlineID IN {{{idsStr}}} AND DeletePending == false")
+                         .ToList()
+                         .Select(b => b.OnlineID)
+                         .ToHashSet());
+                }
+
+                if (apiTitlesArtists.Count > 0)
+                {
+                    var conditions = JoinWithOr(apiTitlesArtists
+                        .Select((ta, i) => $"({nameof(BeatmapInfo.Metadata)}.{nameof(BeatmapMetadata.Title)} == $" + (2*i) + $" AND {nameof(BeatmapInfo.Metadata)}.{nameof(BeatmapMetadata.Artist)} == $" + (2*i+1) + ")"));
+
+                    var args = apiTitlesArtists.SelectMany(ta => new[] { ta.Item1, ta.Item2 }).Select(s => (QueryArgument)s).ToArray();
+
+                    localTitleArtists = realmAccess.Run(r =>
+                        r.All<BeatmapInfo>()
+                         .Filter($"({conditions}) AND {nameof(BeatmapInfo.BeatmapSet)}.{nameof(BeatmapSetInfo.DeletePending)} == false", args)
+                         .ToList()
+                         .Select(b => (b.Metadata.Title.ToLowerInvariant(), b.Metadata.Artist.ToLowerInvariant()))
+                         .Distinct()
+                         .ToHashSet());
+                }
+
+                Schedule(() =>
+                {
+                    foreach (var (results, grid) in allResults)
+                    {
+                        var filtered = results
+                            .Where(b => b.OnlineID != pendingOnlineID)
+                            .Where(b => b.OnlineID <= 0 || !localOnlineIDs.Contains(b.OnlineID))
+                            .Where(b => !localTitleArtists.Contains((b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())))
+                            .ToList();
+
+                        if (filtered.Count > 12)
+                        {
+                            for (int i = filtered.Count - 1; i > 0; i--)
+                            {
+                                int j = random.Next(i + 1);
+                                (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
+                            }
+                        }
+
+                        var finalResults = filtered.Take(12).ToList();
+                        Logger.Log($"[MOsu] populateGrid: {filtered.Count} filtered, showing {finalResults.Count}", LoggingTarget.Runtime);
+
+                        foreach (var set in finalResults)
+                        {
+                            var card = new CompactBeatmapCard(set, allowExpansion: true);
+                            grid.Add(card);
+                        }
+
+                        LoadingLayer loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
+                        loadingIndicator.Hide();
+                        grid.FadeIn(300, Easing.OutQuint);
+                    }
+                });
+            });
+        }
+
         private static readonly System.Random random = new System.Random();
+
+        private static string JoinWithOr(IEnumerable<string> conditions)
+        {
+            return string.Join(" OR ", conditions);
+        }
 
 private static readonly HashSet<string> knownGenres = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -511,56 +630,6 @@ private static readonly HashSet<string> knownGenres = new HashSet<string>(String
             }
             Logger.Log($"[MOsu] Matched genres: {string.Join(", ", matches)}", LoggingTarget.Runtime);
             return matches;
-        }
-
-        private void populateGrid(ReverseChildIDFillFlowContainer<BeatmapCard> grid, IEnumerable<APIBeatmapSet> beatmapSets, int excludeOnlineID, int sequence)
-        {
-            if (sequence != requestSequence)
-            {
-                Logger.Log($"[MOsu] populateGrid: stale response, ignoring", LoggingTarget.Runtime);
-                return;
-            }
-            var beatmapSetsList = beatmapSets.ToList();
-
-            Task.Run(() =>
-            {
-                var localSets = beatmapManager.GetAllUsableBeatmapSets();
-                var downloadedIDs = localSets.Where(b => b.OnlineID > 0).Select(b => b.OnlineID).ToHashSet();
-                var localTitles = localSets.Select(b => (b.Metadata.Title.ToLowerInvariant(), b.Metadata.Artist.ToLowerInvariant())).ToHashSet();
-
-                var filtered = beatmapSetsList
-                    .Where(b => b.OnlineID != excludeOnlineID)
-                    .Where(b => !downloadedIDs.Contains(b.OnlineID))
-                    .Where(b => !localTitles.Contains((b.Title.ToLowerInvariant(), b.Artist.ToLowerInvariant())))
-                    .ToList();
-
-                // Randomize if more than 9 results
-                if (filtered.Count > 12)
-                {
-                    for (int i = filtered.Count - 1; i > 0; i--)
-                    {
-                        int j = random.Next(i + 1);
-                        (filtered[i], filtered[j]) = (filtered[j], filtered[i]);
-                    }
-                }
-
-                var results = filtered.Take(12).ToList();
-                Logger.Log($"[MOsu] populateGrid: {filtered.Count} filtered, showing {results.Count}", LoggingTarget.Runtime);
-
-                Schedule(() =>
-                {
-                    foreach (var set in results)
-                    {
-                        var card = new CompactBeatmapCard(set, allowExpansion: true);
-                        grid.Add(card);
-                    }
-
-                    // Hide loading, show grid
-                    LoadingLayer loadingIndicator = grid == spotlightGrid ? spotlightLoading : (grid == suggestionsGrid ? suggestionsLoading : artistLoading);
-                    loadingIndicator.Hide();
-                    grid.FadeIn(300, Easing.OutQuint);
-                });
-            });
         }
 
         private static SearchGenre toSearchGenre(BeatmapSetOnlineGenre genre)
