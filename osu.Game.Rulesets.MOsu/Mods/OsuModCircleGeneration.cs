@@ -113,7 +113,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             makeMapSquare(beatmap);
         }
 
-        private Slider createKickslider(double startTime, double duration, Vector2 position, OsuBeatmap osuBeatmap, OsuHitObject firstHitObject, double beatLength)
+        private Slider createKickslider(double startTime, double duration, Vector2 position, OsuBeatmap osuBeatmap, OsuHitObject? firstCircle, double beatLength)
         {
             int repeatCount = BreakObjects.Value - 1;
             var timingPoint = osuBeatmap.ControlPointInfo.TimingPointAt(startTime);
@@ -131,7 +131,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     new PathControlPoint(new Vector2((float)targetDistance, 0))
                 })
             };
-            slider.Samples = firstHitObject.Samples;
+            slider.Samples = firstCircle?.Samples;
             slider.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
             return slider;
         }
@@ -223,7 +223,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                             double breakDuration = beatLength * BreakObjects.Value;
                             if (Kickslider.Value)
                             {
-                                var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing, 0), osuBeatmap, firstHitObject, fullBeatLength);
+                                var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing, 0), osuBeatmap, firstCircle, fullBeatLength);
                                 hitObjects.Add(kickslider);
                                 nextStartTime = kickslider.EndTime + beatLength;
                             }
@@ -240,7 +240,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                         double breakDuration = beatLength * BreakObjects.Value;
                         if (Kickslider.Value)
                         {
-                            var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing, 0), osuBeatmap, firstHitObject, fullBeatLength);
+                            var kickslider = createKickslider(previousCircle.StartTime + beatLength, breakDuration, previousCircle.Position + new Vector2(spacing, 0), osuBeatmap, firstCircle, fullBeatLength);
                             hitObjects.Add(kickslider);
                             nextStartTime = kickslider.EndTime + beatLength;
                         }

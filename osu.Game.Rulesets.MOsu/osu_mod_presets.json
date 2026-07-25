@@ -17,17 +17,17 @@
   {
     "Name": "Tap aim 1/4",
     "Description": "Replace the whole map with generated circles",
-    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\"},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":100}}]"
+    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"custom_angle\":true}},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":150}}]"
   },
   {
     "Name": "Tap aim 1/4 with breaks",
     "Description": "Like tap aim but with breaks every 25 circles",
-    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\"},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":100,\"break\":true,\"break_interval\":25,\"break_objects\":6}}]"
+    "ModsJson": "[{\"acronym\":\"NF\"},{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0,\"extended_limits\":true}},{\"acronym\":\"RDV2\",\"settings\":{\"custom_angle\":true}},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":150,\"break\":true,\"break_interval\":25,\"break_objects\":6}}]"
   },
   {
     "Name": "Tap aim 1/4 increasing",
     "Description": "Start with 3 and add 1 circle after each break",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0}},{\"acronym\":\"RDV2\"},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":100,\"break\":true,\"break_interval\":30,\"break_objects\":6,\"increasing\":true}}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"circle_size\":4.0,\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"custom_angle\":true}},{\"acronym\":\"CG\",\"settings\":{\"divisor\":4,\"distance\":150,\"break\":true,\"break_interval\":30,\"break_objects\":6,\"increasing\":true}}]"
   },
   {
     "Name": "Stream practice",
