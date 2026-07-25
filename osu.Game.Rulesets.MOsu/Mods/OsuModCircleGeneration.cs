@@ -19,6 +19,7 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.UI;
 using osuTK;
+using osu.Game.Audio;
 
 namespace osu.Game.Rulesets.MOsu.Mods
 {
@@ -190,11 +191,13 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     }
                 }
 
+                var firstCircle = beatmap.HitObjects.OfType<HitCircle>().FirstOrDefault();
+
                 var circle = new HitCircle
                 {
                     Position = position,
                     NewCombo = cornerIndex == 0,
-                    Samples = firstHitObject.Samples
+                    Samples = firstCircle?.Samples
                 };
 
                 circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
@@ -251,7 +254,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
                 circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(nextStartTime);
                 circle.TimePreempt = firstHitObject.TimePreempt;
-                var firstCircle = beatmap.HitObjects.OfType<HitCircle>().FirstOrDefault();
                 if (firstCircle != null)
                     circle.TimeFadeIn = firstCircle.TimeFadeIn;
 
