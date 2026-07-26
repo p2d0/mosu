@@ -119,8 +119,8 @@ namespace osu.Game.Rulesets.MOsu.UI
         [BackgroundDependencyLoader]
         private void load(IRulesetConfigCache configCache, IBeatmap? beatmap)
         {
-            var osuConfig = (OsuRulesetConfigManager?)configCache.GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
-            osuConfig?.BindWith(OsuRulesetSetting.PlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
+            // var osuConfig = (OsuRulesetConfigManager?)configCache.GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
+            // osuConfig?.BindWith(OsuRulesetSetting.PlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
 
             var osuBeatmap = (OsuBeatmap?)beatmap;
             RegisterPool<HitCircle, DrawableHitCircle>(20, 100);
