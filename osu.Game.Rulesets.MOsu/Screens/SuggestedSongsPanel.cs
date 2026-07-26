@@ -336,7 +336,9 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
                         foreach (var set in finalResults)
                         {
-                            grid.Add(new CompactBeatmapCard(set, allowExpansion: true));
+                            var card = new CompactBeatmapCard(set, allowExpansion: true);
+                            card.SetWidthForParent(grid.Parent.DrawWidth);
+                            grid.Add(card);
                         }
 
                         loading.Hide();

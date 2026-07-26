@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -28,7 +29,8 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
         protected override Drawable IdleContent => idleBottomContent;
         protected override Drawable DownloadInProgressContent => downloadProgressBar;
 
-        public const float WIDTH = 324;
+        public const float MIN_WIDTH = 300;
+        public const float MAX_WIDTH = 355;
         public const float HEIGHT = 80;
 
         [Cached]
@@ -53,10 +55,18 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
             Action = DefaultAction;
         }
 
+        public void SetWidthForParent(float parentWidth, int columns = 3)
+        {
+            float spacing = 6;
+            float calculatedWidth = (parentWidth - spacing * (columns - 1)) / columns;
+            float clampedWidth = Math.Clamp(calculatedWidth, MIN_WIDTH, MAX_WIDTH);
+            Width = clampedWidth;
+            Schedule(() => buttonContainer.Width = Width - HEIGHT + CORNER_RADIUS);
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            Width = WIDTH;
             Height = HEIGHT;
 
             FillFlowContainer leftIconArea = null!;
@@ -86,7 +96,7 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
                         buttonContainer = new CollapsibleButtonContainer(BeatmapSet)
                         {
                             X = HEIGHT - CORNER_RADIUS,
-                            Width = WIDTH - HEIGHT + CORNER_RADIUS,
+                            Width = MAX_WIDTH - HEIGHT + CORNER_RADIUS,
                             FavouriteState = { BindTarget = FavouriteState },
                             ButtonsCollapsedWidth = CORNER_RADIUS,
                             ButtonsExpandedWidth = 24,
