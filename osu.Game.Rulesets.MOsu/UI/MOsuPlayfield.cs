@@ -24,6 +24,7 @@ using osu.Game.Rulesets.Osu.UI.Cursor;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osuTK;
+using osu.Framework.Logging;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -119,8 +120,16 @@ namespace osu.Game.Rulesets.MOsu.UI
         [BackgroundDependencyLoader]
         private void load(IRulesetConfigCache configCache, IBeatmap? beatmap)
         {
-            // var osuConfig = (OsuRulesetConfigManager?)configCache.GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
-            // osuConfig?.BindWith(OsuRulesetSetting.PlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
+            var osuConfig = configCache.GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset()) as OsuRulesetConfigManager;
+            if (osuConfig != null)
+            {
+                // CRITICAL: Get enum value from runtime assembly, not compile-time NuGet package.
+                // NuGet 702.1 has PlayfieldBorderStyle=4, but runtime 726.0 has PlayfieldBorderStyle=5.
+                // Using wrong value causes BindableBool (HitAnimations) instead of Bindable<PlayfieldBorderStyle>.
+                var runtimeEnumType = osuConfig.GetType().Assembly.GetType("osu.Game.Rulesets.Osu.Configuration.OsuRulesetSetting")!;
+                var runtimePlayfieldBorderStyle = (OsuRulesetSetting)System.Enum.Parse(runtimeEnumType, "PlayfieldBorderStyle")!;
+                osuConfig.BindWith(runtimePlayfieldBorderStyle, playfieldBorder.PlayfieldBorderStyle);
+            }
 
             var osuBeatmap = (OsuBeatmap?)beatmap;
             RegisterPool<HitCircle, DrawableHitCircle>(20, 100);
