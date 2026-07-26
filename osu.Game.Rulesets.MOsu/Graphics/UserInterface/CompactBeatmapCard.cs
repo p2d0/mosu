@@ -55,9 +55,30 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
             Action = DefaultAction;
         }
 
-        public void SetWidthForParent(float parentWidth, int columns = 3)
+        public void SetWidthForParent(float parentWidth, int? forcedColumns = null)
         {
             float spacing = 6;
+
+            int columns;
+            if (forcedColumns.HasValue)
+            {
+                columns = forcedColumns.Value;
+            }
+            else
+            {
+                // Max columns that keep width >= MIN_WIDTH
+                columns = (int)((parentWidth + spacing) / (MIN_WIDTH + spacing));
+                columns = Math.Max(columns, 1);
+
+                // If calculated width exceeds MAX_WIDTH, increase columns
+                float testWidth = (parentWidth - spacing * (columns - 1)) / columns;
+                while (testWidth > MAX_WIDTH && columns < 6)
+                {
+                    columns++;
+                    testWidth = (parentWidth - spacing * (columns - 1)) / columns;
+                }
+            }
+
             float calculatedWidth = (parentWidth - spacing * (columns - 1)) / columns;
             float clampedWidth = Math.Clamp(calculatedWidth, MIN_WIDTH, MAX_WIDTH);
             Width = clampedWidth;
