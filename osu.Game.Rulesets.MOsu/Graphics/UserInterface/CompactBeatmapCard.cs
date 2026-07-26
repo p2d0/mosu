@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
         protected override Drawable IdleContent => idleBottomContent;
         protected override Drawable DownloadInProgressContent => downloadProgressBar;
 
-        public const float MIN_WIDTH = 300;
+        public const float MIN_WIDTH = 290;
         public const float MAX_WIDTH = 355;
         public const float HEIGHT = 80;
 
@@ -66,17 +66,9 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterface
             }
             else
             {
-                // Max columns that keep width >= MIN_WIDTH
+                // Max columns that keep width >= MIN_WIDTH, cap at 4
                 columns = (int)((parentWidth + spacing) / (MIN_WIDTH + spacing));
-                columns = Math.Max(columns, 1);
-
-                // If calculated width exceeds MAX_WIDTH, increase columns
-                float testWidth = (parentWidth - spacing * (columns - 1)) / columns;
-                while (testWidth > MAX_WIDTH && columns < 6)
-                {
-                    columns++;
-                    testWidth = (parentWidth - spacing * (columns - 1)) / columns;
-                }
+                columns = Math.Clamp(columns, 1, 4);
             }
 
             float calculatedWidth = (parentWidth - spacing * (columns - 1)) / columns;
