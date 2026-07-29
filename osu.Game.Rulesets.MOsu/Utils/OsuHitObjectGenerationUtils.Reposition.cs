@@ -74,7 +74,8 @@ namespace osu.Game.Rulesets.MOsu.Utils
         public static List<OsuHitObject> RepositionHitObjectsClampOnly(IEnumerable<ObjectPositionInfo> objectPositionInfos,
                                                                         bool isHardcore = false)
         {
-            Vector2 previousEndPosition = playfield_centre;
+            Vector2 originalPreviousEndPosition = playfield_centre;
+            Vector2 newPreviousEndPosition = playfield_centre;
 
             foreach (var info in objectPositionInfos)
             {
@@ -82,14 +83,17 @@ namespace osu.Game.Rulesets.MOsu.Utils
 
                 if (hitObject is Spinner)
                 {
-                    previousEndPosition = hitObject.EndPosition;
+                    originalPreviousEndPosition = hitObject.EndPosition;
+                    newPreviousEndPosition = hitObject.EndPosition;
                     continue;
                 }
 
-                // Original direction from previous end position
+                // Original direction from ORIGINAL previous end position (not the new one)
                 Vector2 originalPos = hitObject.Position;
-                Vector2 originalDirection = originalPos - previousEndPosition;
+                Vector2 originalDirection = originalPos - originalPreviousEndPosition;
                 float originalDistance = originalDirection.Length;
+
+                bool distanceChanged = !Precision.AlmostEquals(info.DistanceFromPrevious, originalDistance);
 
                 Vector2 posRelativeToPrev;
                 if (originalDistance > 0)
@@ -99,7 +103,7 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 }
                 else
                 {
-                    // Degenerate: use angle info
+                    // Degenerate
                     float angle = MathF.Atan2(originalDirection.Y, originalDirection.X);
                     posRelativeToPrev = new Vector2(
                         info.DistanceFromPrevious * MathF.Cos(angle),
@@ -107,10 +111,11 @@ namespace osu.Game.Rulesets.MOsu.Utils
                     );
                 }
 
-                // Apply edge-aware rotation (steers toward center when near edge)
-                posRelativeToPrev = RotateAwayFromEdge(previousEndPosition, posRelativeToPrev);
+                // Only apply edge-aware rotation when distance changed
+                if (distanceChanged)
+                    posRelativeToPrev = RotateAwayFromEdge(newPreviousEndPosition, posRelativeToPrev);
 
-                Vector2 newPos = previousEndPosition + posRelativeToPrev;
+                Vector2 newPos = newPreviousEndPosition + posRelativeToPrev;
 
                 if (hitObject is HitCircle)
                 {
@@ -124,7 +129,8 @@ namespace osu.Game.Rulesets.MOsu.Utils
                     }
 
                     hitObject.Position = finalPos;
-                    previousEndPosition = finalPos;
+                    originalPreviousEndPosition = originalPos;
+                    newPreviousEndPosition = finalPos;
                 }
                 else if (hitObject is Slider slider)
                 {
@@ -157,7 +163,8 @@ namespace osu.Game.Rulesets.MOsu.Utils
                         slider.Position = new Vector2(newX, newY);
                     }
 
-                    previousEndPosition = slider.EndPosition;
+                    originalPreviousEndPosition = slider.EndPosition;
+                    newPreviousEndPosition = slider.EndPosition;
                 }
             }
 
