@@ -112,7 +112,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos, true);
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos);
         }
     }
 }

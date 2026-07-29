@@ -66,13 +66,11 @@ namespace osu.Game.Rulesets.MOsu.Utils
         /// apply edge-aware rotation via <see cref="RotateAwayFromEdge"/>,
         /// then only clamp objects that fall outside the playfield.
         /// Uses original direction vectors to avoid drift when distances unchanged.
-        /// Does NOT shift preceding objects.
+        /// Does NOT shift preceding objects. No padding (hardcore-style).
         /// </summary>
         /// <param name="objectPositionInfos">Position information with (potentially) modified distances.</param>
-        /// <param name="isHardcore">Remove circle padding</param>
         /// <returns>The repositioned hit objects.</returns>
-        public static List<OsuHitObject> RepositionHitObjectsClampOnly(IEnumerable<ObjectPositionInfo> objectPositionInfos,
-                                                                        bool isHardcore = false)
+        public static List<OsuHitObject> RepositionHitObjectsClampOnly(IEnumerable<ObjectPositionInfo> objectPositionInfos)
         {
             Vector2 originalPreviousEndPosition = playfield_centre;
             Vector2 newPreviousEndPosition = playfield_centre;
@@ -120,12 +118,15 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 if (hitObject is HitCircle)
                 {
                     Vector2 finalPos = newPos;
-                    float padding = isHardcore ? 0f : (float)hitObject.Radius;
 
-                    if (newPos.X < padding || newPos.X > OsuPlayfield.BASE_SIZE.X - padding ||
-                        newPos.Y < padding || newPos.Y > OsuPlayfield.BASE_SIZE.Y - padding)
+                    // No padding (hardcore-style)
+                    if (newPos.X < 0 || newPos.X > OsuPlayfield.BASE_SIZE.X ||
+                        newPos.Y < 0 || newPos.Y > OsuPlayfield.BASE_SIZE.Y)
                     {
-                        finalPos = ClampToPlayfieldWithPadding(newPos, padding);
+                        finalPos = new Vector2(
+                            Math.Clamp(newPos.X, 0, OsuPlayfield.BASE_SIZE.X),
+                            Math.Clamp(newPos.Y, 0, OsuPlayfield.BASE_SIZE.Y)
+                        );
                     }
 
                     hitObject.Position = finalPos;
@@ -173,14 +174,13 @@ namespace osu.Game.Rulesets.MOsu.Utils
 
         /// <summary>
         /// Reposition the hit objects according to the information in <paramref name="objectPositionInfos"/>.
+        /// No padding (hardcore-style).
         /// </summary>
         /// <param name="objectPositionInfos">Position information for each hit object.</param>
-        /// <param name="isHardcore">Remove circle padding and unnecessary shifting</param>
         /// <param name="extendPlayArea">Extend Play area</param>
         /// <param name="infinitePlayArea">Infinite play area</param>
         /// <returns>The repositioned hit objects.</returns>
         public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos,
-                                                              bool isHardcore = false,
                                                               bool extendPlayArea = false,
                                                               bool infinitePlayArea = false
         )
@@ -207,7 +207,7 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 switch (hitObject)
                 {
                     case HitCircle:
-                        shift = clampHitCircleToPlayfield(current,isHardcore, extendPlayArea, infinitePlayArea);
+                        shift = clampHitCircleToPlayfield(current, extendPlayArea, infinitePlayArea);
                         break;
 
                     case Slider:
@@ -215,21 +215,7 @@ namespace osu.Game.Rulesets.MOsu.Utils
                         break;
                 }
 
-                if (!isHardcore && shift != Vector2.Zero)
-                {
-                    var toBeShifted = new List<OsuHitObject>();
 
-                    for (int j = i - 1; j >= i - preceding_hitobjects_to_shift && j >= 0; j--)
-                    {
-                        // only shift hit circles
-                        if (!(workingObjects[j].HitObject is HitCircle)) break;
-
-                        toBeShifted.Add(workingObjects[j].HitObject);
-                    }
-
-                    if (toBeShifted.Count > 0)
-                        applyDecreasingShift(toBeShifted, shift);
-                }
 
                 previous = current;
             }
@@ -359,13 +345,13 @@ namespace osu.Game.Rulesets.MOsu.Utils
         /// Move the modified position of a <see cref="HitCircle"/> so that it fits inside the playfield.
         /// </summary>
         /// <returns>The deviation from the original modified position in order to fit within the playfield.</returns>
-        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject, bool isHardcore = false, bool extendPlayArea = false,bool infinitePlayArea = false)
+        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject, bool extendPlayArea = false, bool infinitePlayArea = false)
         {
             var previousPosition = workingObject.PositionModified;
             if(!infinitePlayArea && !extendPlayArea)
                 workingObject.EndPositionModified = workingObject.PositionModified = ClampToPlayfieldWithPadding(
                     workingObject.PositionModified,
-                    isHardcore ? 0f : (float)workingObject.HitObject.Radius
+                    0f
                 );
 
             if(extendPlayArea)
