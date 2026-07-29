@@ -185,6 +185,11 @@ namespace osu.Game.Rulesets.MOsu.UI
                     replayPlayer.AddSettings(new RandomV2Settings(randomV2, Beatmap, Mods, () => ReplayScore?.Replay, replayPlayer.Mods));
                 }
 
+                // Add SpacingAdjust settings panel when the mod is active
+                if (Mods.OfType<OsuModSpacingAdjust>().FirstOrDefault() is OsuModSpacingAdjust spacingAdjust){
+                    replayPlayer.AddSettings(new SpacingAdjustSettings(spacingAdjust, Beatmap, Mods, () => ReplayScore?.Replay, replayPlayer.Mods));
+                }
+
 
                 ReplayAnalysisOverlay analysisOverlay;
                 PlayfieldAdjustmentContainer.Add(analysisOverlay = new ReplayAnalysisOverlay(replayPlayer.Score.Replay));

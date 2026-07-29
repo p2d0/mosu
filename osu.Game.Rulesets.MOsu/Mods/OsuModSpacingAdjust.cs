@@ -2,6 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using osu.Framework.Bindables;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
@@ -11,6 +14,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Utils;
+using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Mods
 {
@@ -28,51 +32,81 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public override bool RequiresConfiguration => true;
 
-[SettingSource("Object spacing", "Modifies the spacing between objects.")]
-public BindableNumber<float> ObjectSpacing { get; } = new BindableFloat
-{
-    MinValue = 0.5f,
-    MaxValue = 10,
-    Default = 1,
-    Value = 1,
-    Precision = 0.01f,
-};
+        private ConditionalWeakTable<OsuHitObject, object> originalPositions = new();
+        private ConditionalWeakTable<Slider, object> originalSliderPaths = new();
 
-// public override string SettingDescription => ObjectSpacing.IsDefault ? string.Empty : $"{ObjectSpacing.Value:N2}x";
-
-private const double min_break_duration = 1000;
-
-public void ApplyToBeatmap(IBeatmap beatmap)
-{
-    if (!(beatmap is OsuBeatmap osuBeatmap))
-        return;
-
-    var positionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
-
-    for (int i = 0; i < positionInfos.Count; i++)
-    {
-        var positionInfo = positionInfos[i];
-
-        // if (i == 0 || positionInfos[i - 1].HitObject is Spinner ||
-        //     positionInfo.HitObject.StartTime - positionInfos[i - 1].HitObject.GetEndTime() > min_break_duration)
-        // {
-        //     positionInfo.StayInPlace = true;
-        // }
-
-        if (ObjectSpacing.Value >= 1)
+        private void restoreOriginals(OsuBeatmap osuBeatmap)
         {
-            // When increasing jump distance, longer jumps get a smaller increase in distance
-            positionInfo.DistanceFromPrevious *= MathF.Pow(ObjectSpacing.Value, 1f - positionInfo.DistanceFromPrevious / 640f);
-        }
-        else
-        {
-            // When reducing jump distance, shorter jumps get a smaller reduction in distance
-            positionInfo.DistanceFromPrevious *= MathF.Pow(ObjectSpacing.Value, positionInfo.DistanceFromPrevious / 640f);
-        }
-    }
+            foreach (var obj in osuBeatmap.HitObjects.OfType<OsuHitObject>())
+            {
+                if (!originalPositions.TryGetValue(obj, out var pos))
+                {
+                    pos = obj.Position;
+                    originalPositions.Add(obj, pos);
+                }
+                obj.Position = (Vector2)pos;
 
-    // TODO fix
-    osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos, true);
-}
+                if (obj is Slider slider)
+                {
+                    if (!originalSliderPaths.TryGetValue(slider, out var pathState))
+                    {
+                        pathState = slider.Path.ControlPoints.Select(p => p.Position).ToArray();
+                        originalSliderPaths.Add(slider, pathState);
+                    }
+                    var pts = (Vector2[])pathState;
+                    for (int j = 0; j < slider.Path.ControlPoints.Count && j < pts.Length; j++)
+                        slider.Path.ControlPoints[j].Position = pts[j];
+                }
+            }
+        }
+
+        [SettingSource("Object spacing", "Modifies the spacing between objects.")]
+        public BindableNumber<float> ObjectSpacing { get; } = new BindableFloat
+        {
+            MinValue = 0.5f,
+            MaxValue = 10,
+            Default = 1,
+            Value = 1,
+            Precision = 0.01f,
+        };
+
+        // public override string SettingDescription => ObjectSpacing.IsDefault ? string.Empty : $"{ObjectSpacing.Value:N2}x";
+
+        private const double min_break_duration = 1000;
+
+        public void ApplyToBeatmap(IBeatmap beatmap)
+        {
+            if (!(beatmap is OsuBeatmap osuBeatmap))
+                return;
+
+            restoreOriginals(osuBeatmap);
+
+            var positionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+
+            for (int i = 0; i < positionInfos.Count; i++)
+            {
+                var positionInfo = positionInfos[i];
+
+                // if (i == 0 || positionInfos[i - 1].HitObject is Spinner ||
+                //     positionInfo.HitObject.StartTime - positionInfos[i - 1].HitObject.GetEndTime() > min_break_duration)
+                // {
+                //     positionInfo.StayInPlace = true;
+                // }
+
+                if (ObjectSpacing.Value >= 1)
+                {
+                    // When increasing jump distance, longer jumps get a smaller increase in distance
+                    positionInfo.DistanceFromPrevious *= MathF.Pow(ObjectSpacing.Value, 1f - positionInfo.DistanceFromPrevious / 640f);
+                }
+                else
+                {
+                    // When reducing jump distance, shorter jumps get a smaller reduction in distance
+                    positionInfo.DistanceFromPrevious *= MathF.Pow(ObjectSpacing.Value, positionInfo.DistanceFromPrevious / 640f);
+                }
+            }
+
+            // TODO fix
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos, true);
+        }
     }
 }
