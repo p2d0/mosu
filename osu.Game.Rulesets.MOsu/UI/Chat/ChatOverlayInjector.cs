@@ -1,13 +1,20 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Cursor;
 using osu.Game;
+using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.Cursor;
 using osu.Game.Input.Bindings;
+using osu.Game.Online.Chat;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Chat;
 using osu.Game.Overlays.Toolbar;
 using osu.Game.Rulesets.MOsu.Extensions;
 
@@ -21,13 +28,20 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         private FieldInfo? chatOverlayField;
         private FieldInfo? overlayContentField;
         private FieldInfo? focusedOverlaysField;
+        private FieldInfo? newsField;
+        private FieldInfo? dashboardField;
+        private FieldInfo? beatmapListingField;
+        private FieldInfo? changelogOverlayField;
+        private FieldInfo? rankingsOverlayField;
+        private FieldInfo? wikiOverlayField;
+        private FieldInfo? settingsField;
+        private FieldInfo? notificationsField;
 
-        private ChatOverlay? newOverlay;
+        private osu.Game.Overlays.ChatOverlay? chatOverlay;
         private bool hasInjected;
 
         public ChatOverlayInjector()
         {
-            // Ensure Update runs even if this component isn't visible
             AlwaysPresent = true;
         }
 
@@ -38,6 +52,14 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             chatOverlayField = getFieldInHierarchy(type, "chatOverlay");
             overlayContentField = getFieldInHierarchy(type, "overlayContent");
             focusedOverlaysField = getFieldInHierarchy(type, "focusedOverlays");
+            newsField = getFieldInHierarchy(type, "news");
+            dashboardField = getFieldInHierarchy(type, "dashboard");
+            beatmapListingField = getFieldInHierarchy(type, "beatmapListing");
+            changelogOverlayField = getFieldInHierarchy(type, "changelogOverlay");
+            rankingsOverlayField = getFieldInHierarchy(type, "rankingsOverlay");
+            wikiOverlayField = getFieldInHierarchy(type, "wikiOverlay");
+            settingsField = getFieldInHierarchy(type, "settings");
+            notificationsField = getFieldInHierarchy(type, "notifications");
         }
 
         protected override void LoadComplete()
@@ -50,26 +72,17 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         {
             if (hasInjected) return;
 
-            var overlayContent = overlayContentField?.GetValue(game) as Container;
-            var toolbarContainer = game.GetToolbarContainer();
+            chatOverlay = chatOverlayField?.GetValue(game) as osu.Game.Overlays.ChatOverlay;
 
-            if (overlayContent == null || toolbarContainer == null)
+            if (chatOverlay == null || !chatOverlay.IsLoaded)
             {
                 Schedule(PollAndInject);
                 return;
             }
 
-            if (!injectOverlay(overlayContent))
-            {
-                Schedule(PollAndInject);
-                return;
-            }
-
-            if (!injectButton(toolbarContainer))
-            {
-                Schedule(PollAndInject);
-                return;
-            }
+            injectTextBar();
+            injectDashboardHideHandler();
+            injectMOsuChatLine();
 
             hasInjected = true;
         }
@@ -86,115 +99,174 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             return null;
         }
 
-        private bool injectOverlay(Container targetContainer)
+        private OverlayContainer? getOverlay(FieldInfo? field)
         {
-            // Retrieve the old overlay using the field
-            var oldOverlay = chatOverlayField?.GetValue(game) as OverlayContainer;
-            var parent = oldOverlay?.Parent as Container;
+            return field?.GetValue(game) as OverlayContainer;
+        }
 
-            // Check if injection already happened by looking for our custom ChatOverlay in the actual parent
-            if (parent != null && parent.Children.OfType<ChatOverlay>().Any())
+        private void injectTextBar()
+        {
+            var textBarField = typeof(osu.Game.Overlays.ChatOverlay).GetField("textBar", BindingFlags.Instance | BindingFlags.NonPublic);
+            var oldTextBar = textBarField?.GetValue(chatOverlay) as ChatTextBar;
+            if (oldTextBar == null || oldTextBar.Parent == null) return;
+
+            var parent = oldTextBar.Parent as Container;
+            if (parent == null) return;
+
+            var newTextBar = new MOsuChatTextBar
             {
-                newOverlay = parent.Children.OfType<ChatOverlay>().First();
-                return true;
+                RelativeSizeAxes = Axes.X,
+            };
+
+            // Wire up message handling via reflection to handleChatMessage
+            var handleChatMessageMethod = typeof(osu.Game.Overlays.ChatOverlay).GetMethod("handleChatMessage", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (handleChatMessageMethod != null)
+            {
+                newTextBar.OnChatMessageCommitted += (message) =>
+                {
+                    handleChatMessageMethod.Invoke(chatOverlay, new object[] { message });
+                };
             }
 
-            // Wait until the old overlay exists and has been added to the container
-            if (oldOverlay == null || parent == null)
-                return false;
-
-            // Remove the old overlay and remember its position
-            var childrenAfter = new List<Drawable>();
-            if (oldOverlay != null)
+            // Intercept /mods and /md commands
+            newTextBar.OnModsCommand += (message) =>
             {
-                if (parent != null)
+                newTextBar.sendCurrentMods();
+            };
+
+            var wrapper = new OsuContextMenuContainer
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Anchor = oldTextBar.Anchor,
+                Origin = oldTextBar.Origin,
+                Padding = oldTextBar.Padding,
+                Child = newTextBar,
+            };
+
+            parent.Remove(oldTextBar, false);
+            parent.Add(wrapper);
+            textBarField?.SetValue(chatOverlay, newTextBar);
+        }
+
+        private void injectDashboardHideHandler()
+        {
+            chatOverlay.State.ValueChanged += state =>
+            {
+                if (state.NewValue != Visibility.Hidden)
                 {
-                    int oldIndex = parent.IndexOf(oldOverlay);
+                    getOverlay(newsField)?.Hide();
+                    getOverlay(dashboardField)?.Hide();
+                    getOverlay(beatmapListingField)?.Hide();
+                    getOverlay(changelogOverlayField)?.Hide();
+                    getOverlay(rankingsOverlayField)?.Hide();
+                    getOverlay(wikiOverlayField)?.Hide();
+                    getOverlay(settingsField)?.Hide();
+                    getOverlay(notificationsField)?.Hide();
+                }
+            };
+        }
 
-                    // Actually remove oldOverlay from parent (Expire alone doesn't remove it)
-                    parent.Remove(oldOverlay, false);
+        private void injectMOsuChatLine()
+        {
+            var loadedChannelsField = typeof(osu.Game.Overlays.ChatOverlay).GetField("loadedChannels", BindingFlags.Instance | BindingFlags.NonPublic);
+            var loadedChannels = loadedChannelsField?.GetValue(chatOverlay) as Dictionary<Channel, osu.Game.Overlays.Chat.DrawableChannel>;
+            if (loadedChannels == null) return;
 
-                    // Remove children that were after oldOverlay
-                    for (int i = parent.Children.Count - 1; i >= oldIndex; i--)
+            foreach (var drawableChannel in loadedChannels.Values)
+            {
+                hookChatLineFlow(drawableChannel);
+            }
+
+            // Also hook new channels as they're loaded
+            var currentChannelField = typeof(osu.Game.Overlays.ChatOverlay).GetField("currentChannel", BindingFlags.Instance | BindingFlags.NonPublic);
+            var currentChannelBindable = currentChannelField?.GetValue(chatOverlay) as Bindable<Channel?>;
+            if (currentChannelBindable != null)
+            {
+                currentChannelBindable.ValueChanged += _ =>
+                {
+                    foreach (var drawableChannel in loadedChannels.Values)
                     {
-                        var child = parent.Children[i];
-                        parent.Remove(child, false);
-                        childrenAfter.Add(child);
+                        hookChatLineFlow(drawableChannel);
+                    }
+                };
+            }
+        }
+
+        private void hookChatLineFlow(osu.Game.Overlays.Chat.DrawableChannel channel)
+        {
+            var chatLineFlowField = typeof(osu.Game.Overlays.Chat.DrawableChannel).GetField("ChatLineFlow", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var chatLineFlow = chatLineFlowField?.GetValue(channel) as FillFlowContainer;
+            if (chatLineFlow == null) return;
+
+            // Replace existing ChatLines
+            replaceChatLines(chatLineFlow);
+        }
+
+        private void replaceChatLines(FillFlowContainer flow)
+        {
+            foreach (var child in flow.Children.ToArray())
+            {
+                if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine))
+                {
+                    var moChatLine = new MOsuChatLine(chatLine.Message);
+                    moChatLine.Depth = chatLine.Depth;
+                    moChatLine.Anchor = chatLine.Anchor;
+                    moChatLine.Origin = chatLine.Origin;
+                    flow.Remove(child, true);
+                    flow.Add(moChatLine);
+                }
+            }
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            if (!hasInjected || chatOverlay == null) return;
+
+            var loadedChannelsField = typeof(osu.Game.Overlays.ChatOverlay).GetField("loadedChannels", BindingFlags.Instance | BindingFlags.NonPublic);
+            var loadedChannels = loadedChannelsField?.GetValue(chatOverlay) as Dictionary<Channel, osu.Game.Overlays.Chat.DrawableChannel>;
+            if (loadedChannels == null) return;
+
+            foreach (var drawableChannel in loadedChannels.Values)
+            {
+                var chatLineFlowField = typeof(osu.Game.Overlays.Chat.DrawableChannel).GetField("ChatLineFlow", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var chatLineFlow = chatLineFlowField?.GetValue(drawableChannel) as FillFlowContainer;
+                if (chatLineFlow == null) continue;
+
+                // Collect replacements with their indices
+                var children = chatLineFlow.Children.ToArray();
+                var replacements = new List<(int index, osu.Game.Overlays.Chat.ChatLine old, MOsuChatLine @new)>();
+                for (int i = 0; i < children.Length; i++)
+                {
+                    var child = children[i];
+                    if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine))
+                    {
+                        var moChatLine = new MOsuChatLine(chatLine.Message);
+                        moChatLine.Depth = chatLine.Depth;
+                        moChatLine.Anchor = chatLine.Anchor;
+                        moChatLine.Origin = chatLine.Origin;
+                        replacements.Add((i, chatLine, moChatLine));
                     }
                 }
 
-                // Also remove it from the focusedOverlays list
-                if (focusedOverlaysField != null)
+                if (replacements.Count == 0) continue;
+
+                // Clear and rebuild to preserve order
+                var allChildren = chatLineFlow.Children.ToArray();
+                chatLineFlow.Clear(false);
+
+                foreach (var child in allChildren)
                 {
-                    var list = focusedOverlaysField.GetValue(game) as IList;
-                    list?.Remove(oldOverlay);
+                    if (child is osu.Game.Overlays.Chat.ChatLine oldLine && replacements.Any(r => r.old == oldLine))
+                    {
+                        chatLineFlow.Add(replacements.First(r => r.old == oldLine).@new);
+                    }
+                    else
+                    {
+                        chatLineFlow.Add(child);
+                    }
                 }
-            }
-
-            // Instantiate and add the new MOsu ChatOverlay at the old position (in the SAME parent)
-            newOverlay = new ChatOverlay
-            {
-                Depth = oldOverlay!.Depth,
-            };
-            (parent ?? targetContainer)?.Add(newOverlay);
-
-            // Re-add children that were after the old overlay
-            if (parent != null)
-            {
-                foreach (var child in childrenAfter.AsEnumerable().Reverse())
-                    parent.Add(child);
-            }
-
-            // Update the chatOverlay field so OsuGame uses our custom overlay
-            chatOverlayField?.SetValue(game, newOverlay);
-
-            // Register the new overlay in focusedOverlays so it handles ESC properly
-            if (focusedOverlaysField != null)
-            {
-                var list = focusedOverlaysField.GetValue(game) as IList;
-                list?.Add(newOverlay);
-            }
-
-            return true;
-        }
-
-        private bool injectButton(FillFlowContainer toolbarContainer)
-        {
-            // Find the existing ToolbarChatButton
-            var oldButton = toolbarContainer.Children.OfType<ToolbarChatButton>().FirstOrDefault();
-
-            // Wait until the old button exists
-            if (oldButton == null)
-                return false;
-
-            // Already injected?
-            if (toolbarContainer.Children.OfType<MOsuToolbarChatButton>().Any())
-                return true;
-
-            // Assign explicit layout positions to all children to preserve current order
-            var children = toolbarContainer.Children.ToArray();
-            for (int i = 0; i < children.Length; i++)
-                toolbarContainer.SetLayoutPosition(children[i], i);
-
-            int index = toolbarContainer.IndexOf(oldButton);
-            toolbarContainer.Remove(oldButton, true);
-
-            // Create and add our custom button that controls the new overlay
-            var newButton = new MOsuToolbarChatButton(newOverlay!);
-            toolbarContainer.Add(newButton);
-            toolbarContainer.SetLayoutPosition(newButton, index);
-
-            return true;
-        }
-
-        private partial class MOsuToolbarChatButton : ToolbarOverlayToggleButton
-        {
-            protected override Anchor TooltipAnchor => Anchor.TopRight;
-
-            public MOsuToolbarChatButton(ChatOverlay chatOverlay)
-            {
-                Hotkey = GlobalAction.ToggleChat;
-                StateContainer = chatOverlay;
             }
         }
     }

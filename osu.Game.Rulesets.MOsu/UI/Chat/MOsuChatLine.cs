@@ -6,18 +6,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.MOsu.UI.Chat
@@ -45,38 +49,139 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 if (selectedMods == null || currentRuleset == null)
                     return Array.Empty<MenuItem>();
 
+                var items = new List<MenuItem>();
+
                 // Try extracting preset from invisible link in the message
                 var preset = extractPresetFromLinks(Message.Links);
                 if (preset != null)
                 {
-                    return new MenuItem[]
-                    {
-                        new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(preset))
-                    };
+                    items.Add(new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(preset)));
                 }
 
-                // Fallback: try parsing JSON from message content for backward compat
-                string content = Message.Content;
-                if (!string.IsNullOrWhiteSpace(content))
+                return items.ToArray();
+            }
+        }
+
+        private static string? extractModString(string content)
+        {
+            // Look for patterns like "+HD HR DT" or "+HDHRDT" or "+HD+HR-DT"
+            // Match sequences starting with + or - followed by mod acronyms
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:[+\-][A-Z]{2,4}(?:\s*[+\-]?[A-Z]{2,4})*)");
+            return match.Success ? match.Value : null;
+        }
+
+        private void applyModString(string modString)
+        {
+            if (selectedMods == null || currentRuleset == null) return;
+
+            var rulesetInstance = currentRuleset.Value.CreateInstance();
+            var newMods = new List<Mod>();
+            var errors = new List<string>();
+
+            // Parse mod string: split on spaces and +/-
+            string[] tokens = modString.Split(new[] { ' ', '+', '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var token in tokens)
+            {
+                var modType = rulesetInstance.AllMods.FirstOrDefault(m => m.Acronym.Equals(token, StringComparison.OrdinalIgnoreCase));
+                if (modType != null)
                 {
-                    content = content.Trim();
                     try
                     {
-                        var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(content);
-                        if (presets != null && presets.Count > 0)
-                        {
-                            return new MenuItem[]
-                            {
-                                new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(presets.First()))
-                            };
-                        }
+                        newMods.Add(modType.CreateInstance());
                     }
                     catch
                     {
+                        errors.Add($"{token} failed");
                     }
                 }
+                else
+                {
+                    errors.Add($"{token} not found");
+                }
+            }
 
-                return Array.Empty<MenuItem>();
+            if (newMods.Count > 0)
+            {
+                // Check compatibility
+                var incompatible = newMods.Where(m1 => newMods.Any(m2 => m1 != m2 && m1.IncompatibleMods.Contains(m2.GetType()))).Select(m => m.Acronym).Distinct().ToList();
+                if (incompatible.Count > 0)
+                {
+                    notifications?.Post(new SimpleErrorNotification
+                    {
+                        Text = $"Incompatible mods: {string.Join(", ", incompatible)}"
+                    });
+                }
+                else
+                {
+                    selectedMods.Value = newMods.ToArray();
+                    notifications?.Post(new SimpleNotification
+                    {
+                        Text = $"Applied mods: {string.Join(", ", newMods.Select(m => m.Acronym))}"
+                    });
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                notifications?.Post(new SimpleErrorNotification
+                {
+                    Text = $"Unknown mods: {string.Join(", ", errors)}"
+                });
+            }
+        }
+
+        private long? lastMessageId;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            lastMessageId = Message.Id;
+            ScheduleAfterChildren(addModLinks);
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            if (selectedMods != null && currentRuleset != null)
+            {
+                var modString = extractModString(Message.DisplayContent);
+                if (!string.IsNullOrEmpty(modString))
+                {
+                    // Message ID changed means content was rebuilt (e.g., server response)
+                    if (Message.Id != lastMessageId)
+                    {
+                        lastMessageId = Message.Id;
+                        // Call synchronously since content is already built
+                        addModLinks();
+                    }
+                }
+            }
+        }
+
+        private void addModLinks()
+        {
+            if (selectedMods == null || currentRuleset == null) return;
+
+            var contentField = typeof(osu.Game.Overlays.Chat.ChatLine).GetField("drawableContentFlow", BindingFlags.Instance | BindingFlags.NonPublic);
+            var drawableContentFlow = contentField?.GetValue(this) as osu.Game.Graphics.Containers.LinkFlowContainer;
+            if (drawableContentFlow == null) return;
+
+            var modString = extractModString(Message.DisplayContent);
+            if (string.IsNullOrEmpty(modString)) return;
+
+            // Check if there's a preset link with settings
+            var preset = extractPresetFromLinks(Message.Links);
+
+            // Add mod string as clickable link at end of message
+            drawableContentFlow.AddText(" ");
+            if (preset != null)
+            {
+                drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset));
+            }
+            else
+            {
+                drawableContentFlow.AddLink($"[{modString}]", () => applyModString(modString));
             }
         }
 
@@ -91,7 +196,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 byte[] data = Convert.FromBase64String(base64);
                 string json;
 
-                // Try gzip decompression first, fall back to plain text
                 try
                 {
                     using var ms = new MemoryStream(data);
@@ -133,16 +237,17 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
                 selectedMods.Value = mods;
 
+                var modString = string.Join(", ", mods.Select(m => m.Acronym));
                 notifications?.Post(new SimpleNotification
                 {
-                    Text = $"Applied preset: {preset.Name}"
+                    Text = $"Applied mods: {modString}"
                 });
             }
             catch (Exception ex)
             {
                 notifications?.Post(new SimpleErrorNotification
                 {
-                    Text = $"Failed to apply preset: {ex.Message}"
+                    Text = $"Failed to apply mods: {ex.Message}"
                 });
             }
         }
