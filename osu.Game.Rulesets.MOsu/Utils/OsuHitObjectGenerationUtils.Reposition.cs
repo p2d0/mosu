@@ -63,9 +63,10 @@ namespace osu.Game.Rulesets.MOsu.Utils
 
         /// <summary>
         /// Scale distances between hit objects using <paramref name="objectPositionInfos"/>,
+        /// apply edge-aware rotation via <see cref="RotateAwayFromEdge"/>,
         /// then only clamp objects that fall outside the playfield.
-        /// Uses original direction vectors to avoid angle drift.
-        /// Does not shift preceding objects.
+        /// Uses original direction vectors to avoid drift when distances unchanged.
+        /// Does NOT shift preceding objects.
         /// </summary>
         /// <param name="objectPositionInfos">Position information with (potentially) modified distances.</param>
         /// <param name="isHardcore">Remove circle padding</param>
@@ -87,40 +88,39 @@ namespace osu.Game.Rulesets.MOsu.Utils
 
                 // Original direction from previous end position
                 Vector2 originalPos = hitObject.Position;
-                Vector2 direction = originalPos - previousEndPosition;
-                float originalDistance = direction.Length;
+                Vector2 originalDirection = originalPos - previousEndPosition;
+                float originalDistance = originalDirection.Length;
 
-                Vector2 newPos;
+                Vector2 posRelativeToPrev;
                 if (originalDistance > 0)
                 {
-                    // Scale the direction vector by the new distance
-                    newPos = previousEndPosition + direction * (info.DistanceFromPrevious / originalDistance);
+                    // Scale direction by new distance (no drift when distance unchanged)
+                    posRelativeToPrev = originalDirection * (info.DistanceFromPrevious / originalDistance);
                 }
                 else
                 {
-                    // No original direction; use angle info
-                    float angle = MathF.Atan2(direction.Y, direction.X);
-                    newPos = previousEndPosition + new Vector2(
+                    // Degenerate: use angle info
+                    float angle = MathF.Atan2(originalDirection.Y, originalDirection.X);
+                    posRelativeToPrev = new Vector2(
                         info.DistanceFromPrevious * MathF.Cos(angle),
                         info.DistanceFromPrevious * MathF.Sin(angle)
                     );
                 }
 
+                // Apply edge-aware rotation (steers toward center when near edge)
+                posRelativeToPrev = RotateAwayFromEdge(previousEndPosition, posRelativeToPrev);
+
+                Vector2 newPos = previousEndPosition + posRelativeToPrev;
+
                 if (hitObject is HitCircle)
                 {
                     Vector2 finalPos = newPos;
-
-                    // Clamp only if outside
                     float padding = isHardcore ? 0f : (float)hitObject.Radius;
+
                     if (newPos.X < padding || newPos.X > OsuPlayfield.BASE_SIZE.X - padding ||
                         newPos.Y < padding || newPos.Y > OsuPlayfield.BASE_SIZE.Y - padding)
                     {
                         finalPos = ClampToPlayfieldWithPadding(newPos, padding);
-                        Logger.Log($"[ClampOnly] HitCircle {hitObject.IndexInCurrentCombo} clamped from {newPos} to {finalPos}");
-                    }
-                    else if (newPos != originalPos)
-                    {
-                        Logger.Log($"[ClampOnly] HitCircle {hitObject.IndexInCurrentCombo} moved {originalPos} -> {newPos} (dist: {originalDistance:F1} -> {info.DistanceFromPrevious:F1})");
                     }
 
                     hitObject.Position = finalPos;
@@ -129,9 +129,7 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 else if (hitObject is Slider slider)
                 {
                     slider.Position = newPos;
-                    previousEndPosition = slider.EndPosition;
 
-                    // Clamp only if outside
                     var bounds = CalculatePossibleMovementBounds(slider);
                     if (bounds.Width < 0 || bounds.Height < 0)
                     {
