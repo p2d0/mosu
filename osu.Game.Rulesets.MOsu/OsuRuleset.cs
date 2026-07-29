@@ -195,6 +195,7 @@ namespace osu.Game.Rulesets.MOsu
                 case ModType.Fun:
                     return new Mod[]
                     {
+                        new OsuModFunSpacingAdjust(),
                         new OsuModTransform(),
                         new OsuModWiggle(),
                         new OsuModSpinIn(),
