@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Logging;
 using osu.Framework.Utils;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
@@ -58,6 +59,111 @@ namespace osu.Game.Rulesets.MOsu.Utils
             }
 
             return positionInfos;
+        }
+
+        /// <summary>
+        /// Scale distances between hit objects using <paramref name="objectPositionInfos"/>,
+        /// then only clamp objects that fall outside the playfield.
+        /// Uses original direction vectors to avoid angle drift.
+        /// Does not shift preceding objects.
+        /// </summary>
+        /// <param name="objectPositionInfos">Position information with (potentially) modified distances.</param>
+        /// <param name="isHardcore">Remove circle padding</param>
+        /// <returns>The repositioned hit objects.</returns>
+        public static List<OsuHitObject> RepositionHitObjectsClampOnly(IEnumerable<ObjectPositionInfo> objectPositionInfos,
+                                                                        bool isHardcore = false)
+        {
+            Vector2 previousEndPosition = playfield_centre;
+
+            foreach (var info in objectPositionInfos)
+            {
+                var hitObject = info.HitObject;
+
+                if (hitObject is Spinner)
+                {
+                    previousEndPosition = hitObject.EndPosition;
+                    continue;
+                }
+
+                // Original direction from previous end position
+                Vector2 originalPos = hitObject.Position;
+                Vector2 direction = originalPos - previousEndPosition;
+                float originalDistance = direction.Length;
+
+                Vector2 newPos;
+                if (originalDistance > 0)
+                {
+                    // Scale the direction vector by the new distance
+                    newPos = previousEndPosition + direction * (info.DistanceFromPrevious / originalDistance);
+                }
+                else
+                {
+                    // No original direction; use angle info
+                    float angle = MathF.Atan2(direction.Y, direction.X);
+                    newPos = previousEndPosition + new Vector2(
+                        info.DistanceFromPrevious * MathF.Cos(angle),
+                        info.DistanceFromPrevious * MathF.Sin(angle)
+                    );
+                }
+
+                if (hitObject is HitCircle)
+                {
+                    Vector2 finalPos = newPos;
+
+                    // Clamp only if outside
+                    float padding = isHardcore ? 0f : (float)hitObject.Radius;
+                    if (newPos.X < padding || newPos.X > OsuPlayfield.BASE_SIZE.X - padding ||
+                        newPos.Y < padding || newPos.Y > OsuPlayfield.BASE_SIZE.Y - padding)
+                    {
+                        finalPos = ClampToPlayfieldWithPadding(newPos, padding);
+                        Logger.Log($"[ClampOnly] HitCircle {hitObject.IndexInCurrentCombo} clamped from {newPos} to {finalPos}");
+                    }
+                    else if (newPos != originalPos)
+                    {
+                        Logger.Log($"[ClampOnly] HitCircle {hitObject.IndexInCurrentCombo} moved {originalPos} -> {newPos} (dist: {originalDistance:F1} -> {info.DistanceFromPrevious:F1})");
+                    }
+
+                    hitObject.Position = finalPos;
+                    previousEndPosition = finalPos;
+                }
+                else if (hitObject is Slider slider)
+                {
+                    slider.Position = newPos;
+                    previousEndPosition = slider.EndPosition;
+
+                    // Clamp only if outside
+                    var bounds = CalculatePossibleMovementBounds(slider);
+                    if (bounds.Width < 0 || bounds.Height < 0)
+                    {
+                        float currentRot = getSliderRotation(slider);
+                        float origRot = getSliderRotation(slider);
+                        float diff1 = getAngleDifference(origRot, currentRot);
+                        float diff2 = getAngleDifference(origRot + MathF.PI, currentRot);
+                        if (diff1 < diff2)
+                            RotateSlider(slider, origRot - getSliderRotation(slider));
+                        else
+                            RotateSlider(slider, origRot + MathF.PI - getSliderRotation(slider));
+                        bounds = CalculatePossibleMovementBounds(slider);
+                    }
+
+                    var sliderPos = slider.Position;
+                    if (sliderPos.X < bounds.Left || sliderPos.X > bounds.Right ||
+                        sliderPos.Y < bounds.Top || sliderPos.Y > bounds.Bottom)
+                    {
+                        float newX = bounds.Width < 0
+                            ? Math.Clamp(bounds.Left, 0, OsuPlayfield.BASE_SIZE.X)
+                            : Math.Clamp(sliderPos.X, bounds.Left, bounds.Right);
+                        float newY = bounds.Height < 0
+                            ? Math.Clamp(bounds.Top, 0, OsuPlayfield.BASE_SIZE.Y)
+                            : Math.Clamp(sliderPos.Y, bounds.Top, bounds.Bottom);
+                        slider.Position = new Vector2(newX, newY);
+                    }
+
+                    previousEndPosition = slider.EndPosition;
+                }
+            }
+
+            return objectPositionInfos.Select(p => p.HitObject).ToList();
         }
 
         /// <summary>
@@ -175,6 +281,73 @@ namespace osu.Game.Rulesets.MOsu.Utils
             float relativeRotation = MathF.Atan2(centreOfMassModified.Y, centreOfMassModified.X) - MathF.Atan2(centreOfMassOriginal.Y, centreOfMassOriginal.X);
             if (!Precision.AlmostEquals(relativeRotation, 0))
                 RotateSlider(slider, relativeRotation);
+        }
+
+        /// <summary>
+        /// Clamp a <see cref="HitCircle"/> only if it's outside the playfield.
+        /// </summary>
+        private static void clampHitCircleIfOutside(WorkingObject workingObject, bool isHardcore = false)
+        {
+            var pos = workingObject.PositionModified;
+            float padding = isHardcore ? 0f : (float)workingObject.HitObject.Radius;
+
+            if (pos.X < padding || pos.X > OsuPlayfield.BASE_SIZE.X - padding ||
+                pos.Y < padding || pos.Y > OsuPlayfield.BASE_SIZE.Y - padding)
+            {
+                workingObject.EndPositionModified = workingObject.PositionModified = ClampToPlayfieldWithPadding(pos, padding);
+            }
+
+            workingObject.HitObject.Position = workingObject.PositionModified;
+        }
+
+        /// <summary>
+        /// Clamp a <see cref="Slider"/> only if it's outside the playfield.
+        /// </summary>
+        private static void clampSliderIfOutside(WorkingObject workingObject)
+        {
+            var slider = (Slider)workingObject.HitObject;
+            var possibleMovementBounds = CalculatePossibleMovementBounds(slider);
+
+            if (possibleMovementBounds.Width < 0 || possibleMovementBounds.Height < 0)
+            {
+                float currentRotation = getSliderRotation(slider);
+                float diff1 = getAngleDifference(workingObject.RotationOriginal, currentRotation);
+                float diff2 = getAngleDifference(workingObject.RotationOriginal + MathF.PI, currentRotation);
+
+                if (diff1 < diff2)
+                {
+                    RotateSlider(slider, workingObject.RotationOriginal - getSliderRotation(slider));
+                }
+                else
+                {
+                    RotateSlider(slider, workingObject.RotationOriginal + MathF.PI - getSliderRotation(slider));
+                }
+
+                possibleMovementBounds = CalculatePossibleMovementBounds(slider);
+            }
+
+            var pos = workingObject.PositionModified;
+            bool outside = pos.X < possibleMovementBounds.Left || pos.X > possibleMovementBounds.Right ||
+                           pos.Y < possibleMovementBounds.Top || pos.Y > possibleMovementBounds.Bottom;
+
+            if (outside)
+            {
+                float newX = possibleMovementBounds.Width < 0
+                    ? Math.Clamp(possibleMovementBounds.Left, 0, OsuPlayfield.BASE_SIZE.X)
+                    : Math.Clamp(pos.X, possibleMovementBounds.Left, possibleMovementBounds.Right);
+
+                float newY = possibleMovementBounds.Height < 0
+                    ? Math.Clamp(possibleMovementBounds.Top, 0, OsuPlayfield.BASE_SIZE.Y)
+                    : Math.Clamp(pos.Y, possibleMovementBounds.Top, possibleMovementBounds.Bottom);
+
+                slider.Position = workingObject.PositionModified = new Vector2(newX, newY);
+                workingObject.EndPositionModified = slider.EndPosition;
+            }
+            else
+            {
+                slider.Position = workingObject.PositionModified;
+                workingObject.EndPositionModified = slider.EndPosition;
+            }
         }
 
         /// <summary>

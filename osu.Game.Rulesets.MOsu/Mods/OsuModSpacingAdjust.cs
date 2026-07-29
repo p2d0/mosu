@@ -63,8 +63,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Object spacing", "Modifies the spacing between objects.")]
         public BindableNumber<float> ObjectSpacing { get; } = new BindableFloat
         {
-            MinValue = 0.5f,
-            MaxValue = 10,
+            MinValue = 0.1f,
+            MaxValue = 3,
             Default = 1,
             Value = 1,
             Precision = 0.01f,
@@ -105,8 +105,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            // TODO fix
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos, true);
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos, true);
         }
     }
 }
