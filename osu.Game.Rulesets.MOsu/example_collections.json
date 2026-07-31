@@ -72,15 +72,12 @@
             "BeatmapHash": "af1f43cd9dee6e3a1721809c0a9f0484",
             "RulesetShortName": "mosu",
             "BeatmapDifficultyName": "Hard",
-            "TotalScore": 57304,
-            "Accuracy": 0.8119205298013245,
-            "MaxCombo": 37,
-            "Rank": "B",
-            "Date": "2026-05-31T06:34:01.2335534+00:00",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-07-31T08:47:48.0418024+00:00",
             "Mods": [
-              {
-                "acronym": "NF"
-              },
               {
                 "acronym": "DA",
                 "settings": {
@@ -92,8 +89,8 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "power_jumps": true,
-                  "stream_distance_multiplier": 12.0
+                  "stream_distance_multiplier": 5.8,
+                  "expo_streams": true
                 }
               },
               {
@@ -102,23 +99,24 @@
             ],
             "Statistics": {
               "None": 0,
-              "Miss": 136,
+              "Miss": 6,
               "Meh": 0,
-              "Ok": 9,
+              "Ok": 0,
               "Good": 0,
-              "Great": 610,
+              "Great": 0,
               "Perfect": 0,
               "SmallTickMiss": 0,
               "SmallTickHit": 0,
               "LargeTickMiss": 0,
               "LargeTickHit": 0,
-              "SmallBonus": 24,
+              "SmallBonus": 0,
               "LargeBonus": 0,
-              "IgnoreMiss": 22,
+              "IgnoreMiss": 0,
               "IgnoreHit": 0,
               "ComboBreak": 0,
               "SliderTailHit": 0
-            }
+            },
+            "CustomName": ""
           }
         ]
       },
@@ -1237,7 +1235,7 @@
             "Accuracy": 0.0,
             "MaxCombo": 0,
             "Rank": "F",
-            "Date": "2026-06-26T17:44:59.6915845+00:00",
+            "Date": "2026-07-31T09:02:50.7826747+00:00",
             "Mods": [
               {
                 "acronym": "DA",
@@ -1248,6 +1246,7 @@
               {
                 "acronym": "RDV2",
                 "settings": {
+                  "remove_stacks": true,
                   "stream_distance_multiplier": 5.0,
                   "expo_streams": true
                 }
@@ -1271,7 +1270,8 @@
               "IgnoreHit": 0,
               "ComboBreak": 0,
               "SliderTailHit": 0
-            }
+            },
+            "CustomName": ""
           }
         ]
       },
@@ -1741,11 +1741,11 @@
             "BeatmapHash": "eaa7dc979a4316b09dcb67b8f2bd03b1",
             "RulesetShortName": "mosu",
             "BeatmapDifficultyName": "Hard",
-            "TotalScore": 272497,
-            "Accuracy": 0.9143426294820717,
-            "MaxCombo": 105,
-            "Rank": "A",
-            "Date": "2026-05-17T14:24:48.6590862+00:00",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-07-31T08:42:55.9746289+00:00",
             "Mods": [
               {
                 "acronym": "DA",
@@ -1757,8 +1757,12 @@
               {
                 "acronym": "RDV2",
                 "settings": {
-                  "aim_distance_multiplier": 3.02,
-                  "stream_distance_multiplier": 10.5
+                  "remove_stacks": true,
+                  "aim_distance_multiplier": 5.0,
+                  "expo_jumps": true,
+                  "stream_distance_multiplier": 4.5,
+                  "expo_streams": true,
+                  "divisor": 3
                 }
               },
               {
@@ -1767,23 +1771,24 @@
             ],
             "Statistics": {
               "None": 0,
-              "Miss": 10,
-              "Meh": 5,
-              "Ok": 11,
+              "Miss": 8,
+              "Meh": 0,
+              "Ok": 0,
               "Good": 0,
-              "Great": 225,
+              "Great": 0,
               "Perfect": 0,
               "SmallTickMiss": 0,
               "SmallTickHit": 0,
               "LargeTickMiss": 0,
               "LargeTickHit": 0,
-              "SmallBonus": 8,
+              "SmallBonus": 0,
               "LargeBonus": 0,
-              "IgnoreMiss": 10,
+              "IgnoreMiss": 0,
               "IgnoreHit": 0,
               "ComboBreak": 0,
               "SliderTailHit": 0
-            }
+            },
+            "CustomName": ""
           }
         ]
       },
@@ -1943,8 +1948,7 @@
                 "settings": {
                   "aim_distance_multiplier": 8.43,
                   "power_jumps": true,
-                  "divisor": 3,
-                  "seed": 1743527931
+                  "divisor": 3
                 }
               },
               {
