@@ -1732,63 +1732,6 @@
         ]
       },
       {
-        "BeatmapSetId": 396643,
-        "BeatmapMD5Hash": "a4f4019e79b5413dd13c3267ca6804b4",
-        "BeatmapTitle": "Rainbow Tylenol",
-        "BeatmapAuthor": "Kitsune^2",
-        "Scores": [
-            {
-                "BeatmapHash": "a4f4019e79b5413dd13c3267ca6804b4",
-                "RulesetShortName": "mosu",
-                "BeatmapDifficultyName": "Nogard's Extra",
-                "TotalScore": 75,
-                "Accuracy": 0.32,
-                "MaxCombo": 5,
-                "Rank": "F",
-                "Date": "2026-05-30T15:46:26.2525549+00:00",
-                "Mods": [
-                    {
-                        "acronym": "HD"
-                    },
-                    {
-                        "acronym": "DA",
-                        "settings": {
-                            "approach_rate": 10.0,
-                            "extended_limits": true
-                        }
-                    },
-                    {
-                        "acronym": "RDV2",
-                        "settings": {
-                            "aim_distance_multiplier": 3.68,
-                            "power_jumps": true,
-                            "divisor": 4
-                        }
-                    }
-                ],
-                "Statistics": {
-                    "None": 0,
-                    "Miss": 5,
-                    "Meh": 0,
-                    "Ok": 3,
-                    "Good": 0,
-                    "Great": 2,
-                    "Perfect": 0,
-                    "SmallTickMiss": 0,
-                    "SmallTickHit": 0,
-                    "LargeTickMiss": 0,
-                    "LargeTickHit": 0,
-                    "SmallBonus": 0,
-                    "LargeBonus": 0,
-                    "IgnoreMiss": 5,
-                    "IgnoreHit": 3,
-                    "ComboBreak": 0,
-                    "SliderTailHit": 2
-                }
-            }
-        ]
-      },
-      {
         "BeatmapSetId": 2587,
         "BeatmapMD5Hash": "eaa7dc979a4316b09dcb67b8f2bd03b1",
         "BeatmapTitle": "He's a Pirate",
@@ -1963,61 +1906,6 @@
               "IgnoreHit": 0,
               "ComboBreak": 0,
               "SliderTailHit": 0
-            }
-          }
-        ]
-      },
-      {
-        "BeatmapSetId": 137377,
-        "BeatmapMD5Hash": "623d681fc59cbe90d6b7c44ded72d17a",
-        "BeatmapTitle": "Worldwide Choppers",
-        "BeatmapAuthor": "Tech N9ne",
-        "Scores": [
-          {
-            "BeatmapHash": "623d681fc59cbe90d6b7c44ded72d17a",
-            "RulesetShortName": "mosu",
-            "BeatmapDifficultyName": "Gangsta",
-            "TotalScore": 10,
-            "Accuracy": 0.21839080459770116,
-            "MaxCombo": 3,
-            "Rank": "F",
-            "Date": "2026-06-04T09:18:20.1663718+00:00",
-            "Mods": [
-              {
-                "acronym": "DA",
-                "settings": {
-                  "approach_rate": 10.0,
-                  "extended_limits": true
-                }
-              },
-              {
-                "acronym": "RDV2",
-                "settings": {
-                  "aim_distance_multiplier": 4.2,
-                  "power_jumps": true,
-                  "divisor": 4,
-                  "stream_distance": 50
-                }
-              }
-            ],
-            "Statistics": {
-              "None": 0,
-              "Miss": 6,
-              "Meh": 1,
-              "Ok": 6,
-              "Good": 0,
-              "Great": 0,
-              "Perfect": 0,
-              "SmallTickMiss": 0,
-              "SmallTickHit": 0,
-              "LargeTickMiss": 0,
-              "LargeTickHit": 0,
-              "SmallBonus": 0,
-              "LargeBonus": 0,
-              "IgnoreMiss": 2,
-              "IgnoreHit": 2,
-              "ComboBreak": 0,
-              "SliderTailHit": 2
             }
           }
         ]
