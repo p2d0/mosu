@@ -94,10 +94,14 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 bool distanceChanged = !Precision.AlmostEquals(info.DistanceFromPrevious, originalDistance);
 
                 Vector2 posRelativeToPrev;
+                // Rotation strength scales continuously with the distance change so a tiny spacing
+                // adjustment (e.g. 1.001 vs 1.00) produces a tiny rotation instead of a jump.
+                float rotationStrength = 0f;
                 if (originalDistance > 0)
                 {
                     // Scale direction by new distance (no drift when distance unchanged)
                     posRelativeToPrev = originalDirection * (info.DistanceFromPrevious / originalDistance);
+                    rotationStrength = MathF.Abs(info.DistanceFromPrevious / originalDistance - 1f);
                 }
                 else
                 {
@@ -107,11 +111,13 @@ namespace osu.Game.Rulesets.MOsu.Utils
                         info.DistanceFromPrevious * MathF.Cos(angle),
                         info.DistanceFromPrevious * MathF.Sin(angle)
                     );
+                    rotationStrength = 1f;
                 }
 
-                // Only apply edge-aware rotation when distance changed
-                if (distanceChanged)
-                    posRelativeToPrev = RotateAwayFromEdge(newPreviousEndPosition, posRelativeToPrev);
+                // Only apply edge-aware rotation when distance changed, with strength proportional
+                // to how much the distance actually changed.
+                if (distanceChanged && rotationStrength > 0)
+                    posRelativeToPrev = RotateAwayFromEdge(newPreviousEndPosition, posRelativeToPrev, rotationStrength);
 
                 Vector2 newPos = newPreviousEndPosition + posRelativeToPrev;
 
