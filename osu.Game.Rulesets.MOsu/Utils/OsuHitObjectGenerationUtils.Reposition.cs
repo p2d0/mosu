@@ -94,14 +94,14 @@ namespace osu.Game.Rulesets.MOsu.Utils
                 bool distanceChanged = !Precision.AlmostEquals(info.DistanceFromPrevious, originalDistance);
 
                 Vector2 posRelativeToPrev;
-                // Rotation strength scales continuously with the distance change so a tiny spacing
-                // adjustment (e.g. 1.001 vs 1.00) produces a tiny rotation instead of a jump.
-                float rotationStrength = 0f;
+                float rotationRatio = 0f;
                 if (originalDistance > 0)
                 {
                     // Scale direction by new distance (no drift when distance unchanged)
                     posRelativeToPrev = originalDirection * (info.DistanceFromPrevious / originalDistance);
-                    rotationStrength = MathF.Abs(info.DistanceFromPrevious / originalDistance - 1f);
+                    // Ramp rotation smoothly from 0 (tiny change) up to the original 0.5 cap (large change),
+                    // so a 0.001 spacing tweak barely rotates while spacing 3 behaves like before.
+                    rotationRatio = 0.5f * MathF.Min(1f, MathF.Abs(info.DistanceFromPrevious / originalDistance - 1f));
                 }
                 else
                 {
@@ -111,13 +111,13 @@ namespace osu.Game.Rulesets.MOsu.Utils
                         info.DistanceFromPrevious * MathF.Cos(angle),
                         info.DistanceFromPrevious * MathF.Sin(angle)
                     );
-                    rotationStrength = 1f;
+                    rotationRatio = 0.5f;
                 }
 
-                // Only apply edge-aware rotation when distance changed, with strength proportional
-                // to how much the distance actually changed.
-                if (distanceChanged && rotationStrength > 0)
-                    posRelativeToPrev = RotateAwayFromEdge(newPreviousEndPosition, posRelativeToPrev, rotationStrength);
+                // Only apply edge-aware rotation when distance changed, ramped smoothly
+                // (no hard switch, no over-rotation at large spacings).
+                if (distanceChanged && rotationRatio > 0)
+                    posRelativeToPrev = RotateAwayFromEdge(newPreviousEndPosition, posRelativeToPrev, rotationRatio);
 
                 Vector2 newPos = newPreviousEndPosition + posRelativeToPrev;
 
