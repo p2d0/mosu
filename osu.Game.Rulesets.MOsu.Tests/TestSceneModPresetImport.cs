@@ -180,6 +180,35 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_MissingRuleset"));
             AddWaitStep("wait for screenshot", 1);
         }
+
+        [Test]
+        public void TestImportPresetWithRulesetField()
+        {
+            AddStep("ensure osu ruleset", () =>
+            {
+                Realm.Write(r =>
+                {
+                    if (r.Find<RulesetInfo>("osu") == null)
+                        r.Add(new RulesetInfo { OnlineID = 0, ShortName = "osu" });
+                });
+            });
+
+            AddStep("import osu-tagged preset", () => processor.Import("""
+                [
+                    { "Name": "NM1", "Description": "osu preset", "ModsJson": "[]", "RulesetShortName": "osu" },
+                    { "Name": "NM2", "Description": "mosu preset", "ModsJson": "[]" }
+                ]
+                """));
+
+            AddAssert("preset lands under its own ruleset", () =>
+            {
+                var osuPreset = Realm.Run(r => r.All<ModPreset>().FirstOrDefault(p => p.Name == "NM1"));
+                var mosuPreset = Realm.Run(r => r.All<ModPreset>().FirstOrDefault(p => p.Name == "NM2"));
+                return osuPreset?.Ruleset.ShortName == "osu" && mosuPreset?.Ruleset.ShortName == "mosu";
+            });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_RulesetField"));
+            AddWaitStep("wait for screenshot", 1);
+        }
     }
 
     /// <summary>

@@ -50,17 +50,13 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                 realm.Write(r =>
                 {
-                    var rulesetInfo = r.Find<RulesetInfo>(MosuRuleset.SHORT_NAME);
-                    if (rulesetInfo == null)
-                    {
-                        Logger.Log("MOsu ruleset not found in realm, skipping preset import.");
-                        return;
-                    }
-
                     foreach (var dto in transferObjects)
                     {
+                        var rulesetInfo = resolveRuleset(r, dto.RulesetShortName);
+                        if (rulesetInfo == null) continue;
+
                         bool exists = r.All<ModPreset>()
-                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, MosuRuleset.SHORT_NAME)
+                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, rulesetInfo.ShortName)
                             .Count() > 0;
                         if (exists) continue;
 
@@ -95,6 +91,18 @@ namespace osu.Game.Rulesets.MOsu.Database
                 Logger.Error(ex, "Failed to import presets.");
                 schedule(() => notifications.Post(new SimpleErrorNotification { Text = $"Failed to import presets: {ex.Message}" }));
             }
+        }
+
+        /// <summary>
+        /// Resolves the ruleset a preset should be attached to. Files predating the ruleset field
+        /// (empty value) are all mosu, matching how they were originally exported.
+        /// </summary>
+        private static RulesetInfo? resolveRuleset(Realm realm, string rulesetShortName)
+        {
+            if (string.IsNullOrEmpty(rulesetShortName))
+                rulesetShortName = MosuRuleset.SHORT_NAME;
+
+            return realm.Find<RulesetInfo>(rulesetShortName);
         }
     }
 }

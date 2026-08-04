@@ -141,13 +141,14 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     notification.Text = "Fetching presets...";
                     var transferObjects = realm.Run(r => r.All<ModPreset>()
-                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", MosuRuleset.SHORT_NAME)
+                        .Filter("DeletePending == false")
                         .ToList()
                         .Select(p => new ModPresetTransferObject
                         {
                             Name = p.Name,
                             Description = p.Description,
-                            ModsJson = p.ModsJson
+                            ModsJson = p.ModsJson,
+                            RulesetShortName = p.Ruleset.ShortName,
                         })
                         .ToList());
 
