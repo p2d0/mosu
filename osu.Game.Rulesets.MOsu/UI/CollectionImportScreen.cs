@@ -271,60 +271,8 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             notifications.Post(notification);
 
-            // Local downloader — no PostNotification set, so no per-download notifications
-            var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
-            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, action => Schedule(action));
-            var failedSets = new HashSet<int>();
-            var lockObj = new object();
-
-            localDownloader.DownloadFailed += req =>
-            {
-                downloader.DownloadViaMirror(req.Model.OnlineID, lockObj, failedSets);
-            };
-
-            // Subscribe to all beatmap sets, filter client-side (Realm can't translate HashSet.Contains)
-            IDisposable? realmSubscription = null;
-            realmSubscription = realm.RegisterForNotifications(
-                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
-                (sender, _) =>
-                {
-                    if (notification.State == ProgressNotificationState.Cancelled) return;
-
-                    int importedCount = sender.ToList().Count(s => missingSetIds.Contains(s.OnlineID));
-
-                    lock (lockObj)
-                    {
-                        int resolved = importedCount + failedSets.Count;
-                        float progress = (float)resolved / missingSetIds.Count;
-
-                        Schedule(() =>
-                        {
-                            notification.Text = $"Importing {importedCount}/{missingSetIds.Count} maps...";
-                            notification.Progress = progress;
-                        });
-
-                        if (resolved >= missingSetIds.Count)
-                        {
-                            realmSubscription?.Dispose();
-                            Schedule(() =>
-                            {
-                                notification.Text = $"Downloaded {importedCount} maps.";
-                                if (failedSets.Count > 0)
-                                    notification.Text += $" ({failedSets.Count} unavailable)";
-                                notification.Progress = 1;
-                                notification.State = ProgressNotificationState.Completed;
-                            });
-                        }
-                    }
-                });
-
-            // Queue all downloads, routing unavailable sets straight to the mirror backup
-            foreach (var setId in missingSetIds)
-            {
-                if (notification.State == ProgressNotificationState.Cancelled) break;
-
-                await downloader.ResolveSet(setId, localDownloader, lockObj, failedSets);
-            }
+            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, action => Schedule(action));
+            await downloader.DownloadSequential(missingSetIds, notification);
         }
     }
 }

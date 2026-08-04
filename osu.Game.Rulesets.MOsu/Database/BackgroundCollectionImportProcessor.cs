@@ -294,104 +294,18 @@ namespace osu.Game.Rulesets.MOsu.Database
 
             notifications.Post(notification);
 
-            var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
-            var failedSets = new HashSet<int>();
-            var downloadedSets = new HashSet<int>();
-            var lockObj = new object();
-            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, action => Schedule(action));
-            int totalScoresImported = 0;
+            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, action => Schedule(action));
 
-            localDownloader.DownloadFailed += req =>
-            {
-                int setId = req.Model.OnlineID;
-                if (File.Exists(Path.Combine(Path.GetTempPath(), $"nekoha_{setId}.osz")))
-                {
-                    Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
-                    return;
-                }
-                downloader.DownloadViaMirror(setId, lockObj, failedSets);
-            };
-
-            // Download sets one at a time, importing scores after each
-            for (int i = 0; i < missingSetIds.Count; i++)
-            {
-                if (notification.State == ProgressNotificationState.Cancelled) break;
-
-                int setId = missingSetIds[i];
-
-                string title = transferObjects
+            var (downloaded, scoresImported) = await downloader.DownloadSequential(
+                missingSetIds,
+                notification,
+                getTitle: setId => transferObjects
                     .SelectMany(c => c.Beatmaps)
                     .FirstOrDefault(b => b.BeatmapSetId == setId)
-                    ?.BeatmapTitle ?? $"Set {setId}";
+                    ?.BeatmapTitle ?? $"Set {setId}",
+                importScoresAfterSet: setId => importScoresForSet(transferObjects, setId));
 
-                Schedule(() =>
-                {
-                    notification.Text = $"Downloading \"{title}\" ({i + 1}/{missingSetIds.Count})...";
-                    notification.Progress = (float)i / missingSetIds.Count;
-                });
-
-                await downloader.ResolveSet(setId, localDownloader, lockObj, failedSets);
-
-                // Wait for this specific set to appear in realm
-                await waitForSetInRealm(setId);
-
-                int scoresForSet = 0;
-                lock (lockObj)
-                {
-                    if (failedSets.Contains(setId)) continue;
-                    downloadedSets.Add(setId);
-
-                    // Import scores for maps in this set
-                    scoresForSet = importScoresForSet(transferObjects, setId);
-                    totalScoresImported += scoresForSet;
-                }
-
-                Schedule(() =>
-                {
-                    notification.Text = $"Downloaded \"{title}\", imported {scoresForSet} scores ({i + 1}/{missingSetIds.Count})...";
-                    notification.Progress = (float)(i + 1) / missingSetIds.Count;
-                });
-            }
-
-            Schedule(() =>
-            {
-                notification.Text = $"Downloaded {downloadedSets.Count} maps.";
-                if (failedSets.Count > 0)
-                    notification.Text += $" ({failedSets.Count} unavailable)";
-                notification.Text += $" | {totalScoresImported} scores imported.";
-                notification.Progress = 1;
-                notification.State = ProgressNotificationState.Completed;
-            });
-
-            return (downloadedSets.Count, totalScoresImported);
-        }
-
-        private async Task waitForSetInRealm(int setId)
-        {
-            var tcs = new TaskCompletionSource<bool>();
-            IDisposable? subscription = null;
-
-            subscription = realm.RegisterForNotifications(
-                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
-                (sender, _) =>
-                {
-                    if (sender.ToList().Any(s => s.OnlineID == setId))
-                    {
-                        subscription?.Dispose();
-                        tcs.TrySetResult(true);
-                    }
-                });
-
-            // Check if already present
-            var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", setId).FirstOrDefault());
-            if (existing != null)
-            {
-                subscription?.Dispose();
-                tcs.TrySetResult(true);
-            }
-
-            await tcs.Task.WaitAsync(TimeSpan.FromMinutes(2));
-            subscription?.Dispose();
+            return (downloaded, scoresImported);
         }
 
         private static string readEmbeddedCollections()
