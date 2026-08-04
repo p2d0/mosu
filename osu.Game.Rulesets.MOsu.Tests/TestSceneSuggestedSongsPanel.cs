@@ -24,7 +24,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private ScoreInfo testScore = null!;
         private SuggestedSongsPanel panel = null!;
 
-        protected override Ruleset CreateRuleset() => new OsuRuleset();
+        protected override Ruleset CreateRuleset() => new MosuRuleset();
 
         [SetUpSteps]
         public void SetUp()

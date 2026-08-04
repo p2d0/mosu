@@ -47,7 +47,7 @@ using osu.Game.Graphics.UserInterfaceV2;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class OsuSettingsSubsection : RulesetSettingsSubsection
+    public partial class MosuSettingsSubsection : RulesetSettingsSubsection
     {
         private Ruleset ruleset;
 
@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private readonly Bindable<bool> exportWithScores = new Bindable<bool>(false);
 
-        public OsuSettingsSubsection(Ruleset ruleset)
+        public MosuSettingsSubsection(Ruleset ruleset)
             : base(ruleset)
         {
             this.ruleset = ruleset;
@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private void load(IAPIProvider api, OsuGame game,GameHost host)
         {
             // LocalUserManager localUserManager;
-            // host.Dependencies.Cache(localUserManager = new LocalUserManager((OsuRuleset)ruleset, realm, api));
+            // host.Dependencies.Cache(localUserManager = new LocalUserManager((MosuRuleset)ruleset, realm, api));
 
             // game.GetToolbarContainer().Add(new ToolbarLocalUserButton());
 
@@ -162,7 +162,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     notification.Text = "Fetching presets...";
                     var transferObjects = realm.Run(r => r.All<ModPreset>()
-                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", OsuRuleset.SHORT_NAME)
+                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", MosuRuleset.SHORT_NAME)
                         .ToList()
                         .Select(p => new ModPresetTransferObject
                         {
@@ -479,7 +479,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                 realm.Write(r =>
                 {
-                    var osuRulesetInfo = r.Find<RulesetInfo>(OsuRuleset.SHORT_NAME);
+                    var osuRulesetInfo = r.Find<RulesetInfo>(MosuRuleset.SHORT_NAME);
 
                     if (osuRulesetInfo == null)
                         throw new InvalidOperationException("Could not find mosu ruleset in database.");
@@ -487,7 +487,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     foreach (var dto in transferObjects)
                     {
                         bool exists = r.All<ModPreset>()
-                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, OsuRuleset.SHORT_NAME)
+                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, MosuRuleset.SHORT_NAME)
                             .Count() > 0;
 
                         if (exists) continue;

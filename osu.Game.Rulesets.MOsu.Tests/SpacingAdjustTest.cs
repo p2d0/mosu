@@ -99,7 +99,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             using var reader = new StreamReader(selected.Open());
             var decoded = new LegacyBeatmapDecoder().Decode(new LineBufferedReader(reader.BaseStream));
-            var ruleset = new OsuRuleset();
+            var ruleset = new MosuRuleset();
             var map = (OsuBeatmap)ruleset.CreateBeatmapConverter(decoded).Convert();
             ruleset.CreateBeatmapProcessor(map).PreProcess();
             return map;

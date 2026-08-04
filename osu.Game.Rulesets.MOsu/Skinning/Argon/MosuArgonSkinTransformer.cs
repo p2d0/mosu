@@ -11,9 +11,9 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Skinning.Argon
 {
-    public class OsuArgonSkinTransformer : SkinTransformer
+    public class MosuArgonSkinTransformer : SkinTransformer
     {
-        public OsuArgonSkinTransformer(ISkin skin)
+        public MosuArgonSkinTransformer(ISkin skin)
             : base(skin)
         {
         }

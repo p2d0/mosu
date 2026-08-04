@@ -159,7 +159,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 tabs.Clear();
                 lastSection = null;
 
-                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? OsuRuleset.SHORT_NAME);
+                var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? MosuRuleset.SHORT_NAME);
                 if (actualRuleset == null)
                 {
                     Logger.Log("Could not find ruleset for profile overlay.");

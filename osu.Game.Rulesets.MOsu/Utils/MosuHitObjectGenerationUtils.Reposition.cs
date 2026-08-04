@@ -13,7 +13,7 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Utils
 {
-    public static partial class OsuHitObjectGenerationUtils
+    public static partial class MosuHitObjectGenerationUtils
     {
         /// <summary>
         /// Number of previous hitobjects to be shifted together when an object is being moved.

@@ -82,7 +82,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
 
         protected override Drawable CreateDrawableItem(ScoreInfo model)
         {
-            var ruleset = new OsuRuleset();
+            var ruleset = new MosuRuleset();
             switch (type)
             {
                 default:

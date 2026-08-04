@@ -189,7 +189,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             random = new Random((int)Seed.Value);
 
-            var positionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+            var positionInfos = MosuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
 
             // Offsets the angles of all hit objects in a "section" by the same amount.
             float sectionOffset = 0;
@@ -234,7 +234,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
                 if (positionInfos[i].HitObject is Slider slider && random.NextDouble() < 0.5)
                 {
-                    OsuHitObjectGenerationUtils.FlipSliderInPlaceHorizontally(slider);
+                    MosuHitObjectGenerationUtils.FlipSliderInPlaceHorizontally(slider);
                 }
 
                 if (i == 0)
@@ -272,8 +272,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,ExtendPlayArea.Value,InfinitePlayArea.Value);
-            // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+            osuBeatmap.HitObjects = MosuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,ExtendPlayArea.Value,InfinitePlayArea.Value);
+            // var updatedPositionInfos = MosuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
             // var count = 0;
             // var totalDistanceDifferece =  0f;
             // for (int i = 0; i < positionInfos.Count; i++)
@@ -350,7 +350,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             return rawSaturatedDistance;
         }
 
-        private bool isStream(OsuBeatmap osuBeatmap, List<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)
+        private bool isStream(OsuBeatmap osuBeatmap, List<MosuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)
         {
             var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
             if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
@@ -364,12 +364,12 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         // private int Moved = 0;
 
-        private OsuInputManager inputManager = null!;
+        private MosuInputManager inputManager = null!;
 
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
             // Grab the input manager to disable the user's cursor, and for future use
-            inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
+            inputManager = ((DrawableMosuRuleset)drawableRuleset).KeyBindingInputManager;
         }
 
         // public void Update(Playfield playfield)
@@ -427,7 +427,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // Higher angle sharpness -> lower multiplier
             float customMultiplier = (1.5f * AngleSharpness.MaxValue - AngleSharpness.Value) / (1.5f * AngleSharpness.MaxValue - AngleSharpness.Default);
 
-            return OsuHitObjectGenerationUtils.RandomGaussian(random, 0, stdDev * customMultiplier);
+            return MosuHitObjectGenerationUtils.RandomGaussian(random, 0, stdDev * customMultiplier);
         }
 
         private float getRandomOffsetStream(float stdDev)
@@ -436,7 +436,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // Higher angle sharpness -> lower multiplier
             float customMultiplier = (1.5f * StreamAngleSharpness.MaxValue - StreamAngleSharpness.Value) / (1.5f * StreamAngleSharpness.MaxValue - StreamAngleSharpness.Default);
 
-            return OsuHitObjectGenerationUtils.RandomGaussian(random, 0, stdDev * customMultiplier);
+            return MosuHitObjectGenerationUtils.RandomGaussian(random, 0, stdDev * customMultiplier);
         }
 
         /// <param name="targetDistance">The target distance between the previous and the current <see cref="OsuHitObject"/>.</param>
@@ -495,7 +495,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         }
 
         /// <returns>Whether a new section should be started at the current <see cref="OsuHitObject"/>.</returns>
-        private bool shouldStartNewSection(OsuBeatmap beatmap, IReadOnlyList<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
+        private bool shouldStartNewSection(OsuBeatmap beatmap, IReadOnlyList<MosuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
         {
             if (Angle.Value == AngleEnum.Custom)
                 return false;
@@ -505,8 +505,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
             // Exclude new-combo-spam and 1-2-combos.
             bool previousObjectStartedCombo = positionInfos[Math.Max(0, i - 2)].HitObject.IndexInCurrentCombo > 1 &&
                                               positionInfos[i - 1].HitObject.NewCombo;
-            bool previousObjectWasOnDownbeat = OsuHitObjectGenerationUtils.IsHitObjectOnBeat(beatmap, positionInfos[i - 1].HitObject, true);
-            bool previousObjectWasOnBeat = OsuHitObjectGenerationUtils.IsHitObjectOnBeat(beatmap, positionInfos[i - 1].HitObject);
+            bool previousObjectWasOnDownbeat = MosuHitObjectGenerationUtils.IsHitObjectOnBeat(beatmap, positionInfos[i - 1].HitObject, true);
+            bool previousObjectWasOnBeat = MosuHitObjectGenerationUtils.IsHitObjectOnBeat(beatmap, positionInfos[i - 1].HitObject);
 
             return (previousObjectStartedCombo && random.NextDouble() < 0.6f) ||
                    previousObjectWasOnDownbeat ||
@@ -514,7 +514,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         }
 
         /// <returns>Whether a flow change should be applied at the current <see cref="OsuHitObject"/>.</returns>
-        private bool shouldApplyFlowChange(IReadOnlyList<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
+        private bool shouldApplyFlowChange(IReadOnlyList<MosuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
         {
             // Exclude new-combo-spam and 1-2-combos.
             bool previousObjectStartedCombo = positionInfos[Math.Max(0, i - 2)].HitObject.IndexInCurrentCombo > 1 &&

@@ -13,7 +13,7 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Beatmaps
 {
-    public class OsuBeatmapProcessor : BeatmapProcessor
+    public class MosuBeatmapProcessor : BeatmapProcessor
     {
         /// <summary>
         /// The maximum distance between the end of one object and the start of another
@@ -21,7 +21,7 @@ namespace osu.Game.Rulesets.MOsu.Beatmaps
         /// </summary>
         public const int STACK_DISTANCE = 3;
 
-        public OsuBeatmapProcessor(IBeatmap beatmap)
+        public MosuBeatmapProcessor(IBeatmap beatmap)
             : base(beatmap)
         {
         }

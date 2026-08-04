@@ -110,13 +110,13 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     else
                     {
                         // slider head and tail are different - creating a compressed stream
-                        newObjects.AddRange(OsuHitObjectGenerationUtils.ConvertSliderToStreamIgnoringRepeats(s, streamSpacing));
+                        newObjects.AddRange(MosuHitObjectGenerationUtils.ConvertSliderToStreamIgnoringRepeats(s, streamSpacing));
                     }
                 }
                 else
                 {
                     // regular conversion as editor does
-                    newObjects.AddRange(OsuHitObjectGenerationUtils.ConvertSliderToStream(s, point, divisor));
+                    newObjects.AddRange(MosuHitObjectGenerationUtils.ConvertSliderToStream(s, point, divisor));
                 }
             }
 
@@ -181,7 +181,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 list.Add(new HitCircle
                 {
                     StartTime = time,
-                    Position = OsuHitObjectGenerationUtils.ClampToPlayfieldWithPadding(points[i % 4], (float)slider.Radius),
+                    Position = MosuHitObjectGenerationUtils.ClampToPlayfieldWithPadding(points[i % 4], (float)slider.Radius),
                     NewCombo = i == 0 && slider.NewCombo,
                     // SampleControlPoint = samplePoint,
                     Samples = slider.HeadCircle.Samples.Select(s => s.With()).ToList()

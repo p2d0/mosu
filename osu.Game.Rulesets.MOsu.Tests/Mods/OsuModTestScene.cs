@@ -7,6 +7,6 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
     public abstract partial class OsuModTestScene : ModTestScene
     {
-        protected override Ruleset CreatePlayerRuleset() => new OsuRuleset();
+        protected override Ruleset CreatePlayerRuleset() => new MosuRuleset();
     }
 }

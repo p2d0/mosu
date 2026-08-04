@@ -77,7 +77,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             AddStep("load player with mods", () =>
             {
-                var osuRuleset = new OsuRuleset();
+                var osuRuleset = new MosuRuleset();
                 var beatmapInfo = importedSet!.PerformRead(s => s.Beatmaps.First(b => b.Ruleset.ShortName == "osu"));
                 var working = beatmapManager.GetWorkingBeatmap(beatmapInfo);
 

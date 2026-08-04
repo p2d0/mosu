@@ -38,7 +38,7 @@ namespace osu.Game.Rulesets.MOsu.Database
         {
             base.LoadComplete();
 
-            config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+            config = configCache.GetConfigFor(new MosuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
 
             Task.Factory.StartNew(() =>
             {
@@ -68,7 +68,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     realm.Write(r =>
                     {
-                        var osuRulesetInfo = r.Find<RulesetInfo>(OsuRuleset.SHORT_NAME);
+                        var osuRulesetInfo = r.Find<RulesetInfo>(MosuRuleset.SHORT_NAME);
                         if (osuRulesetInfo == null)
                         {
                             Logger.Log("MOsu ruleset not found in realm, skipping preset import.");
@@ -78,7 +78,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                         foreach (var dto in transferObjects)
                         {
                             bool exists = r.All<ModPreset>()
-                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, OsuRuleset.SHORT_NAME)
+                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, MosuRuleset.SHORT_NAME)
                                 .Count() > 0;
 
                             if (exists) continue;

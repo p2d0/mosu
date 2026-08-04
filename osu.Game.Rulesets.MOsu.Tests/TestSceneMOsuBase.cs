@@ -15,7 +15,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     {
         protected DummyAPIAccess dummyAPI => (DummyAPIAccess)API;
 
-        protected OsuRuleset ruleset = null!;
+        protected MosuRuleset ruleset = null!;
         protected LocalUserManager localUserManager = null!;
         protected MOsuRulesetConfigManager config = null!;
 
@@ -37,7 +37,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [BackgroundDependencyLoader]
         private void load(IAPIProvider api)
         {
-            ruleset = new OsuRuleset();
+            ruleset = new MosuRuleset();
             Dependencies.Cache(Realm);
 
             // MOsuRulesetConfigManager must be constructed on the update thread (it loads from the realm in its ctor).

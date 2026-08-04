@@ -44,9 +44,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
             Scheduler.Add(() =>
             {
                 config = (MOsuRulesetConfigManager?)Dependencies.Get(typeof(MOsuRulesetConfigManager))
-                      ?? new MOsuRulesetConfigManager(new SettingsStore(Realm), new OsuRuleset().RulesetInfo);
+                      ?? new MOsuRulesetConfigManager(new SettingsStore(Realm), new MosuRuleset().RulesetInfo);
             });
-            Dependencies.Cache(new OsuRuleset().RulesetInfo);
+            Dependencies.Cache(new MosuRuleset().RulesetInfo);
 
             // Ensure osu! ruleset exists in realm
             Realm.Write(r =>
@@ -420,7 +420,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             const string resourceName = "osu.Game.Rulesets.MOsu.example_collections.json";
 
             // Try the ruleset assembly first, then fall back to test assembly
-            var assemblies = new[] { assembly, typeof(osu.Game.Rulesets.MOsu.UI.OsuSettingsSubsection).Assembly };
+            var assemblies = new[] { assembly, typeof(osu.Game.Rulesets.MOsu.UI.MosuSettingsSubsection).Assembly };
 
             foreach (var asm in assemblies)
             {

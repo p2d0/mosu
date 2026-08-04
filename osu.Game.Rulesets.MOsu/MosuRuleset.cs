@@ -39,9 +39,9 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu
 {
-    public class OsuRuleset : Ruleset
+    public class MosuRuleset : Ruleset
     {
-        public override DrawableRuleset CreateDrawableRulesetWith(IBeatmap beatmap, IReadOnlyList<Mod>? mods = null) => new DrawableOsuRuleset(this, beatmap, mods);
+        public override DrawableRuleset CreateDrawableRulesetWith(IBeatmap beatmap, IReadOnlyList<Mod>? mods = null) => new DrawableMosuRuleset(this, beatmap, mods);
 
         public override ScoreProcessor CreateScoreProcessor() => new OsuScoreProcessor();
 
@@ -49,7 +49,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new OsuBeatmapConverter(beatmap, this);
 
-        public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
+        public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new MosuBeatmapProcessor(beatmap);
 
         public const string SHORT_NAME = "mosu";
 
@@ -234,7 +234,7 @@ namespace osu.Game.Rulesets.MOsu
 
         // private partial class Icon : CompositeDrawable
         // {
-        //     private readonly OsuRuleset ruleset;
+        //     private readonly MosuRuleset ruleset;
         //     private ToolbarLocalUserButton? localUserButton;
         //     private LocalUserManager localUserManager;
         //     private LocalUserProfileOverlay overlay;
@@ -322,7 +322,7 @@ namespace osu.Game.Rulesets.MOsu
 
         //     }
 
-        //     public Icon(OsuRuleset ruleset)
+        //     public Icon(MosuRuleset ruleset)
         //     {
         //         Anchor = Anchor.Centre;
         //         Origin = Anchor.Centre;
@@ -347,7 +347,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override string PlayingVerb => "Clicking cocks";
 
-        public override RulesetSettingsSubsection CreateSettings() => new OsuSettingsSubsection(this);
+        public override RulesetSettingsSubsection CreateSettings() => new MosuSettingsSubsection(this);
 
         public override ISkin? CreateSkinTransformer(ISkin skin, IBeatmap beatmap)
         {
@@ -357,7 +357,7 @@ namespace osu.Game.Rulesets.MOsu
                     return new OsuLegacySkinTransformer(skin);
 
                 case ArgonSkin:
-                    return new OsuArgonSkinTransformer(skin);
+                    return new MosuArgonSkinTransformer(skin);
 
                 case TrianglesSkin:
                     return new OsuTrianglesSkinTransformer(skin);

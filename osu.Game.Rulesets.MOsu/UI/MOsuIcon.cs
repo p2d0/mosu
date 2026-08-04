@@ -31,9 +31,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         // CreateIcon() is called many times by core. Only the first instance should run injection.
         private static bool _injected;
 
-        private readonly OsuRuleset ruleset;
+        private readonly MosuRuleset ruleset;
 
-        public MOsuIcon(OsuRuleset ruleset)
+        public MOsuIcon(MosuRuleset ruleset)
         {
             this.ruleset = ruleset;
             Anchor = Anchor.Centre;
@@ -97,9 +97,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved]
         private IRulesetConfigCache configCache { get; set; } = null!;
 
-        private readonly OsuRuleset ruleset;
+        private readonly MosuRuleset ruleset;
 
-        public MOsuSystemManager(OsuRuleset ruleset)
+        public MOsuSystemManager(MosuRuleset ruleset)
         {
             this.ruleset = ruleset;
             AlwaysPresent = true;

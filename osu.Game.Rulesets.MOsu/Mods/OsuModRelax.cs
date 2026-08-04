@@ -34,12 +34,12 @@ namespace osu.Game.Rulesets.MOsu.Mods
         private bool isDownState;
         private bool wasLeft;
 
-        private OsuInputManager osuInputManager = null!;
+        private MosuInputManager osuInputManager = null!;
 
         private ReplayState<OsuAction> state = null!;
         private double lastStateChangeTime;
 
-        private DrawableOsuRuleset ruleset = null!;
+        private DrawableMosuRuleset ruleset = null!;
         private IPressHandler pressHandler = null!;
 
         private bool hasReplay;
@@ -47,7 +47,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
-            ruleset = (DrawableOsuRuleset)drawableRuleset;
+            ruleset = (DrawableMosuRuleset)drawableRuleset;
 
             // grab the input manager for future use.
             osuInputManager = ruleset.KeyBindingInputManager;

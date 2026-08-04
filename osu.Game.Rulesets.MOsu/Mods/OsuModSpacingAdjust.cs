@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             restoreOriginals(osuBeatmap);
 
-            var positionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+            var positionInfos = MosuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
 
             for (int i = 0; i < positionInfos.Count; i++)
             {
@@ -105,7 +105,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos);
+            osuBeatmap.HitObjects = MosuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos);
         }
     }
 }

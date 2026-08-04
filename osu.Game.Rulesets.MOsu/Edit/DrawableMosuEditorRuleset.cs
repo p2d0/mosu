@@ -13,25 +13,25 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
-    public partial class DrawableOsuEditorRuleset : DrawableOsuRuleset
+    public partial class DrawableMosuEditorRuleset : DrawableOsuRuleset
     {
-        public DrawableOsuEditorRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
+        public DrawableMosuEditorRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             : base(ruleset, beatmap, mods)
         {
         }
 
-        protected override Playfield CreatePlayfield() => new OsuEditorPlayfield();
+        protected override Playfield CreatePlayfield() => new MosuEditorPlayfield();
 
         public override PlayfieldAdjustmentContainer CreatePlayfieldAdjustmentContainer() => new OsuPlayfieldAdjustmentContainer { Size = Vector2.One };
 
-        private partial class OsuEditorPlayfield : OsuPlayfield
+        private partial class MosuEditorPlayfield : OsuPlayfield
         {
             [Resolved]
             private EditorBeatmap editorBeatmap { get; set; } = null!;
 
             protected override GameplayCursorContainer? CreateCursor() => null;
 
-            public OsuEditorPlayfield()
+            public MosuEditorPlayfield()
             {
                 HitPolicy = new AnyOrderHitPolicy();
             }

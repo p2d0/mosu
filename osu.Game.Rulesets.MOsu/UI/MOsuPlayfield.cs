@@ -164,7 +164,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             borderContainer.Padding = new MarginPadding(OsuHitObject.OBJECT_RADIUS * -LegacyRulesetExtensions.CalculateScaleFromCircleSize(beatmap.Difficulty.CircleSize, true));
         }
 
-        protected override HitObjectLifetimeEntry CreateLifetimeEntry(HitObject hitObject) => new OsuHitObjectLifetimeEntry(hitObject);
+        protected override HitObjectLifetimeEntry CreateLifetimeEntry(HitObject hitObject) => new MosuHitObjectLifetimeEntry(hitObject);
 
         protected override void OnHitObjectAdded(HitObject hitObject)
         {
@@ -194,9 +194,9 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => HitObjectContainer.ReceivePositionalInputAt(screenSpacePos);
 
-        private OsuResumeOverlay.OsuResumeOverlayInputBlocker? resumeInputBlocker;
+        private MosuResumeOverlay.MosuResumeOverlayInputBlocker? resumeInputBlocker;
 
-        public void AttachResumeOverlayInputBlocker(OsuResumeOverlay.OsuResumeOverlayInputBlocker resumeInputBlocker)
+        public void AttachResumeOverlayInputBlocker(MosuResumeOverlay.MosuResumeOverlayInputBlocker resumeInputBlocker)
         {
             Debug.Assert(this.resumeInputBlocker == null);
             this.resumeInputBlocker = resumeInputBlocker;
@@ -208,9 +208,9 @@ namespace osu.Game.Rulesets.MOsu.UI
             public void Add(Drawable proxy) => AddInternal(proxy);
         }
 
-        private class OsuHitObjectLifetimeEntry : HitObjectLifetimeEntry
+        private class MosuHitObjectLifetimeEntry : HitObjectLifetimeEntry
         {
-            public OsuHitObjectLifetimeEntry(HitObject hitObject) : base(hitObject)
+            public MosuHitObjectLifetimeEntry(HitObject hitObject) : base(hitObject)
             {
                 LifetimeEnd = HitObject.GetEndTime() + HitObject.HitWindows.WindowFor(HitResult.Miss);
             }

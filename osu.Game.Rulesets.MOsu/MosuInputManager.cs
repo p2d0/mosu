@@ -11,23 +11,23 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.MOsu
 {
-    public partial class OsuInputManager : osu.Game.Rulesets.Osu.OsuInputManager
+    public partial class MosuInputManager : osu.Game.Rulesets.Osu.OsuInputManager
     {
-        public OsuInputManager(RulesetInfo ruleset)
+        public MosuInputManager(RulesetInfo ruleset)
             : base(ruleset)
         {
         }
 
         protected override KeyBindingContainer<OsuAction> CreateKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
-            => new OsuKeyBindingContainer(ruleset, variant, unique);
+            => new MosuKeyBindingContainer(ruleset, variant, unique);
 
         public new bool AllowGameplayInputs
         {
-            get => ((OsuKeyBindingContainer)KeyBindingContainer).AllowGameplayInputs;
-            set => ((OsuKeyBindingContainer)KeyBindingContainer).AllowGameplayInputs = value;
+            get => ((MosuKeyBindingContainer)KeyBindingContainer).AllowGameplayInputs;
+            set => ((MosuKeyBindingContainer)KeyBindingContainer).AllowGameplayInputs = value;
         }
 
-        private partial class OsuKeyBindingContainer : RulesetKeyBindingContainer
+        private partial class MosuKeyBindingContainer : RulesetKeyBindingContainer
         {
             private bool allowGameplayInputs = true;
 
@@ -44,7 +44,7 @@ namespace osu.Game.Rulesets.MOsu
                 }
             }
 
-            public OsuKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
+            public MosuKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
                 : base(ruleset, variant, unique)
             {
             }

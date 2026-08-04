@@ -23,7 +23,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     {
         protected LocalUserProfileOverlay profile = null!;
 
-        protected override Ruleset CreateRuleset() => new OsuRuleset();
+        protected override Ruleset CreateRuleset() => new MosuRuleset();
 
         [BackgroundDependencyLoader]
         private void loadOverlay() => Dependencies.Cache(new OverlayColourProvider(OverlayColourScheme.Green));

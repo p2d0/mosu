@@ -10,6 +10,6 @@ namespace osu.Game.Rulesets.MOsu.Tests
     public partial class TestSceneOsuPlayer : PlayerTestScene
     {
         protected override bool UseFreshStoragePerRun => true;
-        protected override Ruleset CreatePlayerRuleset() => new OsuRuleset();
+        protected override Ruleset CreatePlayerRuleset() => new MosuRuleset();
     }
 }

@@ -175,7 +175,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
             }
             Logger.Log("[MOsu] SuggestedSongsPanel.LoadComplete", LoggingTarget.Runtime);
 
-            var config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+            var config = configCache.GetConfigFor(new MosuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
             starSlider.LowerBound = config.GetBindable<double>(MOsuRulesetSetting.SuggestedSongsMinStars);
             starSlider.UpperBound = config.GetBindable<double>(MOsuRulesetSetting.SuggestedSongsMaxStars);
 

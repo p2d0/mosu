@@ -35,7 +35,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
             typeof(OsuModTouchDevice)
         };
 
-        private OsuInputManager inputManager = null!;
+        private MosuInputManager inputManager = null!;
 
         private List<OsuReplayFrame> replayFrames = null!;
 
@@ -62,7 +62,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
             // Grab the input manager to disable the user's cursor, and for future use
-            inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
+            inputManager = ((DrawableMosuRuleset)drawableRuleset).KeyBindingInputManager;
             inputManager.AllowUserCursorMovement = false;
 
             // Generate the replay frames the cursor should follow

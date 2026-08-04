@@ -35,7 +35,7 @@ namespace osu.Game.Rulesets.MOsu
                 return null;
             return $"{ruleset.ShortName ?? "unknown"}:{ActiveProfile.Value ?? "default"}";
         }
-        private readonly OsuRuleset ruleset;
+        private readonly MosuRuleset ruleset;
         public RulesetInfo RulesetInfo => ruleset.RulesetInfo;
 
         private readonly Bindable<string> activeProfileBindable = new Bindable<string>();
@@ -232,7 +232,7 @@ namespace osu.Game.Rulesets.MOsu
 
 
 
-        public LocalUserManager(OsuRuleset ruleset, RealmAccess realm, MOsuRulesetConfigManager config, IAPIProvider api)
+        public LocalUserManager(MosuRuleset ruleset, RealmAccess realm, MOsuRulesetConfigManager config, IAPIProvider api)
         {
             this.ruleset = ruleset;
             this.realm = realm;

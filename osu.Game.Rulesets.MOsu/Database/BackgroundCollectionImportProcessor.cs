@@ -53,7 +53,7 @@ namespace osu.Game.Rulesets.MOsu.Database
         {
             base.LoadComplete();
 
-            config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+            config = configCache.GetConfigFor(new MosuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
 
             Logger.Log("Beginning MOsu default collection import check..");
 

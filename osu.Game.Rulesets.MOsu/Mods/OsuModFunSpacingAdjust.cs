@@ -88,7 +88,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
             restoreOriginals(osuBeatmap);
 
-            var positionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+            var positionInfos = MosuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
 
             double startTime = osuBeatmap.HitObjects[0]?.StartTime ?? 0;
             double endTime = osuBeatmap.HitObjects.LastOrDefault()?.GetEndTime() ?? 1;
@@ -112,7 +112,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos);
+            osuBeatmap.HitObjects = MosuHitObjectGenerationUtils.RepositionHitObjectsClampOnly(positionInfos);
         }
     }
 }

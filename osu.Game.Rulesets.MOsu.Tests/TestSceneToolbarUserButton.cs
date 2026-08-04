@@ -23,7 +23,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         private const string MAIN_USER = "TestUser";
 
-        protected override Ruleset CreateRuleset() => new OsuRuleset();
+        protected override Ruleset CreateRuleset() => new MosuRuleset();
 
         [SetUpSteps]
         public void SetUp()

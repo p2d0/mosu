@@ -13,13 +13,13 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
-    public partial class OsuDistanceSnapProvider : ComposerDistanceSnapProvider
+    public partial class MosuDistanceSnapProvider : ComposerDistanceSnapProvider
     {
         public override double ReadCurrentDistanceSnap(HitObject before, HitObject after)
         {
             // If the pair of hit objects in question here could feasibly be on the same stack, do not provide a distance snap value -
             // they're likely too close to one another for the distance snap value to be useful anyway even if they somehow are not.
-            if (Vector2.Distance(((OsuHitObject)before).EndPosition, ((OsuHitObject)after).Position) < OsuBeatmapProcessor.STACK_DISTANCE)
+            if (Vector2.Distance(((OsuHitObject)before).EndPosition, ((OsuHitObject)after).Position) < MosuBeatmapProcessor.STACK_DISTANCE)
                 return 0;
 
             var lastObjectWithVelocity = EditorBeatmap.HitObjects.TakeWhile(ho => ho != after).OfType<IHasSliderVelocity>().LastOrDefault();

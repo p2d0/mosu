@@ -40,17 +40,17 @@ using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class DrawableOsuRuleset : DrawableRuleset<OsuHitObject>
+    public partial class DrawableMosuRuleset : DrawableRuleset<OsuHitObject>
     {
         private Bindable<bool>? cursorHideEnabled;
 
-        public new OsuInputManager KeyBindingInputManager => (OsuInputManager)base.KeyBindingInputManager;
+        public new MosuInputManager KeyBindingInputManager => (MosuInputManager)base.KeyBindingInputManager;
 
         public new MOsuPlayfield Playfield => (MOsuPlayfield)base.Playfield;
 
         protected new OsuRulesetConfigManager Config => (OsuRulesetConfigManager)base.Config;
 
-        public DrawableOsuRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod>? mods = null)
+        public DrawableMosuRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod>? mods = null)
             : base(ruleset, beatmap, mods)
         {
             this.playableBeatmap = beatmap!;
@@ -274,7 +274,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         protected override Playfield CreatePlayfield() => new MOsuPlayfield();
 
-        protected override PassThroughInputManager CreateInputManager() => new OsuInputManager(Ruleset.RulesetInfo);
+        protected override PassThroughInputManager CreateInputManager() => new MosuInputManager(Ruleset.RulesetInfo);
 
         public override PlayfieldAdjustmentContainer CreatePlayfieldAdjustmentContainer() => new OsuPlayfieldAdjustmentContainer { AlignWithStoryboard = true };
 
@@ -283,7 +283,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             if (Mods.Any(m => m is OsuModAutopilot or OsuModTouchDevice))
                 return new DelayedResumeOverlay { Scale = new Vector2(0.65f) };
 
-            return new OsuResumeOverlay();
+            return new MosuResumeOverlay();
         }
 
         protected override ReplayInputHandler CreateReplayInputHandler(Replay replay) => new OsuFramedReplayInputHandler(replay);

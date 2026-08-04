@@ -17,10 +17,10 @@ using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class OsuResumeOverlay : ResumeOverlay
+    public partial class MosuResumeOverlay : ResumeOverlay
     {
         private Container cursorScaleContainer = null!;
-        private OsuClickToResumeCursor clickToResumeCursor = null!;
+        private MosuClickToResumeCursor clickToResumeCursor = null!;
 
         private OsuCursorContainer? localCursorContainer;
 
@@ -34,27 +34,27 @@ namespace osu.Game.Rulesets.MOsu.UI
         [BackgroundDependencyLoader]
         private void load()
         {
-            OsuResumeOverlayInputBlocker? inputBlocker = null;
+            MosuResumeOverlayInputBlocker? inputBlocker = null;
 
-            var drawableOsuRuleset = (DrawableOsuRuleset?)drawableRuleset;
+            var drawableMosuRuleset = (DrawableMosuRuleset?)drawableRuleset;
 
-            if (drawableOsuRuleset != null)
+            if (drawableMosuRuleset != null)
             {
-                drawableOsuRuleset.Overlays.Add(inputBlocker = new OsuResumeOverlayInputBlocker());
+                drawableMosuRuleset.Overlays.Add(inputBlocker = new MosuResumeOverlayInputBlocker());
             }
 
             Add(cursorScaleContainer = new Container
             {
-                Child = clickToResumeCursor = new OsuClickToResumeCursor
+                Child = clickToResumeCursor = new MosuClickToResumeCursor
                 {
                     ResumeRequested = action =>
                     {
                         // since the user had to press a button to tap the resume cursor,
                         // block that press event from potentially reaching a hit circle that's behind the cursor.
-                        // we cannot do this from OsuClickToResumeCursor directly since we're in a different input manager tree than the gameplay one,
+                        // we cannot do this from MosuClickToResumeCursor directly since we're in a different input manager tree than the gameplay one,
                         // so we rely on a dedicated input blocking component that's implanted in there to do that for us.
                         // note this only matters when the user didn't pause while they were holding the same key that they are resuming with.
-                        if (inputBlocker != null && !drawableOsuRuleset.AsNonNull().KeyBindingInputManager.PressedActions.Contains(action))
+                        if (inputBlocker != null && !drawableMosuRuleset.AsNonNull().KeyBindingInputManager.PressedActions.Contains(action))
                             inputBlocker.BlockNextPress = true;
 
                         Resume();
@@ -93,14 +93,14 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         protected override bool OnHover(HoverEvent e) => true;
 
-        public partial class OsuClickToResumeCursor : OsuCursor, IKeyBindingHandler<OsuAction>
+        public partial class MosuClickToResumeCursor : OsuCursor, IKeyBindingHandler<OsuAction>
         {
             public override bool HandlePositionalInput => true;
 
             public Action<OsuAction>? ResumeRequested;
             private Container scaleTransitionContainer = null!;
 
-            public OsuClickToResumeCursor()
+            public MosuClickToResumeCursor()
             {
                 RelativePositionAxes = Axes.Both;
             }
@@ -165,11 +165,11 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
         }
 
-        public partial class OsuResumeOverlayInputBlocker : Drawable, IKeyBindingHandler<OsuAction>
+        public partial class MosuResumeOverlayInputBlocker : Drawable, IKeyBindingHandler<OsuAction>
         {
             public bool BlockNextPress;
 
-            public OsuResumeOverlayInputBlocker()
+            public MosuResumeOverlayInputBlocker()
             {
                 RelativeSizeAxes = Axes.Both;
                 Depth = float.MinValue;
