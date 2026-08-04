@@ -79,6 +79,12 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             this.browser = browser;
             this.filter = filter;
+
+            // Always run at 2x playback (same knob as the toolbar's Rate slider) so automated runs finish faster.
+            var playbackRateField = typeof(TestBrowser).GetField("PlaybackRate", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (playbackRateField?.GetValue(browser) is BindableDouble playbackRate)
+                playbackRate.Value = 2;
+
             filteredTestTypes = browser.TestTypes
                 .Where(t => !typeof(PlayerTestScene).IsAssignableFrom(t)
                          && !typeof(Player).IsAssignableFrom(t)

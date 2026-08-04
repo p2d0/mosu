@@ -15,11 +15,6 @@ namespace osu.Game.Rulesets.MOsu.Utils
 {
     public static partial class MosuHitObjectGenerationUtils
     {
-        /// <summary>
-        /// Number of previous hitobjects to be shifted together when an object is being moved.
-        /// </summary>
-        private const int preceding_hitobjects_to_shift = 10;
-
         private static readonly Vector2 playfield_centre = OsuPlayfield.BASE_SIZE / 2;
 
         /// <summary>
@@ -281,73 +276,6 @@ namespace osu.Game.Rulesets.MOsu.Utils
         }
 
         /// <summary>
-        /// Clamp a <see cref="HitCircle"/> only if it's outside the playfield.
-        /// </summary>
-        private static void clampHitCircleIfOutside(WorkingObject workingObject, bool isHardcore = false)
-        {
-            var pos = workingObject.PositionModified;
-            float padding = isHardcore ? 0f : (float)workingObject.HitObject.Radius;
-
-            if (pos.X < padding || pos.X > OsuPlayfield.BASE_SIZE.X - padding ||
-                pos.Y < padding || pos.Y > OsuPlayfield.BASE_SIZE.Y - padding)
-            {
-                workingObject.EndPositionModified = workingObject.PositionModified = ClampToPlayfieldWithPadding(pos, padding);
-            }
-
-            workingObject.HitObject.Position = workingObject.PositionModified;
-        }
-
-        /// <summary>
-        /// Clamp a <see cref="Slider"/> only if it's outside the playfield.
-        /// </summary>
-        private static void clampSliderIfOutside(WorkingObject workingObject)
-        {
-            var slider = (Slider)workingObject.HitObject;
-            var possibleMovementBounds = CalculatePossibleMovementBounds(slider);
-
-            if (possibleMovementBounds.Width < 0 || possibleMovementBounds.Height < 0)
-            {
-                float currentRotation = getSliderRotation(slider);
-                float diff1 = getAngleDifference(workingObject.RotationOriginal, currentRotation);
-                float diff2 = getAngleDifference(workingObject.RotationOriginal + MathF.PI, currentRotation);
-
-                if (diff1 < diff2)
-                {
-                    RotateSlider(slider, workingObject.RotationOriginal - getSliderRotation(slider));
-                }
-                else
-                {
-                    RotateSlider(slider, workingObject.RotationOriginal + MathF.PI - getSliderRotation(slider));
-                }
-
-                possibleMovementBounds = CalculatePossibleMovementBounds(slider);
-            }
-
-            var pos = workingObject.PositionModified;
-            bool outside = pos.X < possibleMovementBounds.Left || pos.X > possibleMovementBounds.Right ||
-                           pos.Y < possibleMovementBounds.Top || pos.Y > possibleMovementBounds.Bottom;
-
-            if (outside)
-            {
-                float newX = possibleMovementBounds.Width < 0
-                    ? Math.Clamp(possibleMovementBounds.Left, 0, OsuPlayfield.BASE_SIZE.X)
-                    : Math.Clamp(pos.X, possibleMovementBounds.Left, possibleMovementBounds.Right);
-
-                float newY = possibleMovementBounds.Height < 0
-                    ? Math.Clamp(possibleMovementBounds.Top, 0, OsuPlayfield.BASE_SIZE.Y)
-                    : Math.Clamp(pos.Y, possibleMovementBounds.Top, possibleMovementBounds.Bottom);
-
-                slider.Position = workingObject.PositionModified = new Vector2(newX, newY);
-                workingObject.EndPositionModified = slider.EndPosition;
-            }
-            else
-            {
-                slider.Position = workingObject.PositionModified;
-                workingObject.EndPositionModified = slider.EndPosition;
-            }
-        }
-
-        /// <summary>
         /// Move the modified position of a <see cref="HitCircle"/> so that it fits inside the playfield.
         /// </summary>
         /// <returns>The deviation from the original modified position in order to fit within the playfield.</returns>
@@ -418,25 +346,6 @@ namespace osu.Game.Rulesets.MOsu.Utils
             workingObject.EndPositionModified = slider.EndPosition;
 
             return workingObject.PositionModified - previousPosition;
-        }
-
-        /// <summary>
-        /// Decreasingly shift a list of <see cref="OsuHitObject"/>s by a specified amount.
-        /// The first item in the list is shifted by the largest amount, while the last item is shifted by the smallest amount.
-        /// </summary>
-        /// <param name="hitObjects">The list of hit objects to be shifted.</param>
-        /// <param name="shift">The amount to be shifted.</param>
-        private static void applyDecreasingShift(IList<OsuHitObject> hitObjects, Vector2 shift)
-        {
-            for (int i = 0; i < hitObjects.Count; i++)
-            {
-                var hitObject = hitObjects[i];
-                // The first object is shifted by a vector slightly smaller than shift
-                // The last object is shifted by a vector slightly larger than zero
-                Vector2 position = hitObject.Position + shift * ((hitObjects.Count - i) / (float)(hitObjects.Count + 1));
-
-                hitObject.Position = ClampToPlayfieldWithPadding(position, (float)hitObject.Radius);
-            }
         }
 
         /// <summary>

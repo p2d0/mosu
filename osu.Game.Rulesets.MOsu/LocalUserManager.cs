@@ -34,8 +34,11 @@ namespace osu.Game.Rulesets.MOsu
         {
             if (ruleset == null)
                 return null;
-            return $"{ruleset.ShortName ?? "unknown"}:{ActiveProfile.Value ?? "default"}";
+            return statisticsKey(ruleset, ActiveProfile.Value ?? "default");
         }
+
+        private static string statisticsKey(RulesetInfo ruleset, string profileName)
+            => $"{ruleset.ShortName}:{profileName}";
         private readonly MosuRuleset ruleset;
         public RulesetInfo RulesetInfo => ruleset.RulesetInfo;
 
@@ -135,7 +138,7 @@ namespace osu.Game.Rulesets.MOsu
             setProfiles(profiles);
 
             // keep the cached statistics fresh so the profile display updates immediately.
-            var key = $"{ruleset.RulesetInfo.ShortName}:{profileName}";
+            var key = statisticsKey(ruleset.RulesetInfo, profileName);
             if (statisticsCache.TryGetValue(key, out var stats))
             {
                 stats.PlayCount = profile.PlayCount;
@@ -184,7 +187,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public UserStatistics? GetStatisticsForProfile(string profileName, RulesetInfo ruleset)
         {
-            var key = $"{ruleset.ShortName}:{profileName}";
+            var key = statisticsKey(ruleset, profileName);
             return statisticsCache.GetValueOrDefault(key);
         }
 
@@ -203,7 +206,7 @@ namespace osu.Game.Rulesets.MOsu
                 var user = await GetLocalUserWithStatisticsForUsernameAsync(name, ruleset.RulesetInfo).ConfigureAwait(false);
                 if (user.Statistics != null)
                 {
-                    var key = $"{ruleset.RulesetInfo.ShortName}:{name}";
+                    var key = statisticsKey(ruleset.RulesetInfo, name);
                     statisticsCache[key] = user.Statistics;
                 }
             }
@@ -240,7 +243,7 @@ namespace osu.Game.Rulesets.MOsu
 
         private void CacheStatistics(UserStatistics stats, string profileName, RulesetInfo ruleset)
         {
-            var key = $"{ruleset.ShortName}:{profileName}";
+            var key = statisticsKey(ruleset, profileName);
             var oldStatistics = statisticsCache.GetValueOrDefault(key);
             statisticsCache[key] = stats;
             var update = new UserStatisticsUpdate(ruleset, oldStatistics, stats);
@@ -414,47 +417,48 @@ namespace osu.Game.Rulesets.MOsu
         /// Replaces: ByUsername
         /// </summary>
         public List<ScoreInfo> GetBestScores(string username, RulesetInfo ruleset)
-        {
-            return realm.Run(r => r.All<ScoreInfo>()
-                .Filter("RealmUser.Username == $0 && PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $1 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", username, ruleset.ShortName)
-                .ToList()
-                .Detach());
-        }
+            => queryScores(ruleset, username);
 
         /// <summary>
         /// Gets all scores that have a replay file available (Local scores), sorted by PP.
         /// Replaces: All
         /// </summary>
         public List<ScoreInfo> GetLocalScores(RulesetInfo ruleset)
-        {
-            return realm.Run(r => r.All<ScoreInfo>()
-                .Filter("PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $0 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", ruleset.ShortName)
-                .ToList()
-                .Detach());
-        }
+            => queryScores(ruleset);
 
         /// <summary>
         /// Gets recent local scores (with replay files).
         /// Replaces: Recent(ruleset)
         /// </summary>
         public List<ScoreInfo> GetRecentScores(RulesetInfo ruleset)
-        {
-            return realm.Run(r => r.All<ScoreInfo>()
-                .Filter("PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $0 SORT(Date DESC) LIMIT(50)", ruleset.ShortName)
-                .ToList()
-                .Detach());
-        }
+            => queryScores(ruleset, recent: true);
 
         /// <summary>
         /// Gets recent scores for a specific user.
         /// Replaces: Recent(ruleset, username)
         /// </summary>
         public List<ScoreInfo> GetRecentScores(string username, RulesetInfo ruleset)
+            => queryScores(ruleset, username, recent: true);
+
+        /// <summary>
+        /// The single realm score query behind all four public accessors — the filter shape is decided
+        /// here once: an optional username predicate, then the standard "playable local score" prefix,
+        /// then a sort/limit suffix.
+        /// </summary>
+        private List<ScoreInfo> queryScores(RulesetInfo ruleset, string? username = null, bool recent = false)
         {
-            return realm.Run(r => r.All<ScoreInfo>()
-                .Filter("RealmUser.Username == $0 && PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $1 SORT(Date DESC) LIMIT(50)", username, ruleset.ShortName)
-                .ToList()
-                .Detach());
+            string sortSuffix = recent
+                ? " SORT(Date DESC) LIMIT(50)"
+                : " SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)";
+
+            if (username != null)
+            {
+                string filter = "RealmUser.Username == $0 && PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $1" + sortSuffix;
+                return realm.Run(r => r.All<ScoreInfo>().Filter(filter, username, ruleset.ShortName).ToList().Detach());
+            }
+
+            string noUserFilter = "PP != null && DeletePending == false && RankInt != -1 && Ruleset.ShortName == $0" + sortSuffix;
+            return realm.Run(r => r.All<ScoreInfo>().Filter(noUserFilter, ruleset.ShortName).ToList().Detach());
         }
 
 

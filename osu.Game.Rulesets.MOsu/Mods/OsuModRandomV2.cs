@@ -147,42 +147,14 @@ namespace osu.Game.Rulesets.MOsu.Mods
         private static readonly float playfield_diagonal = MOsuPlayfield.BASE_SIZE.LengthFast;
 
         private Random random = null!;
-        private ConditionalWeakTable<OsuHitObject, object> originalPositions = new();
-        private ConditionalWeakTable<Slider, object> originalSliderPaths = new();
-
-        private void restoreOriginals(OsuBeatmap osuBeatmap)
-        {
-            foreach (var obj in osuBeatmap.HitObjects.OfType<OsuHitObject>())
-            {
-                if (!originalPositions.TryGetValue(obj, out var pos))
-                {
-                    pos = obj.Position;
-                    originalPositions.Add(obj, pos);
-                }
-                obj.Position = (Vector2)pos;
-
-                if (obj is Slider slider)
-                {
-                    if (!originalSliderPaths.TryGetValue(slider, out var pathState))
-                    {
-                        pathState = slider.Path.ControlPoints.Select(p => p.Position).ToArray();
-                        originalSliderPaths.Add(slider, pathState);
-                    }
-                    var pts = (Vector2[])pathState;
-                    for (int j = 0; j < slider.Path.ControlPoints.Count && j < pts.Length; j++)
-                        slider.Path.ControlPoints[j].Position = pts[j];
-                }
-            }
-        }
+        private readonly MosuHitObjectGenerationUtils.OriginalHitObjectStateStore originalState = new();
 
         public void ApplyToBeatmap(IBeatmap beatmap)
         {
             if (beatmap is not OsuBeatmap osuBeatmap)
                 return;
 
-
-
-            restoreOriginals(osuBeatmap);
+            originalState.Restore(osuBeatmap);
 
             Seed.Value ??= RNG.Next();
 

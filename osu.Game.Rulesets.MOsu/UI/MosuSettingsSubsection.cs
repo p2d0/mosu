@@ -107,7 +107,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     Text = "Load examples",
                     TooltipText = "Import example collections from embedded JSON file",
-                    Action = () => collectionImportProcessor?.ImportExampleCollections()
+                    Action = () => collectionImportProcessor?.ImportInBackground()
                 },
                 new OsuSpriteText
                 {
