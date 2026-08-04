@@ -216,7 +216,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private readonly Bindable<bool> selectAll = new Bindable<bool>(true);
         private readonly Bindable<bool> includeScores = new Bindable<bool>(false);
-        private readonly List<CollectionExportEntry> entries = new List<CollectionExportEntry>();
+        private readonly List<(BeatmapCollection collection, Bindable<bool> selected)> entries = new List<(BeatmapCollection, Bindable<bool>)>();
 
         private FillFlowContainer collectionList = null!;
 
@@ -273,7 +273,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             selectAll.ValueChanged += e =>
             {
                 foreach (var entry in entries)
-                    entry.Selected.Value = e.NewValue;
+                    entry.selected.Value = e.NewValue;
             };
         }
 
@@ -291,27 +291,27 @@ namespace osu.Game.Rulesets.MOsu.UI
             realm.Run(r =>
             {
                 foreach (var collection in r.All<BeatmapCollection>().Detach())
-                    entries.Add(new CollectionExportEntry(collection, new Bindable<bool>(true)));
+                    entries.Add((collection, new Bindable<bool>(true)));
             });
 
             foreach (var entry in entries)
             {
-                entry.Selected.ValueChanged += _ =>
+                entry.selected.ValueChanged += _ =>
                 {
-                    selectAll.Value = entries.All(e => e.Selected.Value);
+                    selectAll.Value = entries.All(e => e.selected.Value);
                 };
 
                 collectionList.Add(new OsuCheckbox
                 {
-                    LabelText = entry.Collection.Name,
-                    Current = entry.Selected,
+                    LabelText = entry.collection.Name,
+                    Current = entry.selected,
                 });
             }
         }
 
         private void export()
         {
-            var selected = entries.Where(e => e.Selected.Value).Select(e => e.Collection).ToList();
+            var selected = entries.Where(e => e.selected.Value).Select(e => e.collection).ToList();
 
             if (selected.Count == 0)
             {
@@ -408,18 +408,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Schedule(() => notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" }));
                 }
             });
-        }
-
-        private class CollectionExportEntry
-        {
-            public BeatmapCollection Collection { get; }
-            public Bindable<bool> Selected { get; }
-
-            public CollectionExportEntry(BeatmapCollection collection, Bindable<bool> selected)
-            {
-                Collection = collection;
-                Selected = selected;
-            }
         }
     }
 

@@ -107,21 +107,41 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             string modString = buildModDisplayString(preset);
 
-            // Add mod string as clickable link at end of message, with a hover tooltip
-            // describing the mods and their customizations (non-default settings).
-            // The tooltip must never prevent the link from being added.
-            string? tooltip = null;
+            drawableContentFlow.AddText(" ");
+            drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), buildModTooltip(preset));
+        }
+
+        /// <summary>
+        /// Resolves a preset's mods into mod instances for the current ruleset (empty on failure).
+        /// </summary>
+        private List<Mod> resolvePresetMods(PresetExportDto preset)
+        {
+            if (currentRuleset == null || preset.Mods.Count == 0)
+                return new List<Mod>();
+
             try
             {
-                tooltip = buildModTooltip(preset);
+                var rulesetInstance = currentRuleset.Value.CreateInstance();
+                var mods = new List<Mod>();
+
+                foreach (var apiMod in preset.Mods)
+                {
+                    try
+                    {
+                        mods.Add(apiMod.ToMod(rulesetInstance));
+                    }
+                    catch
+                    {
+                        // skip mods that fail to resolve
+                    }
+                }
+
+                return mods;
             }
             catch
             {
-                // tooltip failures must not hide the mod link
+                return new List<Mod>();
             }
-
-            drawableContentFlow.AddText(" ");
-            drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), tooltip);
         }
 
         /// <summary>
@@ -130,22 +150,10 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         /// </summary>
         private string buildModDisplayString(PresetExportDto preset)
         {
-            if (currentRuleset == null || preset.Mods.Count == 0)
-                return string.Join(" ", preset.Mods.Select(m => m.Acronym));
-
-            try
-            {
-                var rulesetInstance = currentRuleset.Value.CreateInstance();
-                return string.Join(" ", preset.Mods.Select(m =>
-                {
-                    var mod = m.ToMod(rulesetInstance);
-                    return $"{(mod.SettingDescription.Any() ? "-" : "+")}{mod.Acronym}";
-                }));
-            }
-            catch
-            {
-                return string.Join(" ", preset.Mods.Select(m => m.Acronym));
-            }
+            var mods = resolvePresetMods(preset);
+            return mods.Count == 0
+                ? string.Join(" ", preset.Mods.Select(m => m.Acronym))
+                : string.Join(" ", mods.Select(m => $"{(m.SettingDescription.Any() ? "-" : "+")}{m.Acronym}"));
         }
 
         /// <summary>
@@ -154,66 +162,40 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         /// </summary>
         private string? buildModTooltip(PresetExportDto preset)
         {
-            if (currentRuleset == null || preset.Mods.Count == 0)
+            var mods = resolvePresetMods(preset);
+            if (mods.Count == 0)
                 return null;
 
-            try
+            var lines = new List<string>();
+
+            foreach (var mod in mods)
             {
-                var rulesetInstance = currentRuleset.Value.CreateInstance();
-                var lines = new List<string>();
+                lines.Add($"{mod.Acronym} — {mod.Name}");
 
-                foreach (var apiMod in preset.Mods)
-                {
-                    try
-                    {
-                        var mod = apiMod.ToMod(rulesetInstance);
-                        lines.Add($"{mod.Acronym} — {mod.Name}");
-
-                        foreach (var (setting, value) in mod.SettingDescription)
-                            lines.Add($"  {setting}: {value}");
-                    }
-                    catch
-                    {
-                        // skip mods that fail to resolve
-                    }
-                }
-
-                return lines.Count == 0 ? null : string.Join("\n", lines);
+                foreach (var (setting, value) in mod.SettingDescription)
+                    lines.Add($"  {setting}: {value}");
             }
-            catch
-            {
-                return null;
-            }
+
+            return string.Join("\n", lines);
         }
 
         /// <summary>
-        /// Builds a hover tooltip describing the mods in a mod string, including their
-        /// customizations (non-default settings) like the main game's mod tooltip.
+        /// Decodes a mod preset from the <c>osu://preset/</c> link in a chat message.
         /// </summary>
         private PresetExportDto? extractPresetFromLinks(List<Link> links)
         {
             var presetLink = links.FirstOrDefault(l => l.Url.StartsWith("osu://preset/"));
             if (presetLink == null) return null;
 
-            string base64 = presetLink.Url["osu://preset/".Length..];
             try
             {
-                byte[] data = Convert.FromBase64String(base64);
-                string json;
+                byte[] data = Convert.FromBase64String(presetLink.Url["osu://preset/".Length..]);
 
-                try
-                {
-                    using var ms = new MemoryStream(data);
-                    using var gz = new GZipStream(ms, CompressionMode.Decompress);
-                    using var sr = new StreamReader(gz);
-                    json = sr.ReadToEnd();
-                }
-                catch
-                {
-                    json = Encoding.UTF8.GetString(data);
-                }
+                using var ms = new MemoryStream(data);
+                using var gz = new GZipStream(ms, CompressionMode.Decompress);
+                using var sr = new StreamReader(gz);
 
-                var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(json);
+                var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(sr.ReadToEnd());
                 return presets?.FirstOrDefault();
             }
             catch
@@ -235,26 +217,18 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 return;
             }
 
-            try
+            var mods = resolvePresetMods(preset);
+            if (mods.Count == 0)
             {
-                var rulesetInstance = currentRuleset.Value.CreateInstance();
-                var mods = preset.Mods.Select(m => m.ToMod(rulesetInstance)).ToList();
-
-                selectedMods.Value = mods;
-
-                var modString = string.Join(", ", mods.Select(m => m.Acronym));
-                notifications?.Post(new SimpleNotification
-                {
-                    Text = $"Applied mods: {modString}"
-                });
+                notifications?.Post(new SimpleErrorNotification { Text = "Failed to resolve preset mods." });
+                return;
             }
-            catch (Exception ex)
+
+            selectedMods.Value = mods;
+            notifications?.Post(new SimpleNotification
             {
-                notifications?.Post(new SimpleErrorNotification
-                {
-                    Text = $"Failed to apply mods: {ex.Message}"
-                });
-            }
+                Text = $"Applied mods: {string.Join(", ", mods.Select(m => m.Acronym))}"
+            });
         }
 
         private class PresetExportDto
