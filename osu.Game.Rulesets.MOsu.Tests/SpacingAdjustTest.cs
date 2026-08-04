@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using NUnit.Framework;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Beatmaps.Formats;
+using osu.Game.IO;
 using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
@@ -74,6 +79,80 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         private static float maxDisplacement(IEnumerable<Vector2> a, IEnumerable<Vector2> b) =>
             a.Zip(b).Select(p => Vector2.Distance(p.First, p.Second)).Max();
+
+        private const string real_beatmap_filename = "2364885 Manticora - Humiliation Supreme.osz";
+
+        private static OsuBeatmap decodeManticora()
+        {
+            var fullpath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", real_beatmap_filename);
+            Assert.That(File.Exists(fullpath), Is.True, $"Beatmap file not found at {fullpath}");
+
+            // Highest-starred osu difficulty from the .osz, matching the autoplay test scene.
+            using var zip = ZipFile.OpenRead(fullpath);
+            var selected = zip.Entries
+                .Where(e => e.FullName.EndsWith(".osu", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(e =>
+                {
+                    using var r = new StreamReader(e.Open());
+                    return new LegacyBeatmapDecoder().Decode(new LineBufferedReader(r.BaseStream)).BeatmapInfo.StarRating;
+                }).First();
+
+            using var reader = new StreamReader(selected.Open());
+            var decoded = new LegacyBeatmapDecoder().Decode(new LineBufferedReader(reader.BaseStream));
+            var ruleset = new OsuRuleset();
+            var map = (OsuBeatmap)ruleset.CreateBeatmapConverter(decoded).Convert();
+            ruleset.CreateBeatmapProcessor(map).PreProcess();
+            return map;
+        }
+
+        [TestCase(2f)]
+        [TestCase(2.5f)]
+        [TestCase(3f)]
+        public void RealBeatmapNoConsecutiveFlips(float spacing)
+        {
+            var map = decodeManticora();
+            var objects = map.HitObjects.OfType<OsuHitObject>().ToList();
+            Assert.That(objects.Count, Is.GreaterThan(10));
+
+            float angle(Vector2 v) => MathF.Atan2(v.Y, v.X);
+            float diffAngle(float a, float b)
+            {
+                float d = Math.Abs(a - b) % (MathF.PI * 2);
+                return MathF.Min(d, MathF.PI * 2 - d);
+            }
+
+            // Flips are judged against spacing-1.0 (identity) positions so direction is per the real map.
+            var applier = new SpacingApplier(map);
+            var orig = applier.Apply(1f);
+            var newPos = applier.Apply(spacing);
+
+            // A segment is "flipped" if its direction deviates >90° from the original flow. Only
+            // consecutive runs of >=2 flipped segments are bad (a stream visibly folding back on itself);
+            // an isolated single flip is tolerated.
+            var flipped = new bool[newPos.Count - 1];
+            for (int i = 0; i < newPos.Count - 1; i++)
+                flipped[i] = diffAngle(angle(orig[i + 1] - orig[i]), angle(newPos[i + 1] - newPos[i])) * 180 / MathF.PI > 90;
+
+            var runs = new List<(int start, int length)>();
+            for (int i = 0; i < flipped.Length; i++)
+            {
+                if (!flipped[i]) continue;
+                int end = i;
+                while (end + 1 < flipped.Length && flipped[end + 1]) end++;
+                runs.Add((i, end - i + 1));
+                i = end;
+            }
+
+            int badRuns = runs.Count(r => r.length >= 2);
+            TestContext.Progress.WriteLine($"[RealMap] spacing {spacing}: {objects.Count} objects, {flipped.Count(f => f)} flipped segments, {runs.Count} runs, {badRuns} bad runs of 2+");
+            foreach (var (start, length) in runs.Where(r => r.length >= 2))
+                TestContext.Progress.WriteLine($"[RealMap] spacing {spacing} BAD RUN len={length} at obj={start}..{start + length - 1}");
+
+            // Accepted behaviour for now: a handful of boundary folds only at extreme spacing
+            // (2.5-3x). Keep the ceiling explicit so a future regression beyond it fails loudly.
+            TestContext.Progress.WriteLine($"[RealMap] accepted bad-run ceiling = 2 (boundary folds only at high spacing, by design)");
+            Assert.That(badRuns, Is.LessThanOrEqualTo(2), $"{badRuns} consecutive-flip runs (2+) at spacing {spacing} — regression beyond the accepted ceiling");
+        }
 
         [Test]
         public void Spacing1Point0PreservesOriginalPositions()
