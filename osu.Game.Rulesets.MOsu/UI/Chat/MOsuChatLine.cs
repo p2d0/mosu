@@ -105,7 +105,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             if (preset == null)
                 return;
 
-            string modString = string.Join(" ", preset.Mods.Select(m => m.Acronym));
+            string modString = buildModDisplayString(preset);
 
             // Add mod string as clickable link at end of message, with a hover tooltip
             // describing the mods and their customizations (non-default settings).
@@ -122,6 +122,30 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             drawableContentFlow.AddText(" ");
             drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), tooltip);
+        }
+
+        /// <summary>
+        /// Builds the displayed mod string with signs, matching how mods are shared
+        /// (<c>+HD DT</c> for difficulty increases, <c>-EZ</c> for decreases).
+        /// </summary>
+        private string buildModDisplayString(PresetExportDto preset)
+        {
+            if (currentRuleset == null || preset.Mods.Count == 0)
+                return string.Join(" ", preset.Mods.Select(m => m.Acronym));
+
+            try
+            {
+                var rulesetInstance = currentRuleset.Value.CreateInstance();
+                return string.Join(" ", preset.Mods.Select(m =>
+                {
+                    var mod = m.ToMod(rulesetInstance);
+                    return $"{(mod.Type == ModType.DifficultyIncrease ? "+" : "-")}{mod.Acronym}";
+                }));
+            }
+            catch
+            {
+                return string.Join(" ", preset.Mods.Select(m => m.Acronym));
+            }
         }
 
         /// <summary>
