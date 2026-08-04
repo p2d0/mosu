@@ -207,7 +207,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         {
             foreach (var child in flow.Children.ToArray())
             {
-                if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine))
+                if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine) && MOsuChatLine.ContainsMods(chatLine.Message))
                 {
                     var moChatLine = new MOsuChatLine(chatLine.Message);
                     moChatLine.Depth = chatLine.Depth;
@@ -240,7 +240,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 for (int i = 0; i < children.Length; i++)
                 {
                     var child = children[i];
-                    if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine))
+                    if (child is osu.Game.Overlays.Chat.ChatLine chatLine && !(child is MOsuChatLine) && MOsuChatLine.ContainsMods(chatLine.Message))
                     {
                         var moChatLine = new MOsuChatLine(chatLine.Message);
                         moChatLine.Depth = chatLine.Depth;

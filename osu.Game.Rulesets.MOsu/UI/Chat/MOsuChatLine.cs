@@ -30,6 +30,14 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
     {
         public MOsuChatLine(Message message) : base(message) { }
 
+        /// <summary>
+        /// Whether a chat message contains mods (a mod string like "+HD DT" or a preset link)
+        /// and therefore benefits from being displayed as an <see cref="MOsuChatLine"/>.
+        /// </summary>
+        public static bool ContainsMods(Message message)
+            => !string.IsNullOrEmpty(extractModString(message.DisplayContent))
+               || message.Links.Any(l => l.Url.StartsWith("osu://preset/"));
+
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
