@@ -10,6 +10,7 @@ using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Header;
 using osu.Game.Overlays.Profile.Header.Components;
 using osu.Game.Resources.Localisation.Web;
+using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets.MOsu.UI.LocalUser.Header;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser
@@ -25,6 +26,9 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 
         [Resolved]
         private LocalUserManager localUserManager { get; set; } = null!;
+
+        [Resolved(CanBeNull = true)]
+        private IDialogOverlay? dialogOverlay { get; set; }
 
         public LocalProfileHeader()
         {
@@ -48,9 +52,22 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 if (!string.IsNullOrWhiteSpace(name))
                     localUserManager.AddProfile(name);
             };
-            localTopHeader.ProfileCardRow.RequestDeleteProfile = name => localUserManager.RemoveProfile(name);
+            localTopHeader.ProfileCardRow.RequestDeleteProfile = requestDelete;
             localUserManager.ProfileChanged += _ => Schedule(() => localTopHeader.ProfileCardRow.Refresh());
             localUserManager.ProfilesChanged += () => Schedule(() => localTopHeader.ProfileCardRow.Refresh());
+        }
+
+        private void requestDelete(string name)
+        {
+            // Only skip the confirmation when the profile is known to have 0 PP.
+            // Undefined stats are treated as potentially earned PP, so they still require confirmation.
+            var stats = localUserManager.GetStatisticsForProfile(name, localUserManager.RulesetInfo);
+
+            // No overlay available (e.g. tests) or profile known to have 0 PP -> delete directly.
+            if (dialogOverlay == null || stats?.PP == 0)
+                localUserManager.RemoveProfile(name);
+            else
+                dialogOverlay.Push(new DeleteProfileConfirmationDialog(name, () => localUserManager.RemoveProfile(name)));
         }
 
         protected override Drawable CreateBackground() => Empty();
