@@ -203,14 +203,23 @@ namespace osu.Game.Rulesets.MOsu.UI
                 };
 
                 // Quit mid-play: the player exits without showing results.
-                if (player.Parent is ScreenStack screenStack)
+                // The player is only parented to the ScreenStack after its load completes (push loads it
+                // under the source screen first), so defer the hookup until the stack is actually the parent.
+                void hookQuitHandler()
                 {
-                    screenStack.ScreenExited += (exited, _) =>
+                    if (player.Parent is ScreenStack screenStack)
                     {
-                        if (exited == player)
-                            countPlay();
-                    };
+                        screenStack.ScreenExited += (exited, _) =>
+                        {
+                            if (exited == player)
+                                countPlay();
+                        };
+                    }
+                    else
+                        Schedule(hookQuitHandler);
                 }
+
+                Schedule(hookQuitHandler);
             }
             if (replayPlayer != null)
             {
