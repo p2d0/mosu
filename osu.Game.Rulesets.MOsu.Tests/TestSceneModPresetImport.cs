@@ -209,6 +209,26 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_RulesetField"));
             AddWaitStep("wait for screenshot", 1);
         }
+
+        [Test]
+        public void TestImportPresetWithUnknownRulesetSkipped()
+        {
+            AddStep("import mania-tagged preset", () => processor.Import("""
+                [
+                    { "Name": "MANIA1", "Description": "", "ModsJson": "[]", "RulesetShortName": "mania" },
+                    { "Name": "KEEP1", "Description": "", "ModsJson": "[]" }
+                ]
+                """));
+
+            AddAssert("unknown-ruleset preset skipped, mosu preset kept", () =>
+            {
+                var maniaPreset = Realm.Run(r => r.All<ModPreset>().FirstOrDefault(p => p.Name == "MANIA1"));
+                var keptPreset = Realm.Run(r => r.All<ModPreset>().FirstOrDefault(p => p.Name == "KEEP1"));
+                return maniaPreset == null && keptPreset?.Ruleset.ShortName == "mosu";
+            });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_UnknownRulesetSkipped"));
+            AddWaitStep("wait for screenshot", 1);
+        }
     }
 
     /// <summary>
