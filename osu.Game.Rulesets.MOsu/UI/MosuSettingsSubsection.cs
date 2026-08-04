@@ -154,6 +154,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved]
         private INotificationOverlay notifications { get; set; } = null!;
 
+        private readonly Bindable<bool> selectAll = new Bindable<bool>(true);
         private readonly List<(RulesetInfo ruleset, Bindable<bool> selected)> entries = new List<(RulesetInfo, Bindable<bool>)>();
 
         private FillFlowContainer rulesetList = null!;
@@ -176,6 +177,11 @@ namespace osu.Game.Rulesets.MOsu.UI
                         Text = "Export presets",
                         Font = OsuFont.GetFont(weight: FontWeight.Bold),
                     },
+                    new OsuCheckbox
+                    {
+                        LabelText = "Select all",
+                        Current = selectAll,
+                    },
                     new OsuScrollContainer
                     {
                         RelativeSizeAxes = Axes.X,
@@ -196,6 +202,12 @@ namespace osu.Game.Rulesets.MOsu.UI
                         Action = export,
                     },
                 }
+            };
+
+            selectAll.ValueChanged += e =>
+            {
+                foreach (var entry in entries)
+                    entry.selected.Value = e.NewValue;
             };
         }
 
@@ -228,6 +240,11 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             foreach (var entry in entries)
             {
+                entry.selected.ValueChanged += _ =>
+                {
+                    selectAll.Value = entries.All(e => e.selected.Value);
+                };
+
                 rulesetList.Add(new OsuCheckbox
                 {
                     LabelText = entry.ruleset.ShortName,
