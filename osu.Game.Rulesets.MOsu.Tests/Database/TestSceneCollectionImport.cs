@@ -22,7 +22,9 @@ using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Tests.Visual;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+using osu.Game.Rulesets.MOsu.Tests;
+
+namespace osu.Game.Rulesets.MOsu.Tests.Database
 {
     [TestFixture]
     public partial class TestSceneCollectionImport : OsuTestScene

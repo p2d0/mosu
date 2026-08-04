@@ -8,7 +8,9 @@ using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Tests.Visual;
 using osuTK;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+using osu.Game.Rulesets.MOsu.Tests;
+
+namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
     public partial class TestSceneExpoJumpsTooltip : OsuManualInputManagerTestScene
     {

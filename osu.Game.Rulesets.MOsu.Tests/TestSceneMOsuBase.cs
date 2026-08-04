@@ -9,6 +9,8 @@ using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Tests.Visual;
 
+using osu.Game.Rulesets.MOsu.Tests;
+
 namespace osu.Game.Rulesets.MOsu.Tests
 {
     public abstract partial class TestSceneMOsuBase : OsuTestScene

@@ -9,6 +9,7 @@ using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Rulesets.MOsu.Tests.Screens;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
@@ -18,7 +19,7 @@ using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.UI;
 using osu.Game.Tests.Visual;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
     public partial class TestSceneAutoplayRandomV2 : TestSceneOsuPlayer
     {

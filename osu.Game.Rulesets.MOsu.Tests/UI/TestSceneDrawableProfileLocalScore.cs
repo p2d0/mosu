@@ -12,7 +12,9 @@ using osu.Game.Users;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Mods;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+using osu.Game.Rulesets.MOsu.Tests;
+
+namespace osu.Game.Rulesets.MOsu.Tests.UI
 {
     public partial class TestSceneDrawableProfileLocalScore : TestSceneMOsuBase
     {

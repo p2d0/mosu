@@ -8,6 +8,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Rulesets.MOsu.Tests;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Models;
@@ -17,7 +18,7 @@ using osu.Game.Scoring;
 using osu.Game.Users;
 using osu.Game.Tests.Visual;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+namespace osu.Game.Rulesets.MOsu.Tests.UI
 {
     public partial class TestSceneUserProfileOverlay : TestSceneMOsuBase
     {

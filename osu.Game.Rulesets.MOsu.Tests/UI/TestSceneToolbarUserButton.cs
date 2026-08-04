@@ -13,7 +13,9 @@ using osu.Game.Models;
 using osu.Game.Scoring;
 using osu.Game.Users;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+using osu.Game.Rulesets.MOsu.Tests;
+
+namespace osu.Game.Rulesets.MOsu.Tests.UI
 {
     [TestFixture]
     public partial class TestSceneToolbarUserButton : TestSceneMOsuBase

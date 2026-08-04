@@ -12,11 +12,12 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
+using osu.Game.Rulesets.MOsu.Tests;
 using osu.Game.Rulesets.MOsu.Screens;
 using osu.Game.Scoring;
 using osu.Game.Users;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+namespace osu.Game.Rulesets.MOsu.Tests.Screens
 {
     [TestFixture]
     public partial class TestSceneSuggestedSongsPanel : TestSceneMOsuBase

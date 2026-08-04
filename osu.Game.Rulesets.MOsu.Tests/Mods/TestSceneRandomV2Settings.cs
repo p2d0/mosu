@@ -7,6 +7,7 @@ using osu.Framework.Testing;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Rulesets.MOsu.Tests;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Mods;
@@ -15,22 +16,22 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Overlays.Settings;
 using osuTK;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {
-    public partial class TestSceneSpacingAdjustSettings : TestSceneMOsuBase
+    public partial class TestSceneRandomV2Settings : TestSceneMOsuBase
     {
-        private SpacingAdjustSettings settingsPanel = null!;
-        private OsuModSpacingAdjust mod = null!;
+        private RandomV2Settings settingsPanel = null!;
+        private OsuModRandomV2 mod = null!;
         private OsuBeatmap beatmap = null!;
 
         [Test]
-        public void TestSpacingAdjustSettingsPanelLoads()
+        public void TestRandomV2SettingsPanelLoads()
         {
             createModAndBeatmap();
 
             AddStep("create and add settings panel", () =>
             {
-                settingsPanel = new SpacingAdjustSettings(mod, beatmap, Array.Empty<Mod>(), () => null, new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>()))
+                settingsPanel = new RandomV2Settings(mod, beatmap, Array.Empty<Mod>(), () => null, new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>()))
                 {
                     RelativeSizeAxes = Axes.X,
                     AutoSizeAxes = Axes.Y,
@@ -38,14 +39,18 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 Add(settingsPanel);
             });
 
-            AddUntilStep("panel has slider", () =>
-                settingsPanel.ChildrenOfType<SettingsSlider<float>>().Any());
+            AddUntilStep("panel has sliders", () =>
+                settingsPanel.ChildrenOfType<SettingsSlider<float>>().Any()
+                || settingsPanel.ChildrenOfType<SettingsSlider<int>>().Any());
+
+            AddUntilStep("panel has checkboxes", () =>
+                settingsPanel.ChildrenOfType<SettingsCheckbox>().Any());
 
             CaptureScreenshot("PanelLoads");
         }
 
         [Test]
-        public void TestSpacingAdjustSettingsLiveReprocess()
+        public void TestRandomV2SettingsLiveReprocess()
         {
             createModAndBeatmap();
 
@@ -53,7 +58,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             AddStep("create and add settings panel", () =>
             {
-                settingsPanel = new SpacingAdjustSettings(mod, beatmap, Array.Empty<Mod>(), () => null, new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>()))
+                settingsPanel = new RandomV2Settings(mod, beatmap, Array.Empty<Mod>(), () => null, new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>()))
                 {
                     RelativeSizeAxes = Axes.X,
                     AutoSizeAxes = Axes.Y,
@@ -62,8 +67,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 originalPositions = beatmap.HitObjects.OfType<OsuHitObject>().Select(h => h.Position).ToArray();
             });
 
-            AddStep("change object spacing", () =>
-                mod.ObjectSpacing.Value = 2f);
+            AddStep("change aim distance multiplier", () =>
+                mod.AimDistanceMultiplier.Value = 2f);
 
             AddUntilStep("positions changed", () =>
             {
@@ -78,9 +83,10 @@ namespace osu.Game.Rulesets.MOsu.Tests
         {
             AddStep("create mod and beatmap", () =>
             {
-                mod = new OsuModSpacingAdjust
+                mod = new OsuModRandomV2
                 {
-                    ObjectSpacing = { Value = 1f }
+                    AimDistanceMultiplier = { Value = 10f },
+                    Seed = { Value = 42 }
                 };
 
                 var controlPointInfo = new ControlPointInfo();
@@ -96,7 +102,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 {
                     beatmap.HitObjects.Add(new HitCircle
                     {
-                        StartTime = 1000 + i * 200,
+                        // spacing must exceed beatLength / Divisor (500 / 2 = 250) or the mod classifies the object as a stream and AimDistanceMultiplier has no effect.
+                        StartTime = 1000 + i * 500,
                         Position = new Vector2(200 + (i % 4) * 50, 200 + (i / 4) * 50),
                         NewCombo = i % 5 == 0
                     });

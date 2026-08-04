@@ -14,7 +14,9 @@ using osu.Game.Tests.Visual;
 using osu.Framework.Testing;
 using Realms;
 
-namespace osu.Game.Rulesets.MOsu.Tests
+using osu.Game.Rulesets.MOsu.Tests;
+
+namespace osu.Game.Rulesets.MOsu.Tests.Database
 {
     [TestFixture]
     public partial class TestSceneModPresetImport : OsuTestScene
