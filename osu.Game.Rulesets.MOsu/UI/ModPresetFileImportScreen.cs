@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Screens;
-using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -18,10 +14,9 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2; // For OsuFileSelector
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Screens;
 using osuTK;
-using osu.Game.Rulesets.Mods;
-using Realms;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -155,54 +150,11 @@ namespace osu.Game.Rulesets.MOsu.UI
                 try
                 {
                     string json = File.ReadAllText(path);
-                    var transferObjects = JsonConvert.DeserializeObject<List<ModPresetTransferObject>>(json);
-
-                    if (transferObjects == null || transferObjects.Count == 0)
+                    var processor = new ModPresetImportProcessor(realm, notifications, action => Schedule(action));
+                    processor.Import(json, count =>
                     {
-                        Schedule(() => notifications?.Post(new SimpleErrorNotification { Text = "No presets found in file." }));
-                        return;
-                    }
-
-                    int importedCount = 0;
-
-                    realm.Write(r =>
-                    {
-                        var osuRulesetInfo = r.Find<RulesetInfo>(MosuRuleset.SHORT_NAME);
-                        if (osuRulesetInfo == null) return;
-
-                        foreach (var dto in transferObjects)
-                        {
-                            // Duplicate check
-                            bool exists = r.All<ModPreset>()
-                                .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, MosuRuleset.SHORT_NAME)
-                                .Count() > 0;
-
-                            if (exists) continue;
-
-                            r.Add(new ModPreset
-                            {
-                                ID = Guid.NewGuid(),
-                                Name = dto.Name,
-                                Description = dto.Description,
-                                ModsJson = dto.ModsJson,
-                                Ruleset = osuRulesetInfo,
-                                DeletePending = false
-                            });
-                            importedCount++;
-                        }
-                    });
-
-                    Schedule(() =>
-                    {
-                        if (importedCount > 0)
-                        {
-                            notifications?.Post(new SimpleNotification { Text = $"Imported {importedCount} presets!" });
-                            this.Exit(); // Close screen on success
-                        }
-                        else
-                        {
-                            notifications?.Post(new SimpleNotification { Text = "All presets in file were duplicates." });
-                        }
+                        if (count > 0)
+                            this.Exit(); // Close screen on success, keep open on all-duplicates
                     });
                 }
                 catch (Exception ex)
