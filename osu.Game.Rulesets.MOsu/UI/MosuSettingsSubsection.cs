@@ -115,18 +115,125 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Margin = new MarginPadding { Left = 15 },
                     Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
-                new SettingsButtonV2
-                {
-                    Text = "Export presets to file",
-                    TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
-                    Action = exportPresets
-                },
+                new ExportPresetsButton(),
                 new ExportCollectionsButton(),
             };
         }
 
-        private void exportPresets()
+
+    }
+
+    public partial class ExportPresetsButton : SettingsButtonV2, IHasPopover
+    {
+        [BackgroundDependencyLoader]
+        private void load()
         {
+            Text = "Export presets to file";
+            TooltipText = "Choose which rulesets' presets to export";
+            Action = () =>
+            {
+                // Toggle, like the collections export: clicking again hides instead of reopening.
+                if (this.FindClosestParent<PopoverContainer>()?.CurrentTarget == this)
+                    this.HidePopover();
+                else
+                    this.ShowPopover();
+            };
+        }
+
+        public Popover GetPopover() => new ExportPresetsPopover();
+    }
+
+    public partial class ExportPresetsPopover : OsuPopover
+    {
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private Storage storage { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
+
+        private readonly List<(RulesetInfo ruleset, Bindable<bool> selected)> entries = new List<(RulesetInfo, Bindable<bool>)>();
+
+        private FillFlowContainer rulesetList = null!;
+
+        public ExportPresetsPopover()
+        {
+            AutoSizeAxes = Axes.Both;
+            Origin = Anchor.TopCentre;
+
+            Child = new FillFlowContainer
+            {
+                Direction = FillDirection.Vertical,
+                AutoSizeAxes = Axes.Y,
+                Width = 360,
+                Spacing = new Vector2(10f),
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText
+                    {
+                        Text = "Export presets",
+                        Font = OsuFont.GetFont(weight: FontWeight.Bold),
+                    },
+                    new OsuScrollContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Height = 200,
+                        Child = rulesetList = new FillFlowContainer
+                        {
+                            Direction = FillDirection.Vertical,
+                            AutoSizeAxes = Axes.Y,
+                            RelativeSizeAxes = Axes.X,
+                            Spacing = new Vector2(4f),
+                        },
+                    },
+                    new RoundedButton
+                    {
+                        Text = "Export",
+                        Height = 40,
+                        RelativeSizeAxes = Axes.X,
+                        Action = export,
+                    },
+                }
+            };
+        }
+
+        protected override void PopIn()
+        {
+            base.PopIn();
+            reloadRulesets();
+        }
+
+        private void reloadRulesets()
+        {
+            rulesetList.Clear();
+            entries.Clear();
+
+            realm.Run(r =>
+            {
+                foreach (var ruleset in r.All<RulesetInfo>().Detach()
+                                         .Where(rs => r.All<ModPreset>().Any(p => p.Ruleset.ShortName == rs.ShortName && !p.DeletePending))
+                                         .OrderBy(rs => rs.ShortName))
+                    entries.Add((ruleset, new Bindable<bool>(true)));
+            });
+
+            foreach (var entry in entries)
+            {
+                rulesetList.Add(new OsuCheckbox
+                {
+                    LabelText = entry.ruleset.ShortName,
+                    Current = entry.selected,
+                });
+            }
+        }
+
+        private void export()
+        {
+            var selectedShortNames = entries.Where(e => e.selected.Value).Select(e => e.ruleset.ShortName).ToHashSet();
+
+            this.HidePopover();
+
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
@@ -143,6 +250,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     var transferObjects = realm.Run(r => r.All<ModPreset>()
                         .Filter("DeletePending == false")
                         .ToList()
+                        .Where(p => selectedShortNames.Contains(p.Ruleset.ShortName))
                         .Select(p => new ModPresetTransferObject
                         {
                             Name = p.Name,
@@ -154,7 +262,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                     if (transferObjects.Count == 0)
                     {
-                        notification.Text = "No mosu presets found to export.";
+                        notification.Text = "No presets found to export.";
                         notification.State = ProgressNotificationState.Cancelled;
                         return;
                     }
@@ -187,8 +295,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 }
             });
         }
-
-
     }
 
     public partial class ExportCollectionsButton : SettingsButtonV2, IHasPopover
