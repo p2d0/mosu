@@ -8,7 +8,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -31,12 +30,11 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         public MOsuChatLine(Message message) : base(message) { }
 
         /// <summary>
-        /// Whether a chat message contains mods (a mod string like "+HD DT" or a preset link)
-        /// and therefore benefits from being displayed as an <see cref="MOsuChatLine"/>.
+        /// Whether a chat message contains mods (an <c>osu://preset/</c> link) and therefore
+        /// benefits from being displayed as an <see cref="MOsuChatLine"/>.
         /// </summary>
         public static bool ContainsMods(Message message)
-            => !string.IsNullOrEmpty(extractModString(message.DisplayContent))
-               || message.Links.Any(l => l.Url.StartsWith("osu://preset/"));
+            => message.Links.Any(l => l.Url.StartsWith("osu://preset/"));
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
@@ -70,75 +68,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             }
         }
 
-        private static string? extractModString(string content)
-        {
-            // Look for patterns like "+HD HR DT" or "+HDHRDT" or "+HD+HR-DT"
-            // Match sequences starting with + or - followed by mod acronyms
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:[+\-][A-Z]{2,4}(?:\s*[+\-]?[A-Z]{2,4})*)");
-            return match.Success ? match.Value : null;
-        }
-
-        private void applyModString(string modString)
-        {
-            if (selectedMods == null || currentRuleset == null) return;
-
-            var rulesetInstance = currentRuleset.Value.CreateInstance();
-            var newMods = new List<Mod>();
-            var errors = new List<string>();
-
-            // Parse mod string: split on spaces and +/-
-            string[] tokens = modString.Split(new[] { ' ', '+', '-' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var token in tokens)
-            {
-                var modType = rulesetInstance.AllMods.FirstOrDefault(m => m.Acronym.Equals(token, StringComparison.OrdinalIgnoreCase));
-                if (modType != null)
-                {
-                    try
-                    {
-                        newMods.Add(modType.CreateInstance());
-                    }
-                    catch
-                    {
-                        errors.Add($"{token} failed");
-                    }
-                }
-                else
-                {
-                    errors.Add($"{token} not found");
-                }
-            }
-
-            if (newMods.Count > 0)
-            {
-                // Check compatibility
-                var incompatible = newMods.Where(m1 => newMods.Any(m2 => m1 != m2 && m1.IncompatibleMods.Contains(m2.GetType()))).Select(m => m.Acronym).Distinct().ToList();
-                if (incompatible.Count > 0)
-                {
-                    notifications?.Post(new SimpleErrorNotification
-                    {
-                        Text = $"Incompatible mods: {string.Join(", ", incompatible)}"
-                    });
-                }
-                else
-                {
-                    selectedMods.Value = newMods.ToArray();
-                    notifications?.Post(new SimpleNotification
-                    {
-                        Text = $"Applied mods: {string.Join(", ", newMods.Select(m => m.Acronym))}"
-                    });
-                }
-            }
-
-            if (errors.Count > 0)
-            {
-                notifications?.Post(new SimpleErrorNotification
-                {
-                    Text = $"Unknown mods: {string.Join(", ", errors)}"
-                });
-            }
-        }
-
         private long? lastMessageId;
 
         protected override void LoadComplete()
@@ -153,16 +82,12 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             base.Update();
             if (selectedMods != null && currentRuleset != null)
             {
-                var modString = extractModString(Message.DisplayContent);
-                if (!string.IsNullOrEmpty(modString))
+                // Message ID changed means content was rebuilt (e.g., server response)
+                if (Message.Id != lastMessageId)
                 {
-                    // Message ID changed means content was rebuilt (e.g., server response)
-                    if (Message.Id != lastMessageId)
-                    {
-                        lastMessageId = Message.Id;
-                        // Call synchronously since content is already built
-                        addModLinks();
-                    }
+                    lastMessageId = Message.Id;
+                    // Call synchronously since content is already built
+                    addModLinks();
                 }
             }
         }
@@ -175,61 +100,53 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             var drawableContentFlow = contentField?.GetValue(this) as osu.Game.Graphics.Containers.LinkFlowContainer;
             if (drawableContentFlow == null) return;
 
-            var modString = extractModString(Message.DisplayContent);
-            if (string.IsNullOrEmpty(modString)) return;
-
-            // Check if there's a preset link with settings
+            // The mods come from the preset link, not from parsing the display text.
             var preset = extractPresetFromLinks(Message.Links);
+            if (preset == null) return;
 
-            // Add mod string as clickable link at end of message, with a hover tooltip describing the mods.
+            string modString = string.Join(" ", preset.Mods.Select(m => m.Acronym));
+
+            // Add mod string as clickable link at end of message, with a hover tooltip
+            // describing the mods and their customizations (non-default settings).
             drawableContentFlow.AddText(" ");
-            string? tooltip = buildModTooltip(modString);
+            drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), buildModTooltip(preset));
+        }
 
-            if (preset != null)
+        /// <summary>
+        /// Builds a hover tooltip describing the mods of a preset, including their
+        /// customizations (non-default settings) like the main game's mod tooltip.
+        /// </summary>
+        private string? buildModTooltip(PresetExportDto preset)
+        {
+            if (currentRuleset == null || preset.Mods.Count == 0)
+                return null;
+
+            var rulesetInstance = currentRuleset.Value.CreateInstance();
+            var lines = new List<string>();
+
+            foreach (var apiMod in preset.Mods)
             {
-                drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), tooltip);
+                try
+                {
+                    var mod = apiMod.ToMod(rulesetInstance);
+                    lines.Add($"{mod.Acronym} — {mod.Name}");
+
+                    foreach (var (setting, value) in mod.SettingDescription)
+                        lines.Add($"  {setting}: {value}");
+                }
+                catch
+                {
+                    // skip mods that fail to resolve
+                }
             }
-            else
-            {
-                drawableContentFlow.AddLink($"[{modString}]", () => applyModString(modString), tooltip);
-            }
+
+            return lines.Count == 0 ? null : string.Join("\n", lines);
         }
 
         /// <summary>
         /// Builds a hover tooltip describing the mods in a mod string, including their
         /// customizations (non-default settings) like the main game's mod tooltip.
         /// </summary>
-        private string? buildModTooltip(string modString)
-        {
-            if (selectedMods == null || currentRuleset == null)
-                return null;
-
-            var rulesetInstance = currentRuleset.Value.CreateInstance();
-            var mods = new List<Mod>();
-
-            foreach (var token in modString.Split(new[] { ' ', '+' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                var modType = rulesetInstance.AllMods.FirstOrDefault(m => m.Acronym.Equals(token, StringComparison.OrdinalIgnoreCase));
-                if (modType != null)
-                    mods.Add(modType.CreateInstance());
-            }
-
-            if (mods.Count == 0)
-                return null;
-
-            var lines = new List<string>();
-
-            foreach (var mod in mods)
-            {
-                lines.Add($"{mod.Acronym} — {mod.Name}");
-
-                foreach (var (setting, value) in mod.SettingDescription)
-                    lines.Add($"  {setting}: {value}");
-            }
-
-            return string.Join("\n", lines);
-        }
-
         private PresetExportDto? extractPresetFromLinks(List<Link> links)
         {
             var presetLink = links.FirstOrDefault(l => l.Url.StartsWith("osu://preset/"));
