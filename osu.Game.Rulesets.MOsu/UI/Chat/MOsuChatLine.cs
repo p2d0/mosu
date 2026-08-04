@@ -102,14 +102,26 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             // The mods come from the preset link, not from parsing the display text.
             var preset = extractPresetFromLinks(Message.Links);
-            if (preset == null) return;
+            if (preset == null)
+                return;
 
             string modString = string.Join(" ", preset.Mods.Select(m => m.Acronym));
 
             // Add mod string as clickable link at end of message, with a hover tooltip
             // describing the mods and their customizations (non-default settings).
+            // The tooltip must never prevent the link from being added.
+            string? tooltip = null;
+            try
+            {
+                tooltip = buildModTooltip(preset);
+            }
+            catch
+            {
+                // tooltip failures must not hide the mod link
+            }
+
             drawableContentFlow.AddText(" ");
-            drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), buildModTooltip(preset));
+            drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), tooltip);
         }
 
         /// <summary>
@@ -121,26 +133,33 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             if (currentRuleset == null || preset.Mods.Count == 0)
                 return null;
 
-            var rulesetInstance = currentRuleset.Value.CreateInstance();
-            var lines = new List<string>();
-
-            foreach (var apiMod in preset.Mods)
+            try
             {
-                try
-                {
-                    var mod = apiMod.ToMod(rulesetInstance);
-                    lines.Add($"{mod.Acronym} — {mod.Name}");
+                var rulesetInstance = currentRuleset.Value.CreateInstance();
+                var lines = new List<string>();
 
-                    foreach (var (setting, value) in mod.SettingDescription)
-                        lines.Add($"  {setting}: {value}");
-                }
-                catch
+                foreach (var apiMod in preset.Mods)
                 {
-                    // skip mods that fail to resolve
+                    try
+                    {
+                        var mod = apiMod.ToMod(rulesetInstance);
+                        lines.Add($"{mod.Acronym} — {mod.Name}");
+
+                        foreach (var (setting, value) in mod.SettingDescription)
+                            lines.Add($"  {setting}: {value}");
+                    }
+                    catch
+                    {
+                        // skip mods that fail to resolve
+                    }
                 }
+
+                return lines.Count == 0 ? null : string.Join("\n", lines);
             }
-
-            return lines.Count == 0 ? null : string.Join("\n", lines);
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>

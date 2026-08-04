@@ -12,6 +12,7 @@ using osu.Game.Collections;
 using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Online.Chat;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Database;
@@ -414,6 +415,28 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddAssert("zero score -> not counted", () => !LocalUserManager.ShouldCountPlay(score));
 
             AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ShouldCountPlayGate"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
+        [Test]
+        public void TestChatPresetLinkParsed()
+        {
+            Message message = null!;
+
+            AddStep("format message with preset link", () =>
+            {
+                // Same format sendCurrentMods posts: mods text + invisible osu://preset/ markdown link.
+                message = new Message
+                {
+                    Content = $"is playing with <osu> +HD +DT [\u200B](osu://preset/{Convert.ToBase64String(new byte[] { 1, 2, 3 }) })"
+                };
+                MessageFormatter.FormatMessage(message);
+            });
+
+            AddAssert("preset link detected in Message.Links", () =>
+                message.Links.Any(l => l.Url.StartsWith("osu://preset/")));
+
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ChatPresetLinkParsed"));
             AddWaitStep("wait for screenshot", 1);
         }
 
