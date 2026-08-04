@@ -197,7 +197,14 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             Text = "Export collections to file";
             TooltipText = "Choose collections to export";
-            Action = this.ShowPopover;
+            Action = () =>
+            {
+                // Toggle, like osu core's FooterButtonOptions: clicking again hides instead of reopening.
+                if (this.FindClosestParent<PopoverContainer>()?.CurrentTarget == this)
+                    this.HidePopover();
+                else
+                    this.ShowPopover();
+            };
         }
 
         public Popover GetPopover() => new ExportCollectionsPopover();
