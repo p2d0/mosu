@@ -101,8 +101,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 processor.Import("{ this is not valid json !!!"));
 
             AddAssert("no presets imported", () => presetCount() == 0);
-            AddAssert("error notification posted", () =>
-                notifications.Posted.OfType<SimpleErrorNotification>().Any());
+            AddAssert("friendly error notification posted", () =>
+                notifications.Posted.OfType<SimpleErrorNotification>().Any(n => n.Text.ToString().Contains("Invalid file")));
             AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_BrokenJson"));
             AddWaitStep("wait for screenshot", 1);
         }
@@ -155,8 +155,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 processor.Import("{ \"Name\": \"HD\", \"Description\": \"Hidden\", \"ModsJson\": \"[]\" }"));
 
             AddAssert("no presets imported", () => presetCount() == 0);
-            AddAssert("error notification posted", () =>
-                notifications.Posted.OfType<SimpleErrorNotification>().Any(n => n.Text.ToString().Contains("Failed to import")));
+            AddAssert("friendly error notification posted", () =>
+                notifications.Posted.OfType<SimpleErrorNotification>().Any(n => n.Text.ToString().Contains("Invalid file")));
             AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "ModPresetImport_ObjectInsteadOfArray"));
             AddWaitStep("wait for screenshot", 1);
         }

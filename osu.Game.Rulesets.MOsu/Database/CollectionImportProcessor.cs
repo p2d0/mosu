@@ -102,6 +102,11 @@ namespace osu.Game.Rulesets.MOsu.Database
                     schedule(() => notifications.Post(new SimpleNotification { Text = $"Imported {importedScores} scores." }));
                 }
             }
+            catch (JsonException)
+            {
+                // malformed or wrong-shape user-provided JSON is an expected input error, not a code bug — no stack trace noise.
+                schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Invalid file: expected a JSON array of collections." }));
+            }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to import collections.");

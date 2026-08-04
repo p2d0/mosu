@@ -85,6 +85,11 @@ namespace osu.Game.Rulesets.MOsu.Database
                         : new SimpleNotification { Text = "All presets in file were duplicates." });
                 });
             }
+            catch (JsonException)
+            {
+                // malformed or wrong-shape user-provided JSON is an expected input error, not a code bug — no stack trace noise.
+                schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Invalid file: expected a JSON array of mod presets." }));
+            }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to import presets.");
