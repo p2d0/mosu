@@ -67,6 +67,17 @@ namespace osu.Game.Rulesets.MOsu.Tests.Screens
 
         }
 
+        [SetUpSteps]
+        public void CleanupPanel()
+        {
+            // TestBrowser runs every [Test] against the same scene instance — remove the previous test's panel so they don't stack.
+            AddStep("remove previous panel", () =>
+            {
+                if (panel != null)
+                    Remove(panel, true);
+            });
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
