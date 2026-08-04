@@ -11,6 +11,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Tests.Visual;
+using osu.Framework.Testing;
 using Realms;
 
 namespace osu.Game.Rulesets.MOsu.Tests
@@ -50,8 +51,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
             processor = new ModPresetImportProcessor(Realm, notifications, action => action());
         }
 
-        [SetUp]
-        public void SetUp()
+        [SetUpSteps]
+        public void SetUpSteps()
         {
             AddStep("clear presets", () =>
             {

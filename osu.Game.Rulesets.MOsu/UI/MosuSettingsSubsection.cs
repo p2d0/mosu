@@ -22,6 +22,7 @@ using osu.Game.Overlays.Settings;
 using osu.Game.Rulesets.UI;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Graphics.Containers;
 using osu.Game.Rulesets.Mods;
 using osuTK;
 using osu.Game.Graphics.Sprites;
@@ -69,8 +70,6 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved(CanBeNull = true)]
         private osu.Game.Rulesets.MOsu.Database.BackgroundCollectionImportProcessor? collectionImportProcessor { get; set; }
 
-        private readonly Bindable<bool> exportWithScores = new Bindable<bool>(false);
-
         public MosuSettingsSubsection(Ruleset ruleset)
             : base(ruleset)
         {
@@ -116,18 +115,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Margin = new MarginPadding { Left = 15 },
                     Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
-                new SettingsCheckbox
-                {
-                    LabelText = "Include local scores in export",
-                    Current = exportWithScores,
-                    TooltipText = "If checked, exporting collections will also include local scores for the beatmaps in those collections."
-                },
-                new SettingsButtonV2
-                {
-                    Text = "Export collections to file",
-                    TooltipText = "Saves all collections (and optionally scores) to exports/collections.json",
-                    Action = exportCollections
-                },
+                new ExportCollectionsButton(),
                 new SettingsButtonV2
                 {
                     Text = "Load example collections",
@@ -199,8 +187,141 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
-        private void exportCollections()
+
+    }
+
+    public partial class ExportCollectionsButton : SettingsButtonV2, IHasPopover
+    {
+        [BackgroundDependencyLoader]
+        private void load()
         {
+            Text = "Export collections to file";
+            TooltipText = "Choose collections to export";
+            Action = this.ShowPopover;
+        }
+
+        public Popover GetPopover() => new ExportCollectionsPopover();
+    }
+
+    public partial class ExportCollectionsPopover : OsuPopover
+    {
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private Storage storage { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
+
+        private readonly Bindable<bool> selectAll = new Bindable<bool>(true);
+        private readonly Bindable<bool> includeScores = new Bindable<bool>(false);
+        private readonly List<CollectionExportEntry> entries = new List<CollectionExportEntry>();
+
+        private FillFlowContainer collectionList = null!;
+
+        public ExportCollectionsPopover()
+        {
+            AutoSizeAxes = Axes.Both;
+            Origin = Anchor.TopCentre;
+
+            Child = new FillFlowContainer
+            {
+                Direction = FillDirection.Vertical,
+                AutoSizeAxes = Axes.Y,
+                Width = 360,
+                Spacing = new Vector2(10f),
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText
+                    {
+                        Text = "Export collections",
+                        Font = OsuFont.GetFont(weight: FontWeight.Bold),
+                    },
+                    new OsuCheckbox
+                    {
+                        LabelText = "Select all",
+                        Current = selectAll,
+                    },
+                    new OsuScrollContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Height = 200,
+                        Child = collectionList = new FillFlowContainer
+                        {
+                            Direction = FillDirection.Vertical,
+                            AutoSizeAxes = Axes.Y,
+                            RelativeSizeAxes = Axes.X,
+                            Spacing = new Vector2(4f),
+                        },
+                    },
+                    new OsuCheckbox
+                    {
+                        LabelText = "Include local scores in export",
+                        Current = includeScores,
+                    },
+                    new RoundedButton
+                    {
+                        Text = "Export",
+                        Height = 40,
+                        RelativeSizeAxes = Axes.X,
+                        Action = export,
+                    },
+                }
+            };
+
+            selectAll.ValueChanged += e =>
+            {
+                foreach (var entry in entries)
+                    entry.Selected.Value = e.NewValue;
+            };
+        }
+
+        protected override void PopIn()
+        {
+            base.PopIn();
+            reloadCollections();
+        }
+
+        private void reloadCollections()
+        {
+            collectionList.Clear();
+            entries.Clear();
+
+            realm.Run(r =>
+            {
+                foreach (var collection in r.All<BeatmapCollection>().Detach())
+                    entries.Add(new CollectionExportEntry(collection, new Bindable<bool>(true)));
+            });
+
+            foreach (var entry in entries)
+            {
+                entry.Selected.ValueChanged += _ =>
+                {
+                    selectAll.Value = entries.All(e => e.Selected.Value);
+                };
+
+                collectionList.Add(new OsuCheckbox
+                {
+                    LabelText = entry.Collection.Name,
+                    Current = entry.Selected,
+                });
+            }
+        }
+
+        private void export()
+        {
+            var selected = entries.Where(e => e.Selected.Value).Select(e => e.Collection).ToList();
+
+            if (selected.Count == 0)
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = "No collections selected." });
+                return;
+            }
+
+            bool withScores = includeScores.Value;
+            this.HidePopover();
+
             var notification = new ProgressNotification
             {
                 State = ProgressNotificationState.Active,
@@ -209,53 +330,41 @@ namespace osu.Game.Rulesets.MOsu.UI
             };
             notifications.Post(notification);
 
-            bool includeScores = exportWithScores.Value;
-
             Task.Run(() =>
             {
                 try
                 {
                     var exportStorage = storage.GetStorageForDirectory("exports");
-                    string filename = "collections.json";
-                    string json;
-                    int count = 0;
+                    string filename = withScores ? "collections_with_scores.json" : "collections.json";
 
-                    if (includeScores)
+                    var collectionObjects = new List<CollectionTransferObject>();
+
+                    realm.Run(r =>
                     {
-                        filename = "collections_with_scores.json";
-                        notification.Text = "Fetching collections and scores...";
-                        var collectionObjects = new List<CollectionTransferObject>();
-
-                        realm.Run(r =>
+                        foreach (var collection in selected)
                         {
-                            var collections = r.All<BeatmapCollection>().Detach().ToList();
-                            int total = collections.Count;
-                            int current = 0;
-
-                            foreach (var c in collections)
+                            var dto = new CollectionTransferObject
                             {
-                                if (notification.State == ProgressNotificationState.Cancelled) return;
+                                Name = collection.Name,
+                                Beatmaps = new List<CollectionBeatmapEntry>()
+                            };
 
-                                var dto = new CollectionTransferObject
+                            foreach (var hash in collection.BeatmapMD5Hashes)
+                            {
+                                var beatmap = r.All<BeatmapInfo>().Filter("MD5Hash == $0", hash).FirstOrDefault();
+                                if (beatmap == null) continue;
+
+                                var entry = new CollectionBeatmapEntry
                                 {
-                                    Name = c.Name,
-                                    Beatmaps = new List<CollectionBeatmapEntry>()
+                                    BeatmapSetId = beatmap.BeatmapSet!.OnlineID,
+                                    BeatmapMD5Hash = hash,
+                                    BeatmapTitle = beatmap.Metadata.Title,
+                                    BeatmapAuthor = beatmap.Metadata.Artist,
+                                    Scores = new List<ScoreExportDto>()
                                 };
 
-                                foreach (var hash in c.BeatmapMD5Hashes)
+                                if (withScores)
                                 {
-                                    var beatmap = r.All<BeatmapInfo>().Filter("MD5Hash == $0", hash).FirstOrDefault();
-                                    if (beatmap == null) continue;
-
-                                    var entry = new CollectionBeatmapEntry
-                                    {
-                                        BeatmapSetId = beatmap.BeatmapSet!.OnlineID,
-                                        BeatmapMD5Hash = hash,
-                                        BeatmapTitle = beatmap.Metadata.Title,
-                                        BeatmapAuthor = beatmap.Metadata.Artist,
-                                        Scores = new List<ScoreExportDto>()
-                                    };
-
                                     var scores = r.All<ScoreInfo>()
                                         .Filter("BeatmapInfo.MD5Hash == $0 && DeletePending == false", hash)
                                         .Detach()
@@ -277,69 +386,24 @@ namespace osu.Game.Rulesets.MOsu.UI
                                             Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
                                         });
                                     }
-
-                                    dto.Beatmaps.Add(entry);
                                 }
 
-                                collectionObjects.Add(dto);
-                                current++;
-
-                                notification.Text = $"Processed {current}/{total} collections...";
-                                notification.Progress = (float)current / total;
+                                dto.Beatmaps.Add(entry);
                             }
-                        });
 
-                        notification.Text = "Serializing data...";
-                        json = JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
-                        count = collectionObjects.Count;
-                    }
-                    else
-                    {
-                        notification.Text = "Fetching collections...";
-                        var collectionObjects = new List<CollectionTransferObject>();
-
-                        realm.Run(r =>
-                        {
-                            var collections = r.All<BeatmapCollection>().Detach().ToList();
-
-                            foreach (var c in collections)
-                            {
-                                var dto = new CollectionTransferObject
-                                {
-                                    Name = c.Name,
-                                    Beatmaps = new List<CollectionBeatmapEntry>()
-                                };
-
-                                foreach (var hash in c.BeatmapMD5Hashes)
-                                {
-                                    var beatmap = r.All<BeatmapInfo>().Filter("MD5Hash == $0", hash).FirstOrDefault();
-                                    if (beatmap == null) continue;
-
-                                    dto.Beatmaps.Add(new CollectionBeatmapEntry
-                                    {
-                                        BeatmapSetId = beatmap.BeatmapSet!.OnlineID,
-                                        BeatmapMD5Hash = hash,
-                                        BeatmapTitle = beatmap.Metadata.Title,
-                                        BeatmapAuthor = beatmap.Metadata.Artist,
-                                        Scores = new List<ScoreExportDto>()
-                                    });
-                                }
-
-                                collectionObjects.Add(dto);
-                            }
-                        });
-
-                        if (collectionObjects.Count == 0)
-                        {
-                            notification.Text = "No collections found to export.";
-                            notification.State = ProgressNotificationState.Cancelled;
-                            return;
+                            collectionObjects.Add(dto);
                         }
+                    });
 
-                        notification.Text = "Serializing data...";
-                        json = JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
-                        count = collectionObjects.Count;
+                    if (collectionObjects.Count == 0)
+                    {
+                        notification.Text = "No collections found to export.";
+                        notification.State = ProgressNotificationState.Cancelled;
+                        return;
                     }
+
+                    notification.Text = "Serializing data...";
+                    string json = JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
 
                     notification.Text = "Writing file...";
                     using (var stream = exportStorage.CreateFileSafely(filename))
@@ -348,7 +412,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         writer.Write(json);
                     }
 
-                    notification.CompletionText = $"Exported {count} collections to {filename}!";
+                    notification.CompletionText = $"Exported {collectionObjects.Count} collections to {filename}!";
                     notification.State = ProgressNotificationState.Completed;
                     exportStorage.PresentFileExternally(filename);
                 }
@@ -360,6 +424,17 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
+        private class CollectionExportEntry
+        {
+            public BeatmapCollection Collection { get; }
+            public Bindable<bool> Selected { get; }
+
+            public CollectionExportEntry(BeatmapCollection collection, Bindable<bool> selected)
+            {
+                Collection = collection;
+                Selected = selected;
+            }
+        }
     }
 
     public partial class ImportFromClipboardButton : SettingsButtonV2
