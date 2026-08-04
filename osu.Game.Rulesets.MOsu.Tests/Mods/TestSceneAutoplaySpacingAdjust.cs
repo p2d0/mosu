@@ -7,7 +7,6 @@ using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
-using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Tests.Screens;
 using osu.Game.Rulesets.MOsu.Mods;
@@ -36,14 +35,10 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
         private Live<BeatmapSetInfo>? importedSet;
         private OsuModSpacingAdjust spacingMod = new OsuModSpacingAdjust();
 
-        [Resolved]
-        private OsuConfigManager config { get; set; } = null!;
-
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            AddSliderStep("ui scale", 0.8f, 1.6f, 1f, scale => config.SetValue(OsuSetting.UIScale, scale));
             AddSliderStep("object spacing", 0.1f, 3f, 1f, v =>
             {
                 Logger.Log($"[TEST] object spacing slider -> {v}");

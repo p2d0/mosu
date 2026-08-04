@@ -7,7 +7,6 @@ using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
-using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Tests.Screens;
 using osu.Game.Rulesets.MOsu.Mods;
@@ -36,14 +35,10 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
         private Live<BeatmapSetInfo>? importedSet;
         private OsuModRandomV2 randomMod = new OsuModRandomV2();
 
-        [Resolved]
-        private OsuConfigManager config { get; set; } = null!;
-
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            AddSliderStep("ui scale", 0.8f, 1.6f, 1f, scale => config.SetValue(OsuSetting.UIScale, scale));
             AddSliderStep("aim distance multiplier", 1f, 10f, 1f, v =>
             {
                 Logger.Log($"[TEST] aim distance slider -> {v}");
@@ -53,11 +48,6 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
             {
                 Logger.Log($"[TEST] stream distance slider -> {v}");
                 randomMod.StreamDistanceMultiplier.Value = v;
-            });
-            AddSliderStep("angle sharpness", 1f, 10f, 7f, v =>
-            {
-                Logger.Log($"[TEST] angle sharpness slider -> {v}");
-                randomMod.AngleSharpness.Value = v;
             });
         }
 
@@ -132,11 +122,6 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
                 randomMod.StreamDistanceMultiplier.ValueChanged += e =>
                 {
                     Logger.Log($"[TEST] stream distance changed to {e.NewValue}");
-                    updateBeatmap();
-                };
-                randomMod.AngleSharpness.ValueChanged += e =>
-                {
-                    Logger.Log($"[TEST] angle sharpness changed to {e.NewValue}");
                     updateBeatmap();
                 };
             });
