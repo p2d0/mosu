@@ -72,9 +72,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
         private static string? extractModString(string content)
         {
-            // Look for patterns like "+HD HR DT" or "+HDHRDT" or "+HD+HR-DT"
-            // Match sequences starting with + or - followed by mod acronyms
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:[+\-][A-Z]{2,4}(?:\s*[+\-]?[A-Z]{2,4})*)");
+            // Look for patterns like "+HD HR DT" or "+HDHRDT" — positive mods only (no '-').
+            // Match sequences starting with + followed by mod acronyms
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:\+[A-Z]{2,4}(?:\s*\+?[A-Z]{2,4})*)");
             return match.Success ? match.Value : null;
         }
 
@@ -181,16 +181,42 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             // Check if there's a preset link with settings
             var preset = extractPresetFromLinks(Message.Links);
 
-            // Add mod string as clickable link at end of message
+            // Add mod string as clickable link at end of message, with a hover tooltip describing the mods.
             drawableContentFlow.AddText(" ");
+            string? tooltip = buildModTooltip(modString);
+
             if (preset != null)
             {
-                drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset));
+                drawableContentFlow.AddLink($"[{modString}]", () => applyPreset(preset), tooltip);
             }
             else
             {
-                drawableContentFlow.AddLink($"[{modString}]", () => applyModString(modString));
+                drawableContentFlow.AddLink($"[{modString}]", () => applyModString(modString), tooltip);
             }
+        }
+
+        /// <summary>
+        /// Builds a hover tooltip describing the mods in a mod string (acronyms with their names).
+        /// </summary>
+        private string? buildModTooltip(string modString)
+        {
+            if (selectedMods == null || currentRuleset == null)
+                return null;
+
+            var rulesetInstance = currentRuleset.Value.CreateInstance();
+            var mods = new List<Mod>();
+
+            foreach (var token in modString.Split(new[] { ' ', '+' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var modType = rulesetInstance.AllMods.FirstOrDefault(m => m.Acronym.Equals(token, StringComparison.OrdinalIgnoreCase));
+                if (modType != null)
+                    mods.Add(modType.CreateInstance());
+            }
+
+            if (mods.Count == 0)
+                return null;
+
+            return string.Join("\n", mods.Select(m => $"{m.Acronym} — {m.Name}"));
         }
 
         private PresetExportDto? extractPresetFromLinks(List<Link> links)
