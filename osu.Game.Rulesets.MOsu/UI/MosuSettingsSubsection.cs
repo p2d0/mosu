@@ -212,8 +212,16 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             realm.Run(r =>
             {
+                // Resolve preset ruleset names in memory — Realm's LINQ provider can't navigate p.Ruleset.ShortName inside a query.
+                var rulesetShortNamesWithPresets = r.All<ModPreset>()
+                    .Filter("DeletePending == false")
+                    .ToList()
+                    .Select(p => p.Ruleset.ShortName)
+                    .Distinct()
+                    .ToHashSet();
+
                 foreach (var ruleset in r.All<RulesetInfo>().Detach()
-                                         .Where(rs => r.All<ModPreset>().Any(p => p.Ruleset.ShortName == rs.ShortName && !p.DeletePending))
+                                         .Where(rs => rulesetShortNamesWithPresets.Contains(rs.ShortName))
                                          .OrderBy(rs => rs.ShortName))
                     entries.Add((ruleset, new Bindable<bool>(true)));
             });
