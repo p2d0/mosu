@@ -42,11 +42,11 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         /// <summary>
         /// Imports collections from JSON: writes collections, downloads missing beatmap sets
-        /// (with mirror fallback), and imports scores when <paramref name="importScores"/> is set.
+        /// (with mirror fallback), and imports scores when the JSON contains any.
         /// <paramref name="onCollectionsImported"/> fires once collections are written (before any downloads).
         /// Never throws — errors are posted as notifications.
         /// </summary>
-        public async Task Import(string json, bool importScores = false, Action? onCollectionsImported = null)
+        public async Task Import(string json, Action? onCollectionsImported = null)
         {
             try
             {
@@ -57,6 +57,9 @@ namespace osu.Game.Rulesets.MOsu.Database
                     schedule(() => notifications.Post(new SimpleErrorNotification { Text = "No collections found in file." }));
                     return;
                 }
+
+                // Import scores only if the JSON actually contains any.
+                bool importScores = transferObjects.Any(c => c.Beatmaps.Any(b => b.Scores.Count > 0));
 
                 // Step 1: Import collections
                 var (allSetIds, importedCollections) = importCollections(transferObjects);

@@ -60,7 +60,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                 {
                     string json = readEmbeddedCollections();
                     var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
-                    await processor.Import(json, importScores: true);
+                    await processor.Import(json);
                     markCollectionsImported();
                 }
                 catch (Exception ex)

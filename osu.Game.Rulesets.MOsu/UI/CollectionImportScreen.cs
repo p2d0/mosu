@@ -28,8 +28,6 @@ namespace osu.Game.Rulesets.MOsu.UI
         public override bool HideOverlaysOnEnter => true;
         public override bool DisallowExternalBeatmapRulesetChanges => true;
 
-        private readonly bool importScores;
-
         private OsuFileSelector fileSelector = null!;
         private Container contentContainer = null!;
         private TextFlowContainer currentFileText = null!;
@@ -53,11 +51,6 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
-
-        public CollectionImportScreen(bool importScores = false)
-        {
-            this.importScores = importScores;
-        }
 
         [BackgroundDependencyLoader]
         private void load()
@@ -117,7 +110,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             },
                             importButton = new RoundedButton
                             {
-                                Text = importScores ? "Import Collections & Scores" : "Import & Download",
+                                Text = "Import & Download",
                                 Anchor = Anchor.BottomCentre,
                                 Origin = Anchor.BottomCentre,
                                 RelativeSizeAxes = Axes.X,
@@ -172,7 +165,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     string json = File.ReadAllText(path);
                     var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
-                    processor.Import(json, importScores, onCollectionsImported: () => this.Exit());
+                    processor.Import(json, onCollectionsImported: () => this.Exit());
                 }
                 catch (Exception ex)
                 {
