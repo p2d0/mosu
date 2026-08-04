@@ -25,6 +25,7 @@ using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Screens;
 using osuTK;
 using Realms;
@@ -235,7 +236,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             }
                             else
                             {
-                                startBackgroundDownload(missingSetIds);
+                                _ = startBackgroundDownload(missingSetIds);
                             }
                         }
 
@@ -254,7 +255,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
-        private void startBackgroundDownload(List<int> missingSetIds)
+        private async Task startBackgroundDownload(List<int> missingSetIds)
         {
             if (!api.IsLoggedIn)
             {
@@ -272,12 +273,13 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             // Local downloader — no PostNotification set, so no per-download notifications
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
+            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, action => Schedule(action));
             var failedSets = new HashSet<int>();
             var lockObj = new object();
 
             localDownloader.DownloadFailed += req =>
             {
-                lock (lockObj) failedSets.Add(req.Model.OnlineID);
+                downloader.DownloadViaMirror(req.Model.OnlineID, lockObj, failedSets);
             };
 
             // Subscribe to all beatmap sets, filter client-side (Realm can't translate HashSet.Contains)
@@ -316,9 +318,24 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
                 });
 
-            // Queue all downloads
+            // Queue all downloads, routing unavailable sets straight to the mirror backup
             foreach (var setId in missingSetIds)
             {
+                if (notification.State == ProgressNotificationState.Cancelled) break;
+
+                try
+                {
+                    if (!await downloader.IsSetAvailable(setId))
+                    {
+                        downloader.DownloadViaMirror(setId, lockObj, failedSets);
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, $"Lookup failed for set {setId}, attempting normal download.");
+                }
+
                 var onlineSet = new APIBeatmapSet { OnlineID = setId };
                 if (localDownloader.GetExistingDownload(onlineSet) == null)
                     localDownloader.Download(onlineSet);

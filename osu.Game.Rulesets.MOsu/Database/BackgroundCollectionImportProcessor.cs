@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -299,6 +298,7 @@ namespace osu.Game.Rulesets.MOsu.Database
             var failedSets = new HashSet<int>();
             var downloadedSets = new HashSet<int>();
             var lockObj = new object();
+            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, action => Schedule(action));
             int totalScoresImported = 0;
 
             localDownloader.DownloadFailed += req =>
@@ -309,7 +309,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                     Logger.Log($"Beatconnect download already in progress for set {setId}, skipping.");
                     return;
                 }
-                tryMirrorFallback(setId, lockObj, failedSets);
+                downloader.DownloadViaMirror(setId, lockObj, failedSets);
             };
 
             // Download sets one at a time, importing scores after each
@@ -331,8 +331,25 @@ namespace osu.Game.Rulesets.MOsu.Database
                 });
 
                 var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                if (localDownloader.GetExistingDownload(onlineSet) == null)
-                    localDownloader.Download(onlineSet);
+
+                try
+                {
+                    if (!await downloader.IsSetAvailable(setId))
+                    {
+                        Logger.Log($"Set {setId} not found on osu!, using nekoha mirror backup...");
+                        downloader.DownloadViaMirror(setId, lockObj, failedSets);
+                    }
+                    else if (localDownloader.GetExistingDownload(onlineSet) == null)
+                    {
+                        localDownloader.Download(onlineSet);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, $"Lookup failed for set {setId}, attempting normal download.");
+                    if (localDownloader.GetExistingDownload(onlineSet) == null)
+                        localDownloader.Download(onlineSet);
+                }
 
                 // Wait for this specific set to appear in realm
                 await waitForSetInRealm(setId);
@@ -394,66 +411,6 @@ namespace osu.Game.Rulesets.MOsu.Database
 
             await tcs.Task.WaitAsync(TimeSpan.FromMinutes(2));
             subscription?.Dispose();
-        }
-
-        private void tryMirrorFallback(int setId, object lockObj, HashSet<int> failedSets)
-        {
-            Logger.Log($"Download failed for set {setId}, trying nekoha mirror backup...");
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    var response = new HttpClient
-                    {
-                        Timeout = TimeSpan.FromSeconds(60)
-                    }.GetAsync($"https://mirror.nekoha.moe/api4/download/{setId}").Result;
-
-                    string filename = $"nekoha_{setId}.osz";
-                    string path = Path.Combine(Path.GetTempPath(), filename);
-
-                    byte[] data = response.Content.ReadAsByteArrayAsync().Result;
-                    Logger.Log($"Nekoha mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={data.Length} bytes");
-                    if (!response.IsSuccessStatusCode)
-                        throw new Exception($"Nekoha mirror returned {response.StatusCode}");
-                    File.WriteAllBytes(path, data);
-
-                    Schedule(() =>
-                    {
-                        var importNotification = new ProgressNotification
-                        {
-                            State = ProgressNotificationState.Active,
-                            Text = $"Importing set {setId} from nekoha mirror..."
-                        };
-                        notifications.Post(importNotification);
-                        Task.Run(async () =>
-                        {
-                            long fileSize = new FileInfo(path).Length;
-                            var result = await beatmapManager.Import(importNotification, new[] { new ImportTask(path) });
-                            File.Delete(path);
-                            Schedule(() =>
-                            {
-                                if (result.Any())
-                                {
-                                    importNotification.State = ProgressNotificationState.Completed;
-                                    importNotification.CompletionText = $"Imported set {setId} from nekoha mirror backup";
-                                }
-                                else
-                                {
-                                    Logger.Error(new Exception($"Nekoha mirror import returned 0 items for set {setId}. File size: {fileSize} bytes."), "Nekoha mirror import empty");
-                                    importNotification.State = ProgressNotificationState.Cancelled;
-                                    notifications.Post(new SimpleErrorNotification { Text = $"Nekoha mirror import failed for set {setId}" });
-                                    lock (lockObj) failedSets.Add(setId);
-                                }
-                            });
-                        });
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, $"Nekoha mirror backup failed for set {setId}");
-                    lock (lockObj) failedSets.Add(setId);
-                }
-            }, TaskCreationOptions.LongRunning);
         }
 
         private static string readEmbeddedCollections()
