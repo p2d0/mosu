@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
-using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;

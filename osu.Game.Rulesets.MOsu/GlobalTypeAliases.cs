@@ -84,6 +84,7 @@ global using OsuPlayfieldAdjustmentContainer = osu.Game.Rulesets.Osu.UI.OsuPlayf
 global using OsuReplayFrame = osu.Game.Rulesets.Osu.Replays.OsuReplayFrame;
 global using OsuReplayRecorder = osu.Game.Rulesets.Osu.UI.OsuReplayRecorder;
 global using OsuRulesetConfigManager = osu.Game.Rulesets.Osu.Configuration.OsuRulesetConfigManager;
+global using OsuBeatmapProcessor = osu.Game.Rulesets.Osu.Beatmaps.OsuBeatmapProcessor;
 global using OsuSkinComponentLookup = osu.Game.Rulesets.Osu.OsuSkinComponentLookup;
 global using OsuTrianglesSkinTransformer = osu.Game.Rulesets.Osu.Skinning.Default.OsuTrianglesSkinTransformer;
 global using ReplayAnalysisOverlay = osu.Game.Rulesets.Osu.UI.ReplayAnalysisOverlay;

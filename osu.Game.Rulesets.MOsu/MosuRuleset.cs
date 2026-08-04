@@ -21,7 +21,6 @@ using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
-using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Screens;
@@ -49,7 +48,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new OsuBeatmapConverter(beatmap, this);
 
-        public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new MosuBeatmapProcessor(beatmap);
+        public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
 
         public const string SHORT_NAME = "mosu";
 
