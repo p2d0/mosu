@@ -22,7 +22,6 @@ using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Tests.Visual;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests.Database
 {
@@ -31,9 +30,6 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
     {
         [Resolved]
         private BeatmapManager beatmapManager { get; set; } = null!;
-
-        [Resolved]
-        private GameHost gameHost { get; set; } = null!;
 
         protected MOsuRulesetConfigManager config { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
@@ -98,9 +94,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 var collection = Realm.Run(r => r.All<BeatmapCollection>().FirstOrDefault(c => c.Name == "MOsu examples"));
                 return collection != null && collection.BeatmapMD5Hashes.Count > 0;
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_CollectionsImported"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestImportIdempotent()
@@ -126,9 +120,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 int secondCount = Realm.Run(r => r.All<BeatmapCollection>().Count());
                 return secondCount == firstCount;
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ImportIdempotent"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestHashesNotDuplicated()
@@ -144,9 +136,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 if (collection == null) return false;
                 return collection.BeatmapMD5Hashes.Distinct().Count() == collection.BeatmapMD5Hashes.Count;
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_HashesNotDuplicated"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestDownloadRequiresLogin()
@@ -177,9 +167,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
             // BeatmapModelDownloader attempts download regardless of login state.
             // It only checks api != null, not api.IsLoggedIn.
             AddAssert("download attempted despite offline (proves IsLoggedIn guard needed)", () => downloadBegan);
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_DownloadRequiresLogin"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestExportImportRoundTrip()
@@ -272,9 +260,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                     && collection.BeatmapMD5Hashes.Contains("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
                     && collection.BeatmapMD5Hashes.Contains("cccccccccccccccccccccccccccccccc");
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ExportImportRoundTrip"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestScoreExportIncludesPlayer()
@@ -297,9 +283,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 var back = JsonConvert.DeserializeObject<ScoreExportDto>(json);
                 return back != null && back.UserOnlineId == 999 && back.UserUsername == "TestUser";
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ScoreExportIncludesPlayer"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestScoreImportRestoresPlayer()
@@ -346,9 +330,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 var score = Realm.Run(r => r.All<ScoreInfo>().FirstOrDefault(s => s.TotalScore == 123456));
                 return score != null && score.RealmUser.OnlineID == 4242 && score.RealmUser.Username == "PlayerOne";
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ScoreImportRestoresPlayer"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestPlayCountPersistsInProfileJson()
@@ -384,9 +366,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 manager.IncrementPlayCount("DoesNotExist");
                 return manager.GetProfiles().Count == before;
             });
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_PlayCountPersistsInProfileJson"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestShouldCountPlayGate()
@@ -416,9 +396,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
             });
             AddAssert("zero score -> not counted", () => !LocalUserManager.ShouldCountPlay(score));
 
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ShouldCountPlayGate"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         [Test]
         public void TestChatPresetLinkParsed()
@@ -442,9 +420,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
             AddAssert("preset link detected in Message.Links", () =>
                 message.Links.Any(l => l.Url.StartsWith("osu://preset/")));
 
-            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ChatPresetLinkParsed"));
-            AddWaitStep("wait for screenshot", 1);
-        }
+                    }
 
         private void SeedBeatmapsAndScores()
         {
