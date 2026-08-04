@@ -99,7 +99,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
                 },
-                new ImportPresetButton(),
                 new SettingsButtonV2
                 {
                     Text = "Import presets from file",
@@ -371,19 +370,6 @@ namespace osu.Game.Rulesets.MOsu.UI
 
     }
 
-    public partial class ImportPresetButton : SettingsButtonV2, IHasPopover
-    {
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            Text = "Import presets (Paste JSON)";
-            TooltipText = "Click to paste preset JSON data";
-            Action = this.ShowPopover;
-        }
-
-        public Popover GetPopover() => new ImportPresetPopover();
-    }
-
     public partial class ImportCollectionScoresButton : SettingsButtonV2
     {
         [Resolved(CanBeNull = true)]
@@ -397,129 +383,5 @@ namespace osu.Game.Rulesets.MOsu.UI
             Action = () => performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen(importScores: true)));
         }
     }
-
-    public partial class ImportPresetPopover : OsuPopover
-    {
-        [Resolved]
-        private RealmAccess realm { get; set; } = null!;
-
-        [Resolved]
-        private INotificationOverlay notifications { get; set; } = null!;
-
-        private readonly FocusedTextBox textBox;
-
-        public ImportPresetPopover()
-        {
-            AutoSizeAxes = Axes.Both;
-            Origin = Anchor.TopCentre;
-
-            RoundedButton importButton;
-
-            Child = new FillFlowContainer
-            {
-                Direction = FillDirection.Vertical,
-                AutoSizeAxes = Axes.Y,
-                Width = 300,
-                Spacing = new Vector2(10f),
-                Children = new Drawable[]
-                {
-                    new OsuSpriteText
-                    {
-                        Text = "Paste JSON below:",
-                        Font = OsuFont.GetFont(weight: FontWeight.Bold),
-                    },
-                    textBox = new FocusedTextBox
-                    {
-                        PlaceholderText = @"[{ ""Name"": ""..."" ... }]",
-                        Height = 100,
-                        RelativeSizeAxes = Axes.X,
-                        SelectAllOnFocus = true,
-                        LengthLimit = 1000000,
-                    },
-                    importButton = new RoundedButton
-                    {
-                        Height = 40,
-                        RelativeSizeAxes = Axes.X,
-                        Text = "Import",
-                    }
-                }
-            };
-
-            importButton.Action += import;
-            textBox.OnCommit += (_, _) => import();
-        }
-
-        protected override void PopIn()
-        {
-            base.PopIn();
-            textBox.TakeFocus();
-        }
-
-        private void import()
-        {
-            string json = textBox.Text;
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                this.HidePopover();
-                return;
-            }
-
-            try
-            {
-                var transferObjects = JsonConvert.DeserializeObject<List<ModPresetTransferObject>>(json);
-
-                if (transferObjects == null || transferObjects.Count == 0)
-                {
-                    notifications?.Post(new SimpleErrorNotification { Text = "Invalid JSON or no presets found." });
-                    return;
-                }
-
-                int importedCount = 0;
-
-                realm.Write(r =>
-                {
-                    var osuRulesetInfo = r.Find<RulesetInfo>(MosuRuleset.SHORT_NAME);
-
-                    if (osuRulesetInfo == null)
-                        throw new InvalidOperationException("Could not find mosu ruleset in database.");
-
-                    foreach (var dto in transferObjects)
-                    {
-                        bool exists = r.All<ModPreset>()
-                            .Filter("Name == $0 && Ruleset.ShortName == $1 && DeletePending == false", dto.Name, MosuRuleset.SHORT_NAME)
-                            .Count() > 0;
-
-                        if (exists) continue;
-
-                        r.Add(new ModPreset
-                        {
-                            ID = Guid.NewGuid(),
-                            Name = dto.Name,
-                            Description = dto.Description,
-                            ModsJson = dto.ModsJson,
-                            Ruleset = osuRulesetInfo,
-                            DeletePending = false
-                        });
-                        importedCount++;
-                    }
-                });
-
-                if (importedCount > 0)
-                    notifications?.Post(new SimpleNotification { Text = $"Successfully imported {importedCount} presets!" });
-                else
-                    notifications?.Post(new SimpleNotification { Text = "No new presets imported (duplicates skipped)." });
-
-                this.HidePopover();
-            }
-            catch (JsonException)
-            {
-                notifications?.Post(new SimpleErrorNotification { Text = "Failed to parse JSON. Check format." });
-            }
-            catch (Exception ex)
-            {
-                notifications?.Post(new SimpleErrorNotification { Text = $"Import failed: {ex.Message}" });
-            }
-        }
-    }
 }
+
