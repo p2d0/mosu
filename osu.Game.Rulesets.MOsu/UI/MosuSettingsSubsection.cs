@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions; // For Popover extensions
@@ -27,6 +26,7 @@ using osu.Game.Rulesets.Mods;
 using osuTK;
 using osu.Game.Graphics.Sprites;
 using System.Linq.Expressions;
+using Newtonsoft.Json;
 using Realms;
 using osu.Game.Screens; // Required for IPerformFromScreenRunner
 using System.Threading.Tasks;
@@ -88,6 +88,16 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             Children = new Drawable[]
             {
+                new SettingsButtonV2
+                {
+                    Text = "Import from file",
+                    TooltipText = "Select a .json file containing presets or collections (auto-detected)",
+                    Action = () =>
+                    {
+                        performer?.PerformFromScreen(screen => screen.Push(new JsonImportScreen()));
+                    }
+                },
+                new ImportFromClipboardButton(),
                 new OsuSpriteText
                 {
                     Text = "Presets",
@@ -99,16 +109,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Text = "Export presets to file",
                     TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
-                },
-                new ImportPresetButton(),
-                new SettingsButtonV2
-                {
-                    Text = "Import presets from file",
-                    TooltipText = "Select a .json file from your computer",
-                    Action = () =>
-                    {
-                        performer?.PerformFromScreen(screen => screen.Push(new ModPresetFileImportScreen()));
-                    }
                 },
                 new OsuSpriteText
                 {
@@ -128,16 +128,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     TooltipText = "Saves all collections (and optionally scores) to exports/collections.json",
                     Action = exportCollections
                 },
-                new SettingsButtonV2
-                {
-                    Text = "Import collections from file",
-                    TooltipText = "Open file browser to select a collection .json (Standard format). Scores are imported automatically if the file contains them.",
-                    Action = () =>
-                    {
-                        performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen()));
-                    }
-                },
-                new ImportCollectionsFromClipboardButton(),
                 new SettingsButtonV2
                 {
                     Text = "Load example collections",
@@ -372,7 +362,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
     }
 
-    public partial class ImportCollectionsFromClipboardButton : SettingsButtonV2
+    public partial class ImportFromClipboardButton : SettingsButtonV2
     {
         [Resolved]
         private Clipboard clipboard { get; set; } = null!;
@@ -392,8 +382,8 @@ namespace osu.Game.Rulesets.MOsu.UI
         [BackgroundDependencyLoader]
         private void load()
         {
-            Text = "Import collections from clipboard";
-            TooltipText = "Imports collection JSON from the clipboard. Scores are imported automatically if the file contains them.";
+            Text = "Import from clipboard";
+            TooltipText = "Imports preset or collection JSON from the clipboard (auto-detected)";
             Action = importFromClipboard;
         }
 
@@ -407,42 +397,20 @@ namespace osu.Game.Rulesets.MOsu.UI
                 return;
             }
 
-            var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
-            _ = processor.Import(json);
-        }
-    }
-
-    public partial class ImportPresetButton : SettingsButtonV2
-    {
-        [Resolved]
-        private Clipboard clipboard { get; set; } = null!;
-
-        [Resolved]
-        private RealmAccess realm { get; set; } = null!;
-
-        [Resolved]
-        private INotificationOverlay notifications { get; set; } = null!;
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            Text = "Import presets from clipboard";
-            TooltipText = "Imports preset JSON from the clipboard";
-            Action = importFromClipboard;
-        }
-
-        private void importFromClipboard()
-        {
-            string? json = clipboard.GetText();
-
-            if (string.IsNullOrWhiteSpace(json))
+            switch (JsonImportTypeDetector.Detect(json))
             {
-                notifications?.Post(new SimpleErrorNotification { Text = "Clipboard is empty." });
-                return;
-            }
+                case JsonImportType.Presets:
+                    new ModPresetImportProcessor(realm, notifications, action => Schedule(action)).Import(json);
+                    break;
 
-            var processor = new ModPresetImportProcessor(realm, notifications, action => Schedule(action));
-            processor.Import(json);
+                case JsonImportType.Collections:
+                    _ = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action)).Import(json);
+                    break;
+
+                default:
+                    notifications?.Post(new SimpleErrorNotification { Text = "Clipboard content is not valid presets or collections JSON." });
+                    break;
+            }
         }
     }
 }

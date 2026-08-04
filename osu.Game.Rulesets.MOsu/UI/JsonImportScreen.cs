@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -23,7 +22,10 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class CollectionImportScreen : OsuScreen
+    /// <summary>
+    /// Imports mod presets or beatmap collections from a JSON file, auto-detecting the format.
+    /// </summary>
+    public partial class JsonImportScreen : OsuScreen
     {
         public override bool HideOverlaysOnEnter => true;
         public override bool DisallowExternalBeatmapRulesetChanges => true;
@@ -110,7 +112,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             },
                             importButton = new RoundedButton
                             {
-                                Text = "Import & Download",
+                                Text = "Import",
                                 Anchor = Anchor.BottomCentre,
                                 Origin = Anchor.BottomCentre,
                                 RelativeSizeAxes = Axes.X,
@@ -156,16 +158,38 @@ namespace osu.Game.Rulesets.MOsu.UI
             importButton.Enabled.Value = false;
             currentFileText.Text = "Reading file...";
 
-            // Run the import in a task to prevent UI freeze during JSON parsing. The shared processor
-            // downloads in the background and posts its own notifications, so this screen can exit once
-            // collections are written while the download continues.
+            // Run the import in a task to prevent UI freeze during JSON parsing. The shared processors
+            // post their own notifications; the screen exits once the import is underway.
             Task.Run(() =>
             {
                 try
                 {
                     string json = File.ReadAllText(path);
-                    var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
-                    processor.Import(json, onCollectionsImported: () => this.Exit());
+
+                    switch (JsonImportTypeDetector.Detect(json))
+                    {
+                        case JsonImportType.Presets:
+                            new ModPresetImportProcessor(realm, notifications, action => Schedule(action))
+                                .Import(json, count =>
+                                {
+                                    if (count > 0)
+                                        this.Exit(); // keep screen open on all-duplicates
+                                });
+                            break;
+
+                        case JsonImportType.Collections:
+                            _ = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action))
+                                .Import(json, onCollectionsImported: () => this.Exit());
+                            break;
+
+                        default:
+                            Schedule(() =>
+                            {
+                                notifications?.Post(new SimpleErrorNotification { Text = "Selected file is not valid presets or collections JSON." });
+                                importButton.Enabled.Value = true;
+                            });
+                            break;
+                    }
                 }
                 catch (Exception ex)
                 {
