@@ -347,6 +347,76 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddWaitStep("wait for screenshot", 1);
         }
 
+        [Test]
+        public void TestPlayCountPersistsInProfileJson()
+        {
+            LocalUserManager manager = null!;
+
+            AddStep("setup manager", () =>
+            {
+                manager = new LocalUserManager(new MosuRuleset(), Realm, config, new DummyAPIAccess());
+                manager.AddProfile("TestUser");
+            });
+
+            AddStep("seed unrelated realm scores", () => SeedBeatmapsAndScores());
+
+            AddStep("increment play count twice", () =>
+            {
+                manager.IncrementPlayCount("TestUser");
+                manager.IncrementPlayCount("TestUser");
+            });
+
+            AddAssert("play count persisted in profile json", () =>
+                manager.GetProfiles().First(p => p.Name == "TestUser").PlayCount == 2);
+
+            AddAssert("play count loaded from json, not realm scores", () =>
+            {
+                var user = manager.GetLocalUserWithStatisticsForUsernameAsync("TestUser", new MosuRuleset().RulesetInfo).GetAwaiter().GetResult();
+                return user.Statistics?.PlayCount == 2;
+            });
+
+            AddAssert("incrementing unknown profile is a no-op", () =>
+            {
+                int before = manager.GetProfiles().Count;
+                manager.IncrementPlayCount("DoesNotExist");
+                return manager.GetProfiles().Count == before;
+            });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_PlayCountPersistsInProfileJson"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
+        [Test]
+        public void TestShouldCountPlayGate()
+        {
+            ScoreInfo score = null!;
+
+            AddStep("create score with a hit", () =>
+            {
+                score = new ScoreInfo
+                {
+                    TotalScore = 1000,
+                };
+                score.Statistics[HitResult.Great] = 1;
+            });
+            AddAssert("counts with hits and score", () => LocalUserManager.ShouldCountPlay(score));
+
+            AddStep("remove hits", () => score.Statistics.Clear());
+            AddAssert("no hits -> not counted", () => !LocalUserManager.ShouldCountPlay(score));
+
+            AddStep("add only misses", () => score.Statistics[HitResult.Miss] = 5);
+            AddAssert("misses only -> not counted", () => !LocalUserManager.ShouldCountPlay(score));
+
+            AddStep("zero score with hits", () =>
+            {
+                score.Statistics[HitResult.Great] = 1;
+                score.TotalScore = 0;
+            });
+            AddAssert("zero score -> not counted", () => !LocalUserManager.ShouldCountPlay(score));
+
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ShouldCountPlayGate"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
         private void SeedBeatmapsAndScores()
         {
             var osuRuleset = Realm.Run(r => r.Find<RulesetInfo>("osu"));

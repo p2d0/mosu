@@ -162,8 +162,26 @@ namespace osu.Game.Rulesets.MOsu.UI
             // Custom rulesets don't get replay files from Player.PrepareScoreForResultsAsync (legacy-only).
             if (scoreManager != null && player != null)
             {
+                // Count the play exactly like the main game counts one (pass / fail / quit, gated on hits).
+                // A play is only counted once per session, and only if the profile's play count should
+                // increase (at least one successful hit and a non-zero score).
+                bool playCounted = false;
+
+                void countPlay()
+                {
+                    var scoreInfo = player.Score.ScoreInfo;
+                    if (playCounted || !LocalUserManager.ShouldCountPlay(scoreInfo))
+                        return;
+
+                    playCounted = true;
+                    localUserManager?.IncrementPlayCount(scoreInfo.RealmUser.Username);
+                }
+
+                // Pass: the score has been recorded and results are being shown.
                 player.OnShowingResults += () =>
                 {
+                    countPlay();
+
                     var scoreInfo = player.Score.ScoreInfo;
                     if (scoreInfo.Ruleset.ShortName == Ruleset.RulesetInfo.ShortName && scoreInfo.Files.Count == 0)
                     {
@@ -176,6 +194,23 @@ namespace osu.Game.Rulesets.MOsu.UI
                         });
                     }
                 };
+
+                // Fail: mirrors upstream's submitFromFailOrQuit on fail.
+                player.GameplayState.HealthProcessor.Failed += () =>
+                {
+                    countPlay();
+                    return true;
+                };
+
+                // Quit mid-play: the player exits without showing results.
+                if (player.Parent is ScreenStack screenStack)
+                {
+                    screenStack.ScreenExited += (exited, _) =>
+                    {
+                        if (exited == player)
+                            countPlay();
+                    };
+                }
             }
             if (replayPlayer != null)
             {

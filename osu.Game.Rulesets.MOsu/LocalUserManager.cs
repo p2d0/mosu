@@ -10,6 +10,7 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Framework.Allocation;
 using osu.Game.Database;
@@ -110,6 +111,36 @@ namespace osu.Game.Rulesets.MOsu
             profiles.Add(new LocalProfile { Name = name, IsActive = false });
             setProfiles(profiles);
             ProfilesChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Whether a play should count towards play count, mirroring the main game's score submission
+        /// gates: at least one successful hit (misses don't count) and a non-zero total score.
+        /// </summary>
+        public static bool ShouldCountPlay(ScoreInfo score)
+            => score.TotalScore > 0 && score.Statistics.Any(s => s.Key.IsHit() && s.Value > 0);
+
+        /// <summary>
+        /// Increments the persisted play count for a profile, mirroring the main game:
+        /// a play is counted once its score is recorded (which only happens for passed plays locally).
+        /// </summary>
+        public void IncrementPlayCount(string profileName)
+        {
+            var profiles = getProfiles();
+            var profile = profiles.FirstOrDefault(p => p.Name == profileName);
+            if (profile == null)
+                return;
+
+            profile.PlayCount++;
+            setProfiles(profiles);
+
+            // keep the cached statistics fresh so the profile display updates immediately.
+            var key = $"{ruleset.RulesetInfo.ShortName}:{profileName}";
+            if (statisticsCache.TryGetValue(key, out var stats))
+            {
+                stats.PlayCount = profile.PlayCount;
+                StatisticsUpdated?.Invoke(new UserStatisticsUpdate(ruleset.RulesetInfo, null, stats));
+            }
         }
 
         public void RemoveProfile(string name)
@@ -317,6 +348,9 @@ namespace osu.Game.Rulesets.MOsu
             {
                 var allScores = GetBestScores(username, ruleset);
 
+                // Play count is persisted per profile in the profile JSON, incremented when a score is recorded.
+                int playCount = getProfiles().FirstOrDefault(p => p.Name == username)?.PlayCount ?? 0;
+
 
                 var scoresWithPP = allScores.Where(s => s.PP.HasValue).ToList();
 
@@ -358,7 +392,7 @@ namespace osu.Game.Rulesets.MOsu
                             Data = rankHistoryData,
                             Mode = ruleset.ShortName
                         },
-                        PlayCount = allScores.Count,
+                        PlayCount = playCount,
                         TotalScore = allScores.Sum(s => s.TotalScore),
                         PlayTime = (int)allScores.Sum(s => s.BeatmapInfo!.Length) / 3600,
                         MaxCombo = allScores.Any() ? allScores.Max(s => s.MaxCombo) : 0,
