@@ -87,6 +87,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             Children = new Drawable[]
             {
+                new OsuSpriteText
+                {
+                    Text = "Imports",
+                    Margin = new MarginPadding { Left = 15 },
+                    Font = OsuFont.GetFont(weight: FontWeight.Bold)
+                },
                 new SettingsButtonV2
                 {
                     Text = "Import from file",
@@ -97,9 +103,15 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
                 },
                 new ImportFromClipboardButton(),
+                new SettingsButtonV2
+                {
+                    Text = "Load examples",
+                    TooltipText = "Import example collections from embedded JSON file",
+                    Action = () => collectionImportProcessor?.ImportExampleCollections()
+                },
                 new OsuSpriteText
                 {
-                    Text = "Presets",
+                    Text = "Exports",
                     Margin = new MarginPadding { Left = 15 },
                     Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
@@ -109,19 +121,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     TooltipText = "Saves all mosu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
                 },
-                new OsuSpriteText
-                {
-                    Text = "Collections",
-                    Margin = new MarginPadding { Left = 15 },
-                    Font = OsuFont.GetFont(weight: FontWeight.Bold)
-                },
                 new ExportCollectionsButton(),
-                new SettingsButtonV2
-                {
-                    Text = "Load example collections",
-                    TooltipText = "Import example collections from embedded JSON file",
-                    Action = () => collectionImportProcessor?.ImportExampleCollections()
-                },
             };
         }
 
