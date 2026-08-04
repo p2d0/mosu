@@ -155,6 +155,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         private INotificationOverlay notifications { get; set; } = null!;
 
         private readonly Bindable<bool> selectAll = new Bindable<bool>(true);
+        // Suppresses selectAll <-> per-entry feedback while a bulk change is in flight.
+        private bool updatingSelections;
+
         private readonly List<(RulesetInfo ruleset, Bindable<bool> selected)> entries = new List<(RulesetInfo, Bindable<bool>)>();
 
         private FillFlowContainer rulesetList = null!;
@@ -206,8 +209,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             selectAll.ValueChanged += e =>
             {
+                if (updatingSelections) return;
+
+                updatingSelections = true;
                 foreach (var entry in entries)
                     entry.selected.Value = e.NewValue;
+                updatingSelections = false;
             };
         }
 
@@ -242,7 +249,11 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 entry.selected.ValueChanged += _ =>
                 {
+                    if (updatingSelections) return;
+
+                    updatingSelections = true;
                     selectAll.Value = entries.All(e => e.selected.Value);
+                    updatingSelections = false;
                 };
 
                 rulesetList.Add(new OsuCheckbox
@@ -347,6 +358,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         private INotificationOverlay notifications { get; set; } = null!;
 
         private readonly Bindable<bool> selectAll = new Bindable<bool>(true);
+        // Suppresses selectAll <-> per-entry feedback while a bulk change is in flight.
+        private bool updatingSelections;
+
         private readonly Bindable<bool> includeScores = new Bindable<bool>(false);
         private readonly List<(BeatmapCollection collection, Bindable<bool> selected)> entries = new List<(BeatmapCollection, Bindable<bool>)>();
 
@@ -404,8 +418,12 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             selectAll.ValueChanged += e =>
             {
+                if (updatingSelections) return;
+
+                updatingSelections = true;
                 foreach (var entry in entries)
                     entry.selected.Value = e.NewValue;
+                updatingSelections = false;
             };
         }
 
@@ -430,7 +448,11 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 entry.selected.ValueChanged += _ =>
                 {
+                    if (updatingSelections) return;
+
+                    updatingSelections = true;
                     selectAll.Value = entries.All(e => e.selected.Value);
+                    updatingSelections = false;
                 };
 
                 collectionList.Add(new OsuCheckbox
