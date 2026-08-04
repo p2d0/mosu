@@ -221,7 +221,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             AddStep("import from export", () =>
             {
-                var transferObjects = JsonConvert.DeserializeObject<List<CollectionWithScoresTransferObject>>(exportedJson);
+                var transferObjects = JsonConvert.DeserializeObject<List<CollectionTransferObject>>(exportedJson);
                 if (transferObjects == null) return;
 
                 Realm.Write(r =>
@@ -325,7 +325,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         private string RunExport()
         {
-            var collectionObjects = new List<CollectionWithScoresTransferObject>();
+            var collectionObjects = new List<CollectionTransferObject>();
 
             Realm.Run(r =>
             {
@@ -333,7 +333,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
                 foreach (var c in collections)
                 {
-                    var dto = new CollectionWithScoresTransferObject
+                    var dto = new CollectionTransferObject
                     {
                         Name = c.Name,
                         Beatmaps = new List<CollectionBeatmapEntry>()
@@ -388,7 +388,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
         private void ImportCollections()
         {
             string json = ReadEmbeddedCollections();
-            var transferObjects = JsonConvert.DeserializeObject<CollectionWithScoresTransferObject[]>(json);
+            var transferObjects = JsonConvert.DeserializeObject<CollectionTransferObject[]>(json);
 
             if (transferObjects == null || transferObjects.Length == 0) return;
 

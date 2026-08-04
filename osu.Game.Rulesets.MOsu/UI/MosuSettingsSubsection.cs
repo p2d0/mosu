@@ -233,7 +233,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     {
                         filename = "collections_with_scores.json";
                         notification.Text = "Fetching collections and scores...";
-                        var collectionObjects = new List<CollectionWithScoresTransferObject>();
+                        var collectionObjects = new List<CollectionTransferObject>();
 
                         realm.Run(r =>
                         {
@@ -245,7 +245,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             {
                                 if (notification.State == ProgressNotificationState.Cancelled) return;
 
-                                var dto = new CollectionWithScoresTransferObject
+                                var dto = new CollectionTransferObject
                                 {
                                     Name = c.Name,
                                     Beatmaps = new List<CollectionBeatmapEntry>()
@@ -394,7 +394,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             Text = "Import collections + scores from file";
             TooltipText = "Import a JSON file containing collections and scores";
-            Action = () => performer?.PerformFromScreen(screen => screen.Push(new CollectionWithScoresImportScreen()));
+            Action = () => performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen(importScores: true)));
         }
     }
 

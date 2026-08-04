@@ -39,21 +39,30 @@ namespace osu.Game.Rulesets.MOsu.Database
         }
 
         /// <summary>
-        /// Downloads <paramref name="setIds"/> one at a time (sequential), routing unavailable maps
-        /// straight to the mirror backup. Optional <paramref name="importScoresAfterSet"/> runs after
-        /// each successful set download and returns the number of scores imported for that set.
+        /// Filters beatmap set ids down to those not present (and not pending deletion) in the local realm.
         /// </summary>
-        public async Task<(int downloaded, int scoresImported)> DownloadSequential(
+        public static List<int> GetMissingSetIds(RealmAccess realm, IEnumerable<int> setIds)
+        {
+            return setIds.Where(id =>
+            {
+                var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", id).FirstOrDefault());
+                return existing == null;
+            }).ToList();
+        }
+
+        /// <summary>
+        /// Downloads <paramref name="setIds"/> one at a time (sequential), routing unavailable maps
+        /// straight to the mirror backup. Returns the number of sets successfully downloaded.
+        /// </summary>
+        public async Task<int> DownloadSequential(
             List<int> setIds,
             ProgressNotification notification,
-            Func<int, string>? getTitle = null,
-            Func<int, int>? importScoresAfterSet = null)
+            Func<int, string>? getTitle = null)
         {
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
             var failedSets = new HashSet<int>();
             var syncLock = new object();
             int downloaded = 0;
-            int totalScoresImported = 0;
 
             localDownloader.DownloadFailed += req =>
             {
@@ -80,12 +89,9 @@ namespace osu.Game.Rulesets.MOsu.Database
                 if (failedSets.Contains(setId)) continue;
                 downloaded++;
 
-                int scores = importScoresAfterSet?.Invoke(setId) ?? 0;
-                totalScoresImported += scores;
-
                 schedule(() =>
                 {
-                    notification.Text = $"Downloaded \"{title}\"" + (importScoresAfterSet != null ? $", imported {scores} scores" : string.Empty) + $" ({i + 1}/{setIds.Count})...";
+                    notification.Text = $"Downloaded \"{title}\" ({i + 1}/{setIds.Count})...";
                     notification.Progress = (float)(i + 1) / setIds.Count;
                 });
             }
@@ -95,13 +101,11 @@ namespace osu.Game.Rulesets.MOsu.Database
                 notification.Text = $"Downloaded {downloaded} maps.";
                 if (failedSets.Count > 0)
                     notification.Text += $" ({failedSets.Count} unavailable)";
-                if (importScoresAfterSet != null)
-                    notification.Text += $" | {totalScoresImported} scores imported.";
                 notification.Progress = 1;
                 notification.State = ProgressNotificationState.Completed;
             });
 
-            return (downloaded, totalScoresImported);
+            return downloaded;
         }
 
         private async Task ResolveSet(int setId, BeatmapModelDownloader localDownloader, object syncLock, HashSet<int> failedSets)

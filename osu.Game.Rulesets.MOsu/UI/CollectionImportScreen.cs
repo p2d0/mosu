@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
@@ -10,25 +7,19 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Game.Beatmaps;
-using osu.Game.Collections;
-using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Online.API;
-using osu.Game.Online.API.Requests;
-using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Screens;
 using osuTK;
-using Realms;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -36,6 +27,8 @@ namespace osu.Game.Rulesets.MOsu.UI
     {
         public override bool HideOverlaysOnEnter => true;
         public override bool DisallowExternalBeatmapRulesetChanges => true;
+
+        private readonly bool importScores;
 
         private OsuFileSelector fileSelector = null!;
         private Container contentContainer = null!;
@@ -60,6 +53,11 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
+
+        public CollectionImportScreen(bool importScores = false)
+        {
+            this.importScores = importScores;
+        }
 
         [BackgroundDependencyLoader]
         private void load()
@@ -119,7 +117,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                             },
                             importButton = new RoundedButton
                             {
-                                Text = "Import & Download",
+                                Text = importScores ? "Import Collections & Scores" : "Import & Download",
                                 Anchor = Anchor.BottomCentre,
                                 Origin = Anchor.BottomCentre,
                                 RelativeSizeAxes = Axes.X,
@@ -165,84 +163,16 @@ namespace osu.Game.Rulesets.MOsu.UI
             importButton.Enabled.Value = false;
             currentFileText.Text = "Reading file...";
 
-            // Run the initial DB import in a task to prevent UI freeze during JSON parsing
+            // Run the import in a task to prevent UI freeze during JSON parsing. The shared processor
+            // downloads in the background and posts its own notifications, so this screen can exit once
+            // collections are written while the download continues.
             Task.Run(() =>
             {
                 try
                 {
                     string json = File.ReadAllText(path);
-                    var collections = JsonConvert.DeserializeObject<List<CollectionTransferObject>>(json);
-
-                    if (collections == null || collections.Count == 0)
-                    {
-                        Schedule(() =>
-                        {
-                            notifications?.Post(new SimpleErrorNotification { Text = "No collections found in file." });
-                            importButton.Enabled.Value = true;
-                            currentFileText.Text = "Import failed.";
-                        });
-                        return;
-                    }
-
-                    HashSet<string> allImportedHashes = new HashSet<string>();
-                    HashSet<int> allSetIds = new HashSet<int>();
-                    int importedCount = 0;
-
-                    // 1. Synchronously update Realm (Must be done on a thread safe for Realm, Task.Run with new context is fine)
-                    realm.Write(r =>
-                    {
-                        foreach (var c in collections)
-                        {
-                            var existing = r.All<BeatmapCollection>().FirstOrDefault(bc => bc.Name == c.Name);
-
-                            if (existing == null)
-                            {
-                                existing = new BeatmapCollection(c.Name);
-                                r.Add(existing);
-                                importedCount++;
-                            }
-
-                            foreach (var beatmapEntry in c.Beatmaps)
-                            {
-                                if (!existing.BeatmapMD5Hashes.Contains(beatmapEntry.BeatmapMD5Hash))
-                                    existing.BeatmapMD5Hashes.Add(beatmapEntry.BeatmapMD5Hash);
-
-                                allImportedHashes.Add(beatmapEntry.BeatmapMD5Hash);
-                                allSetIds.Add(beatmapEntry.BeatmapSetId);
-                            }
-                        }
-                    });
-
-                    // 2. Identify missing sets immediately
-                    var missingSetIds = allSetIds.Where(id =>
-                    {
-                        var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", id).FirstOrDefault());
-                        return existing == null;
-                    }).ToList();
-
-                    Schedule(() =>
-                    {
-                        notifications?.Post(new SimpleNotification
-                        {
-                            Text = $"Imported {importedCount} collections."
-                        });
-
-                        // 3. Start Background Process with Progress Notification
-                        if (missingSetIds.Count > 0)
-                        {
-                            if (!api.IsLoggedIn)
-                            {
-                                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
-                            }
-                            else
-                            {
-                                _ = startBackgroundDownload(missingSetIds);
-                            }
-                        }
-
-                        // 4. Close the screen immediately so user can do other things
-                        this.Exit();
-                    });
+                    var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
+                    processor.Import(json, importScores, onCollectionsImported: () => this.Exit());
                 }
                 catch (Exception ex)
                 {
@@ -253,26 +183,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     });
                 }
             });
-        }
-
-        private async Task startBackgroundDownload(List<int> missingSetIds)
-        {
-            if (!api.IsLoggedIn)
-            {
-                notifications?.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." });
-                return;
-            }
-
-            var notification = new ProgressNotification
-            {
-                State = ProgressNotificationState.Active,
-                Text = "Downloading collection maps...",
-            };
-
-            notifications.Post(notification);
-
-            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, action => Schedule(action));
-            await downloader.DownloadSequential(missingSetIds, notification);
         }
     }
 }

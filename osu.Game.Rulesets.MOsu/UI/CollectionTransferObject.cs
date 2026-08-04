@@ -7,12 +7,6 @@ namespace osu.Game.Rulesets.MOsu.UI {
         public List<CollectionBeatmapEntry> Beatmaps { get; set; } = new List<CollectionBeatmapEntry>();
     }
 
-    public class CollectionWithScoresTransferObject
-    {
-        public string Name { get; set; } = string.Empty;
-        public List<CollectionBeatmapEntry> Beatmaps { get; set; } = new List<CollectionBeatmapEntry>();
-    }
-
     public class CollectionBeatmapEntry
     {
         public int BeatmapSetId { get; set; }
