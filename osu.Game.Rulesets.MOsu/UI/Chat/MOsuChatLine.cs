@@ -72,9 +72,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
         private static string? extractModString(string content)
         {
-            // Look for patterns like "+HD HR DT" or "+HDHRDT" — positive mods only (no '-').
-            // Match sequences starting with + followed by mod acronyms
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:\+[A-Z]{2,4}(?:\s*\+?[A-Z]{2,4})*)");
+            // Look for patterns like "+HD HR DT" or "+HDHRDT" or "+HD+HR-DT"
+            // Match sequences starting with + or - followed by mod acronyms
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content, @"(?:[+\-][A-Z]{2,4}(?:\s*[+\-]?[A-Z]{2,4})*)");
             return match.Success ? match.Value : null;
         }
 
