@@ -137,6 +137,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen()));
                     }
                 },
+                new ImportCollectionsFromClipboardButton(),
                 new SettingsButtonV2
                 {
                     Text = "Load example collections",
@@ -369,6 +370,46 @@ namespace osu.Game.Rulesets.MOsu.UI
             });
         }
 
+    }
+
+    public partial class ImportCollectionsFromClipboardButton : SettingsButtonV2
+    {
+        [Resolved]
+        private Clipboard clipboard { get; set; } = null!;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
+
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmapManager { get; set; } = null!;
+
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            Text = "Import collections from clipboard";
+            TooltipText = "Imports collection JSON from the clipboard. Scores are imported automatically if the file contains them.";
+            Action = importFromClipboard;
+        }
+
+        private void importFromClipboard()
+        {
+            string? json = clipboard.GetText();
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = "Clipboard is empty." });
+                return;
+            }
+
+            var processor = new CollectionImportProcessor(realm, notifications, api, beatmapManager, action => Schedule(action));
+            _ = processor.Import(json);
+        }
     }
 
     public partial class ImportPresetButton : SettingsButtonV2
