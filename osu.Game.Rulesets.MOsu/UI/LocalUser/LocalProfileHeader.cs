@@ -19,9 +19,8 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
     {
         public Bindable<UserProfileData?> User = new Bindable<UserProfileData?>();
 
-        private CentreHeaderContainer centreHeaderContainer;
-        private DetailHeaderContainer detailHeaderContainer;
         private LocalTopHeaderContainer localTopHeader = null!;
+        private DetailHeaderContainer detailHeaderContainer;
         private FillFlowContainer contentContainer = null!;
 
         [Resolved]
@@ -40,7 +39,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
             // TabControl.AddItem(LayoutStrings.HeaderUsersModding);
 
             // Haphazardly guaranteed by OverlayHeader constructor (see CreateBackground / CreateContent).
-            Debug.Assert(centreHeaderContainer != null);
             Debug.Assert(detailHeaderContainer != null);
         }
 
@@ -94,11 +92,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                     User = { BindTarget = User },
                 },
                 detailHeaderContainer = new LocalDetailHeaderContainer
-                {
-                    RelativeSizeAxes = Axes.X,
-                    User = { BindTarget = User },
-                },
-                centreHeaderContainer = new CentreHeaderContainer
                 {
                     RelativeSizeAxes = Axes.X,
                     User = { BindTarget = User },
