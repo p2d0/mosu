@@ -84,7 +84,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
         private static OsuBeatmap decodeManticora()
         {
-            var fullpath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", real_beatmap_filename);
+            var fullpath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "TestResources", real_beatmap_filename);
             Assert.That(File.Exists(fullpath), Is.True, $"Beatmap file not found at {fullpath}");
 
             // Highest-starred osu difficulty from the .osz, matching the autoplay test scene.
