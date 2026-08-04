@@ -175,7 +175,6 @@ namespace osu.Game.Rulesets.MOsu
                         new OsuModCircleGeneration(),
                         new OsuModRandomV2(),
                         new OsuModRandom(),
-                        new OsuModSquare(),
                         new OsuModSpacingAdjust(),
                         new OsuModMirror(),
                         new MultiMod(new OsuModAlternate(), new OsuModSingleTap()),
