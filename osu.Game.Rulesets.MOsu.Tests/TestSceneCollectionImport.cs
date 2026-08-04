@@ -425,12 +425,16 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             AddStep("format message with preset link", () =>
             {
-                // Same format sendCurrentMods posts: mods text + invisible osu://preset/ markdown link.
+                // Same format sendCurrentMods posts: text + invisible osu://preset/ markdown link.
                 message = new Message
                 {
-                    Content = $"is playing with <osu> +HD +DT [\u200B](osu://preset/{Convert.ToBase64String(new byte[] { 1, 2, 3 }) })"
+                    Content = $"is playing <MOsu!> with [\u200B](osu://preset/{Convert.ToBase64String(new byte[] { 1, 2, 3 }) })"
                 };
                 MessageFormatter.FormatMessage(message);
+
+                // Log the parsed links for diagnosis.
+                foreach (var link in message.Links)
+                    Console.WriteLine($"link: url=[{link.Url}] action={link.Action}");
             });
 
             AddAssert("preset link detected in Message.Links", () =>
