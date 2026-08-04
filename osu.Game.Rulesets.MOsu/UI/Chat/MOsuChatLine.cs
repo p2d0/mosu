@@ -196,7 +196,8 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         }
 
         /// <summary>
-        /// Builds a hover tooltip describing the mods in a mod string (acronyms with their names).
+        /// Builds a hover tooltip describing the mods in a mod string, including their
+        /// customizations (non-default settings) like the main game's mod tooltip.
         /// </summary>
         private string? buildModTooltip(string modString)
         {
@@ -216,7 +217,17 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             if (mods.Count == 0)
                 return null;
 
-            return string.Join("\n", mods.Select(m => $"{m.Acronym} — {m.Name}"));
+            var lines = new List<string>();
+
+            foreach (var mod in mods)
+            {
+                lines.Add($"{mod.Acronym} — {mod.Name}");
+
+                foreach (var (setting, value) in mod.SettingDescription)
+                    lines.Add($"  {setting}: {value}");
+            }
+
+            return string.Join("\n", lines);
         }
 
         private PresetExportDto? extractPresetFromLinks(List<Link> links)
