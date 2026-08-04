@@ -323,22 +323,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 if (notification.State == ProgressNotificationState.Cancelled) break;
 
-                try
-                {
-                    if (!await downloader.IsSetAvailable(setId))
-                    {
-                        downloader.DownloadViaMirror(setId, lockObj, failedSets);
-                        continue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, $"Lookup failed for set {setId}, attempting normal download.");
-                }
-
-                var onlineSet = new APIBeatmapSet { OnlineID = setId };
-                if (localDownloader.GetExistingDownload(onlineSet) == null)
-                    localDownloader.Download(onlineSet);
+                await downloader.ResolveSet(setId, localDownloader, lockObj, failedSets);
             }
         }
     }

@@ -9,6 +9,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 
@@ -36,9 +37,37 @@ namespace osu.Game.Rulesets.MOsu.Database
         public bool IsLoggedIn => api.IsLoggedIn;
 
         /// <summary>
+        /// Resolves a single set download: checks availability on osu! and either queues the official
+        /// download (via <paramref name="localDownloader"/>) or falls back to the mirror backup.
+        /// </summary>
+        public async Task ResolveSet(int setId, BeatmapModelDownloader localDownloader, object syncLock, HashSet<int> failedSets)
+        {
+            var onlineSet = new APIBeatmapSet { OnlineID = setId };
+
+            try
+            {
+                if (!await IsSetAvailable(setId))
+                {
+                    Logger.Log($"Set {setId} not found on osu!, using nekoha mirror backup...");
+                    DownloadViaMirror(setId, syncLock, failedSets);
+                }
+                else if (localDownloader.GetExistingDownload(onlineSet) == null)
+                {
+                    localDownloader.Download(onlineSet);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, $"Lookup failed for set {setId}, attempting normal download.");
+                if (localDownloader.GetExistingDownload(onlineSet) == null)
+                    localDownloader.Download(onlineSet);
+            }
+        }
+
+        /// <summary>
         /// Checks whether a beatmap set still exists online (not deleted/unavailable) using the osu! API v2 lookup.
         /// </summary>
-        public async Task<bool> IsSetAvailable(int setId)
+        private async Task<bool> IsSetAvailable(int setId)
         {
             var request = new GetBeatmapSetRequest(setId);
             var tcs = new TaskCompletionSource<bool>();

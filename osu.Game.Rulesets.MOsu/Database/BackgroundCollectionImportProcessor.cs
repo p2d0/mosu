@@ -330,26 +330,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                     notification.Progress = (float)i / missingSetIds.Count;
                 });
 
-                var onlineSet = new APIBeatmapSet { OnlineID = setId };
-
-                try
-                {
-                    if (!await downloader.IsSetAvailable(setId))
-                    {
-                        Logger.Log($"Set {setId} not found on osu!, using nekoha mirror backup...");
-                        downloader.DownloadViaMirror(setId, lockObj, failedSets);
-                    }
-                    else if (localDownloader.GetExistingDownload(onlineSet) == null)
-                    {
-                        localDownloader.Download(onlineSet);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, $"Lookup failed for set {setId}, attempting normal download.");
-                    if (localDownloader.GetExistingDownload(onlineSet) == null)
-                        localDownloader.Download(onlineSet);
-                }
+                await downloader.ResolveSet(setId, localDownloader, lockObj, failedSets);
 
                 // Wait for this specific set to appear in realm
                 await waitForSetInRealm(setId);
