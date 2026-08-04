@@ -14,6 +14,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Scoring;
@@ -53,8 +54,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
             {
                 if (r.Find<RulesetInfo>("osu") == null)
                     r.Add(new RulesetInfo { OnlineID = 0, ShortName = "osu" });
+                // Seed from the ruleset class so InstantiationInfo is set (needed for CreateInstance in score import).
                 if (r.Find<RulesetInfo>("mosu") == null)
-                    r.Add(new RulesetInfo { OnlineID = 0, ShortName = "mosu" });
+                    r.Add(new MosuRuleset().RulesetInfo);
             });
         }
 
@@ -271,6 +273,80 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddWaitStep("wait for screenshot", 1);
         }
 
+        [Test]
+        public void TestScoreExportIncludesPlayer()
+        {
+            AddStep("seed beatmaps and scores", () => SeedBeatmapsAndScores());
+
+            ScoreExportDto? exported = null;
+            AddStep("export score via production mapping", () =>
+            {
+                var score = Realm.Run(r => r.All<ScoreInfo>().FirstOrDefault(s => s.TotalScore == 100000));
+                exported = ScoreExportDto.FromScore(score!);
+            });
+
+            AddAssert("player online id exported", () => exported!.UserOnlineId == 999);
+            AddAssert("player username exported", () => exported!.UserUsername == "TestUser");
+
+            AddAssert("player survives json round-trip", () =>
+            {
+                string json = JsonConvert.SerializeObject(exported);
+                var back = JsonConvert.DeserializeObject<ScoreExportDto>(json);
+                return back != null && back.UserOnlineId == 999 && back.UserUsername == "TestUser";
+            });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ScoreExportIncludesPlayer"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
+        [Test]
+        public void TestScoreImportRestoresPlayer()
+        {
+            AddStep("seed beatmaps and scores", () => SeedBeatmapsAndScores());
+
+            AddStep("import collection json with score player", () =>
+            {
+                var dto = new CollectionTransferObject
+                {
+                    Name = "Player test",
+                    Beatmaps = new List<CollectionBeatmapEntry>
+                    {
+                        new CollectionBeatmapEntry
+                        {
+                            BeatmapSetId = 100,
+                            BeatmapMD5Hash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                            Scores = new List<ScoreExportDto>
+                            {
+                                new ScoreExportDto
+                                {
+                                    BeatmapHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                                    RulesetShortName = "mosu",
+                                    TotalScore = 123456,
+                                    Accuracy = 0.99,
+                                    MaxCombo = 100,
+                                    Rank = "S",
+                                    Date = DateTimeOffset.UtcNow,
+                                    UserOnlineId = 4242,
+                                    UserUsername = "PlayerOne",
+                                }
+                            }
+                        }
+                    }
+                };
+
+                string json = JsonConvert.SerializeObject(new List<CollectionTransferObject> { dto });
+                var processor = new CollectionImportProcessor(Realm, new TestNotificationOverlay(), new DummyAPIAccess(), beatmapManager, action => action());
+                _ = processor.Import(json);
+            });
+
+            AddUntilStep("score imported with player", () =>
+            {
+                var score = Realm.Run(r => r.All<ScoreInfo>().FirstOrDefault(s => s.TotalScore == 123456));
+                return score != null && score.RealmUser.OnlineID == 4242 && score.RealmUser.Username == "PlayerOne";
+            });
+            AddStep("screenshot", () => ScreenshotHelper.Capture(gameHost, "CollectionImport_ScoreImportRestoresPlayer"));
+            AddWaitStep("wait for screenshot", 1);
+        }
+
         private void SeedBeatmapsAndScores()
         {
             var osuRuleset = Realm.Run(r => r.Find<RulesetInfo>("osu"));
@@ -357,18 +433,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
                         foreach (var s in scores)
                         {
-                            entry.Scores.Add(new ScoreExportDto
-                            {
-                                BeatmapHash = s.BeatmapInfo!.MD5Hash,
-                                RulesetShortName = s.Ruleset!.ShortName!,
-                                TotalScore = s.TotalScore,
-                                Accuracy = s.Accuracy,
-                                MaxCombo = s.MaxCombo,
-                                Rank = s.Rank.ToString(),
-                                Date = s.Date,
-                                Mods = s.Mods.Select(m => new APIMod(m)).ToList(),
-                                Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
-                            });
+                            entry.Scores.Add(ScoreExportDto.FromScore(s));
                         }
 
                         dto.Beatmaps.Add(entry);

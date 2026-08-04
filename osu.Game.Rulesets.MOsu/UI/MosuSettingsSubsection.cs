@@ -371,21 +371,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                                         .ToList();
 
                                     foreach (var s in scores)
-                                    {
-                                        entry.Scores.Add(new ScoreExportDto
-                                        {
-                                            BeatmapHash = s.BeatmapInfo!.MD5Hash,
-                                            RulesetShortName = s.Ruleset.ShortName,
-                                            BeatmapDifficultyName = s.BeatmapInfo.DifficultyName,
-                                            TotalScore = s.TotalScore,
-                                            Accuracy = s.Accuracy,
-                                            MaxCombo = s.MaxCombo,
-                                            Rank = s.Rank.ToString(),
-                                            Date = s.Date,
-                                            Mods = s.Mods.Select(m => new APIMod(m)).ToList(),
-                                            Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
-                                        });
-                                    }
+                                        entry.Scores.Add(ScoreExportDto.FromScore(s));
                                 }
 
                                 dto.Beatmaps.Add(entry);

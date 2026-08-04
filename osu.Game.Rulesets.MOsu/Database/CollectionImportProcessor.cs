@@ -182,7 +182,16 @@ namespace osu.Game.Rulesets.MOsu.Database
                                 Mods = mods,
                             };
 
-                            score.User = new APIUser { Username = string.IsNullOrEmpty(sDto.CustomName) ? "Example mods configuration" : sDto.CustomName, Id = -123 };
+                            // Restore the player from the exported user fields, falling back to legacy CustomName.
+                            score.User = new APIUser
+                            {
+                                Id = sDto.UserOnlineId > 0 ? sDto.UserOnlineId : -123,
+                                Username = !string.IsNullOrEmpty(sDto.UserUsername)
+                                    ? sDto.UserUsername
+                                    : !string.IsNullOrEmpty(sDto.CustomName)
+                                        ? sDto.CustomName
+                                        : "Example mods configuration",
+                            };
 
                             foreach (var stat in sDto.Statistics)
                             {
