@@ -17,7 +17,8 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
-using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Rulesets.Configuration;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
@@ -28,10 +29,10 @@ namespace osu.Game.Rulesets.MOsu.Database
     public partial class BackgroundCollectionImportProcessor : Component
     {
         [Resolved]
-        private MOsuRealmAccess mosuRealm { get; set; } = null!;
+        private RealmAccess realm { get; set; } = null!;
 
         [Resolved]
-        private RealmAccess realm { get; set; } = null!;
+        private IRulesetConfigCache configCache { get; set; } = null!;
 
         [Resolved]
         private INotificationOverlay notifications { get; set; } = null!;
@@ -46,17 +47,17 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         private const string resource_name = "osu.Game.Rulesets.MOsu.example_collections.json";
 
+        private MOsuRulesetConfigManager config = null!;
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
+            config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+
             Logger.Log("Beginning MOsu default collection import check..");
 
-            bool alreadyImported = mosuRealm.Run(r =>
-            {
-                var state = r.All<PresetImportState>().FirstOrDefault();
-                return state?.CollectionsImported ?? false;
-            });
+            bool alreadyImported = config.Get<bool>(MOsuRulesetSetting.CollectionsImported);
 
             if (!alreadyImported)
                 ImportExampleCollections();
@@ -151,14 +152,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         private void markCollectionsImported()
         {
-            mosuRealm.Write(r =>
-            {
-                var state = r.All<PresetImportState>().FirstOrDefault();
-                if (state == null)
-                    r.Add(new PresetImportState { CollectionsImported = true });
-                else
-                    state.CollectionsImported = true;
-            });
+            Schedule(() => config.SetValue(MOsuRulesetSetting.CollectionsImported, true));
         }
 
         private List<int> getMissingSetIds(HashSet<int> allSetIds)

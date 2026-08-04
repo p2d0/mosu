@@ -12,6 +12,9 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Rulesets;
+using osu.Game.Rulesets.Configuration;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Chat;
@@ -91,6 +94,8 @@ namespace osu.Game.Rulesets.MOsu.UI
         private RealmAccess realm { get; set; } = null!;
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
+        [Resolved]
+        private IRulesetConfigCache configCache { get; set; } = null!;
 
         private readonly OsuRuleset ruleset;
 
@@ -109,17 +114,11 @@ namespace osu.Game.Rulesets.MOsu.UI
         private async Task InitializeAsync()
         {
             // Heavy work off the game thread.
-            var mosuRealm = host.Dependencies.Get<MOsuRealmAccess>();
-            if (mosuRealm == null)
-            {
-                mosuRealm = new MOsuRealmAccess(host.Storage);
-                host.Dependencies.Cache(mosuRealm);
-            }
-
             var userManager = host.Dependencies.Get<LocalUserManager>();
             if (userManager == null)
             {
-                userManager = new LocalUserManager(ruleset, realm, mosuRealm, api);
+                var config = (MOsuRulesetConfigManager)configCache.GetConfigFor(ruleset);
+                userManager = new LocalUserManager(ruleset, realm, config, api);
                 host.Dependencies.Cache(userManager);
             }
 

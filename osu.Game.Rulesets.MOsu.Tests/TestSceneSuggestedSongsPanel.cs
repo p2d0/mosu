@@ -129,7 +129,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             AddUntilStep("wait for cards", () => panel.ChildrenOfType<BeatmapCard>().Count() > 0);
 
             AddAssert("has cards", () => panel.ChildrenOfType<BeatmapCard>().Count() > 0);
-            AddAssert("max 18 cards (9 spotlight + 9 similar)", () => panel.ChildrenOfType<BeatmapCard>().Count() <= 18);
+            AddAssert("max 36 cards (12 each: spotlight + similar + artist)", () => panel.ChildrenOfType<BeatmapCard>().Count() <= 36);
             CaptureScreenshot("SuggestedSongsPanelLoadsCards");
         }
 

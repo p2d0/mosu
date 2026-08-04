@@ -1,10 +1,7 @@
-using Realms;
-
 namespace osu.Game.Rulesets.MOsu.Models
 {
-    public class LocalProfile : RealmObject
+    public class LocalProfile
     {
-        [PrimaryKey]
         public string Name { get; set; } = "";
 
         public bool IsActive { get; set; }

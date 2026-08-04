@@ -12,8 +12,8 @@ using osu.Game.Collections;
 using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
-using osu.Game.Rulesets.MOsu.Database;
-using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Configuration;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Scoring;
@@ -31,15 +31,21 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [Resolved]
         private GameHost gameHost { get; set; } = null!;
 
-        protected MOsuRealmAccess mosuRealm { get; set; } = null!;
+        protected MOsuRulesetConfigManager config { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
 
         [BackgroundDependencyLoader]
         private void load()
         {
             Dependencies.Cache(Realm);
-            mosuRealm = new MOsuRealmAccess(LocalStorage);
-            Dependencies.Cache(mosuRealm);
+
+            // MOsuRulesetConfigManager must be constructed on the update thread (it loads from the realm in its ctor).
+            // Under dotnet test the game host already caches one, so reuse it when present.
+            Scheduler.Add(() =>
+            {
+                config = (MOsuRulesetConfigManager?)Dependencies.Get(typeof(MOsuRulesetConfigManager))
+                      ?? new MOsuRulesetConfigManager(new SettingsStore(Realm), new OsuRuleset().RulesetInfo);
+            });
             Dependencies.Cache(new OsuRuleset().RulesetInfo);
 
             // Ensure osu! ruleset exists in realm
@@ -64,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     r.RemoveAll<BeatmapInfo>();
                     r.RemoveAll<BeatmapSetInfo>();
                 });
-                mosuRealm.Write(r => r.RemoveAll<PresetImportState>());
+                config.SetValue(MOsuRulesetSetting.CollectionsImported, false);
             });
         }
 
@@ -405,14 +411,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 }
             });
 
-            mosuRealm.Write(r =>
-            {
-                var state = r.All<PresetImportState>().FirstOrDefault();
-                if (state == null)
-                    r.Add(new PresetImportState { CollectionsImported = true });
-                else
-                    state.CollectionsImported = true;
-            });
+            config.SetValue(MOsuRulesetSetting.CollectionsImported, true);
         }
 
         private static string ReadEmbeddedCollections()

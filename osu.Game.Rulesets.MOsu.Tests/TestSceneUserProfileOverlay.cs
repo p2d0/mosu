@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -7,6 +8,8 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Rulesets.MOsu.Configuration;
+using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Models;
@@ -40,12 +43,11 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             AddStep("create test profiles", () =>
             {
-                mosuRealm.Write(r =>
+                config.SetValue(MOsuRulesetSetting.ProfilesJson, new List<LocalProfile>
                 {
-                    r.RemoveAll<LocalProfile>();
-                    r.Add(new LocalProfile { Name = "PlayerOne", IsActive = true });
-                    r.Add(new LocalProfile { Name = "PlayerTwo", IsActive = false });
-                });
+                    new LocalProfile { Name = "PlayerOne", IsActive = true },
+                    new LocalProfile { Name = "PlayerTwo", IsActive = false },
+                }.ToJson());
             });
 
             AddStep("seed scores for PlayerOne", () =>

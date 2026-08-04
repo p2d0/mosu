@@ -12,7 +12,8 @@ using osu.Game.Database;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Rulesets.Configuration;
+using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.UI;
 using Realms;
 
@@ -21,13 +22,15 @@ namespace osu.Game.Rulesets.MOsu.Database
     public partial class BackgroundPresetImportProcessor : Component
     {
         [Resolved]
-        private MOsuRealmAccess mosuRealm { get; set; } = null!;
-
-        [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
         [Resolved]
+        private IRulesetConfigCache configCache { get; set; } = null!;
+
+        [Resolved]
         private INotificationOverlay notifications { get; set; } = null!;
+
+        private MOsuRulesetConfigManager config = null!;
 
         private const string resource_name = "osu.Game.Rulesets.MOsu.osu_mod_presets.json";
 
@@ -35,17 +38,15 @@ namespace osu.Game.Rulesets.MOsu.Database
         {
             base.LoadComplete();
 
+            config = configCache.GetConfigFor(new OsuRuleset()) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
+
             Task.Factory.StartNew(() =>
             {
                 try
                 {
                     Logger.Log("Beginning MOsu default preset import check..");
 
-                    bool alreadyImported = mosuRealm.Run(r =>
-                    {
-                        var state = r.All<PresetImportState>().FirstOrDefault();
-                        return state?.Imported ?? false;
-                    });
+                    bool alreadyImported = config.Get<bool>(MOsuRulesetSetting.PresetsImported);
 
                     if (alreadyImported)
                     {
@@ -97,18 +98,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     Logger.Log($"Imported {importedCount} MOsu default presets.");
 
-                    mosuRealm.Write(r =>
-                    {
-                        var state = r.All<PresetImportState>().FirstOrDefault();
-                        if (state == null)
-                        {
-                            r.Add(new PresetImportState { Imported = true });
-                        }
-                        else
-                        {
-                            state.Imported = true;
-                        }
-                    });
+                    Schedule(() => config.SetValue(MOsuRulesetSetting.PresetsImported, true));
 
                     Schedule(() => notifications.Post(new SimpleNotification
                     {

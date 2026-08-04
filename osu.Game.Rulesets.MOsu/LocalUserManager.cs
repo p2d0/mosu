@@ -7,6 +7,8 @@ using osu.Framework.Logging;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.MOsu.Configuration;
+using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Models;
 using osu.Game.Scoring;
 using osu.Framework.Allocation;
@@ -22,7 +24,7 @@ namespace osu.Game.Rulesets.MOsu
     public partial class LocalUserManager : Component
     {
         private readonly RealmAccess realm;
-        private readonly osu.Game.Rulesets.MOsu.Database.MOsuRealmAccess mosuRealm;
+        private readonly MOsuRulesetConfigManager config;
         private readonly IAPIProvider api;
         // NOTE all in one for now
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
@@ -47,45 +49,54 @@ namespace osu.Game.Rulesets.MOsu
 
             if (activeProfileBindable.Value == name) return;
             activeProfileBindable.Value = name;
-            mosuRealm.Write(r =>
-            {
-                foreach (var p in r.All<LocalProfile>())
-                    p.IsActive = p.Name == name;
-            });
+
+            var profiles = getProfiles();
+            foreach (var p in profiles)
+                p.IsActive = p.Name == name;
+            setProfiles(profiles);
+
             ProfileChanged?.Invoke(name);
             _ = RefreshStatisticsAsync(ruleset.RulesetInfo);
         }
 
-        public List<LocalProfile> GetProfiles()
+        public List<LocalProfile> GetProfiles() => getProfiles();
+
+        private List<LocalProfile> getProfiles()
         {
-            return mosuRealm.Run(r => r.All<LocalProfile>().OrderBy(p => p.Name).ToList().Detach());
+            var json = config.Get<string>(MOsuRulesetSetting.ProfilesJson);
+            return json.FromJson<List<LocalProfile>>() ?? new List<LocalProfile>();
         }
+
+        private void setProfiles(List<LocalProfile> profiles)
+            => config.SetValue(MOsuRulesetSetting.ProfilesJson, profiles.ToJson());
 
         public void EnsureDefaultProfile()
         {
-            mosuRealm.Write(r =>
+            var profiles = getProfiles();
+
+            if (profiles.Count == 0 && api.LocalUser.Value?.Username is string username && !string.IsNullOrEmpty(username))
             {
-                if (r.All<LocalProfile>().Count() == 0 && api.LocalUser.Value?.Username is string username && !string.IsNullOrEmpty(username))
-                {
-                    r.Add(new LocalProfile { Name = username, IsActive = true });
-                    SetActiveProfile(username);
-                }
+                profiles.Add(new LocalProfile { Name = username, IsActive = true });
+                setProfiles(profiles);
+                SetActiveProfile(username);
+            }
+            else
+            {
+                var active = profiles.FirstOrDefault(p => p.IsActive);
+                if (active != null)
+                    SetActiveProfile(active.Name);
                 else
                 {
-                    var active = r.All<LocalProfile>().FirstOrDefault(p => p.IsActive);
-                    if (active != null)
-                        SetActiveProfile(active.Name);
-                    else
+                    var first = profiles.FirstOrDefault();
+                    if (first != null)
                     {
-                        var first = r.All<LocalProfile>().FirstOrDefault();
-                        if (first != null)
-                        {
-                            first.IsActive = true;
-                            SetActiveProfile(first.Name);
-                        }
+                        first.IsActive = true;
+                        setProfiles(profiles);
+                        SetActiveProfile(first.Name);
                     }
                 }
-            });
+            }
+
             // Initialize statistics after profiles are ensured
             if (statisticsInitialised == null || statisticsInitialised.IsCompleted)
                 statisticsInitialised = InitialiseStatisticsAsync();
@@ -93,36 +104,35 @@ namespace osu.Game.Rulesets.MOsu
 
         public void AddProfile(string name)
         {
-            mosuRealm.Write(r =>
-            {
-                if (r.All<LocalProfile>().Any(p => p.Name == name))
-                    return;
-                r.Add(new LocalProfile { Name = name, IsActive = false });
-            });
+            var profiles = getProfiles();
+            if (profiles.Any(p => p.Name == name))
+                return;
+            profiles.Add(new LocalProfile { Name = name, IsActive = false });
+            setProfiles(profiles);
             ProfilesChanged?.Invoke();
         }
 
         public void RemoveProfile(string name)
         {
             string? fallbackName = null;
-            mosuRealm.Write(r =>
-            {
-                var profile = r.All<LocalProfile>().FirstOrDefault(p => p.Name == name);
-                if (profile != null && r.All<LocalProfile>().Count() > 1)
-                {
-                    if (ActiveProfile.Value == name)
-                    {
-                        fallbackName = r.All<LocalProfile>().FirstOrDefault(p => p.Name != name)?.Name;
-                    }
-                    r.Remove(profile);
+            var profiles = getProfiles();
+            var profile = profiles.FirstOrDefault(p => p.Name == name);
 
-                    // Remove all scores under this profile for mosusu ruleset only
-                    realm.Write(rm =>
-                    {
-                        rm.RemoveRange(rm.All<ScoreInfo>().Filter("RealmUser.Username == $0 && Ruleset.ShortName == $1", name, ruleset.RulesetInfo.ShortName));
-                    });
-                }
-            });
+            if (profile != null && profiles.Count > 1)
+            {
+                if (ActiveProfile.Value == name)
+                    fallbackName = profiles.FirstOrDefault(p => p.Name != name)?.Name;
+
+                profiles.Remove(profile);
+                setProfiles(profiles);
+
+                // Remove all scores under this profile for mosusu ruleset only
+                realm.Write(rm =>
+                {
+                    rm.RemoveRange(rm.All<ScoreInfo>().Filter("RealmUser.Username == $0 && Ruleset.ShortName == $1", name, ruleset.RulesetInfo.ShortName));
+                });
+            }
+
             if (fallbackName != null)
                 SetActiveProfile(fallbackName);
             ProfilesChanged?.Invoke();
@@ -194,7 +204,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public List<string> GetProfileNames()
         {
-            return mosuRealm.Run(r => r.All<LocalProfile>().OrderBy(p => p.Name).ToList().Detach().Select(p => p.Name).ToList());
+            return getProfiles().Select(p => p.Name).OrderBy(n => n).ToList();
         }
 
         private void CacheStatistics(UserStatistics stats, string profileName, RulesetInfo ruleset)
@@ -222,11 +232,11 @@ namespace osu.Game.Rulesets.MOsu
 
 
 
-        public LocalUserManager(OsuRuleset ruleset, RealmAccess realm, osu.Game.Rulesets.MOsu.Database.MOsuRealmAccess mosuRealm, IAPIProvider api)
+        public LocalUserManager(OsuRuleset ruleset, RealmAccess realm, MOsuRulesetConfigManager config, IAPIProvider api)
         {
             this.ruleset = ruleset;
             this.realm = realm;
-            this.mosuRealm = mosuRealm;
+            this.config = config;
             this.api = api;
 
             api.LocalUser.BindValueChanged(_ =>

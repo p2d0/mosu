@@ -19,6 +19,9 @@ namespace osu.Game.Rulesets.MOsu.Configuration
             base.InitialiseDefaults();
             SetDefault(MOsuRulesetSetting.SuggestedSongsMinStars, 0.0, 0, 10, 0.1);
             SetDefault(MOsuRulesetSetting.SuggestedSongsMaxStars, 10.1, 0, 10.1, 0.1);
+            SetDefault(MOsuRulesetSetting.ProfilesJson, "[]");
+            SetDefault(MOsuRulesetSetting.PresetsImported, false);
+            SetDefault(MOsuRulesetSetting.CollectionsImported, false);
         }
     }
 
@@ -26,5 +29,8 @@ namespace osu.Game.Rulesets.MOsu.Configuration
     {
         SuggestedSongsMinStars,
         SuggestedSongsMaxStars,
+        ProfilesJson,
+        PresetsImported,
+        CollectionsImported,
     }
 }

@@ -41,6 +41,8 @@ DISPLAY=:99 dotnet run --project osu.Game.Rulesets.MOsu.Tests/osu.Game.Rulesets.
 
 Each test scene file = one `[Test]` method = one screenshot. No multi-method test files.
 
+Visual test logs are NOT at `/mnt/md127/lazer/logs` (that's for the full lazer app) — the test runner writes per-scene logs to `/tmp/of-test-headless/<scene-name>/logs/<timestamp>.runtime.log`.
+
 **After running tests, read every screenshot in `screenshots/` and validate:**
 - UI elements render (not blank/black)
 - Expected content visible (usernames, scores, controls)

@@ -67,7 +67,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             });
 
             AddStep("change aim distance multiplier", () =>
-                mod.AimDistanceMultiplier.Value = 20f);
+                mod.AimDistanceMultiplier.Value = 2f);
 
             AddUntilStep("positions changed", () =>
             {
@@ -101,7 +101,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 {
                     beatmap.HitObjects.Add(new HitCircle
                     {
-                        StartTime = 1000 + i * 200,
+                        // spacing must exceed beatLength / Divisor (500 / 2 = 250) or the mod classifies the object as a stream and AimDistanceMultiplier has no effect.
+                        StartTime = 1000 + i * 500,
                         Position = new Vector2(200 + (i % 4) * 50, 200 + (i / 4) * 50),
                         NewCombo = i % 5 == 0
                     });
