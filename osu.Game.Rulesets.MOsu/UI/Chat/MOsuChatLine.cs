@@ -125,8 +125,8 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         }
 
         /// <summary>
-        /// Builds the displayed mod string with signs, matching how mods are shared
-        /// (<c>+HD DT</c> for difficulty increases, <c>-EZ</c> for decreases).
+        /// Builds the displayed mod string with signs: <c>+</c> for plain mods, <c>-</c> for
+        /// mods with customizations (non-default settings).
         /// </summary>
         private string buildModDisplayString(PresetExportDto preset)
         {
@@ -139,7 +139,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 return string.Join(" ", preset.Mods.Select(m =>
                 {
                     var mod = m.ToMod(rulesetInstance);
-                    return $"{(mod.Type == ModType.DifficultyIncrease ? "+" : "-")}{mod.Acronym}";
+                    return $"{(mod.SettingDescription.Any() ? "-" : "+")}{mod.Acronym}";
                 }));
             }
             catch

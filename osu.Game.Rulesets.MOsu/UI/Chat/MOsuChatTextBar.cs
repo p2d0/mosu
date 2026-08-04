@@ -78,16 +78,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             if (mods.Count == 0) return;
 
-            var sb = new StringBuilder();
-
-            foreach (var mod in mods.Where(m => m.Type == ModType.DifficultyIncrease))
-                sb.Append($"+{mod.Acronym} ");
-
-            foreach (var mod in mods.Where(m => m.Type != ModType.DifficultyIncrease))
-                sb.Append($"-{mod.Acronym} ");
-
-            string modsString = sb.ToString().Trim();
-
             var preset = new PresetExportDto
             {
                 Name = "My Mods",
@@ -105,7 +95,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 base64 = Convert.ToBase64String(ms.ToArray());
             }
 
-            channelManager.PostMessage($"is playing with <{currentRuleset.Value.Name}> {modsString} [\u200B](osu://preset/{base64})");
+            channelManager.PostMessage($"is playing <{currentRuleset.Value.Name}> with [\u200B](osu://preset/{base64})");
         }
 
         private class PresetExportDto
