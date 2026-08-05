@@ -1,11 +1,11 @@
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays.Settings;
@@ -135,7 +135,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     X = offsets[i] - (maxWidth - circle_size) / 2,
-                    Child = new StaticCirclePiece(CircleLabels[i])
+                    Child = new StaticCirclePiece(CircleLabels[i], circleColour(colours, CircleLabels[i]))
                     {
                         Size = new Vector2(circle_size),
                     },
@@ -144,6 +144,11 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 circleContainer.Add(container);
             }
         }
+
+        /// <summary>
+        /// Accent colour per rhythm group: ¼ circles pink, ½ circles cyan.
+        /// </summary>
+        private static Color4 circleColour(OsuColour colours, string label) => label == "¼" ? colours.Pink : colours.Blue;
 
         public abstract void SetState(bool even, int divisor = 2);
 
@@ -197,51 +202,51 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
     public partial class StaticCirclePiece : Container
     {
-        private Texture? discTexture;
-        private string number;
+        private readonly string number;
+        private readonly Color4 accent;
 
-        public StaticCirclePiece(string number)
+        public StaticCirclePiece(string number, Color4 accent)
         {
             this.number = number;
+            this.accent = accent;
             Anchor = Anchor.Centre;
             Origin = Anchor.Centre;
         }
 
         [BackgroundDependencyLoader]
-        private void load(TextureStore textures)
+        private void load()
         {
-            discTexture = textures.Get(@"Gameplay/osu/disc");
+            // argon-style hit circle: dark fill, accent gradient rings, white border
             InternalChildren = new Drawable[]
             {
-                new CircularContainer
+                new Circle
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Children = new Drawable[]
-                    {
-                        new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.White },
-                        new Sprite
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                            Texture = discTexture,
-                            FillMode = FillMode.Fit,
-                        },
-                    },
+                    Colour = accent.Darken(4),
                 },
-                new CircularContainer
+                new Circle
                 {
                     RelativeSizeAxes = Axes.Both,
-                    BorderThickness = 3f,
-                    BorderColour = Color4.White,
-                    Children = new Drawable[]
-                    {
-                        new Box
-                        {
-                            AlwaysPresent = true,
-                            Alpha = 0,
-                            RelativeSizeAxes = Axes.Both,
-                        },
-                    },
+                    Size = new Vector2(0.862f),
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Colour = ColourInfo.GradientVertical(accent, accent.Darken(0.1f)),
+                },
+                new Circle
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Size = new Vector2(0.69f),
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Colour = ColourInfo.GradientVertical(accent.Darken(0.5f), accent.Darken(0.6f)),
+                },
+                new Circle
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Size = new Vector2(0.517f),
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Colour = accent.Darken(4),
                 },
                 new OsuSpriteText
                 {
@@ -250,6 +255,18 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     Text = number,
                     Font = OsuFont.Numeric.With(size: 16),
                     UseFullGlyphHeight = false,
+                },
+                new CircularContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    BorderThickness = 2f,
+                    BorderColour = Color4.White,
+                    Child = new Box
+                    {
+                        AlwaysPresent = true,
+                        Alpha = 0,
+                        RelativeSizeAxes = Axes.Both,
+                    },
                 },
             };
         }
