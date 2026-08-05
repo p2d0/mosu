@@ -59,9 +59,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                     return;
                 }
 
-                // Import scores only if the JSON actually contains any.
-                bool importScores = transferObjects.Any(c => c.Beatmaps.Any(b => b.Scores.Count > 0));
-
                 // Step 1: Import collections
                 var (allSetIds, importedCollections) = importCollections(transferObjects);
 
@@ -94,23 +91,18 @@ namespace osu.Game.Rulesets.MOsu.Database
                     };
                     notifications.Post(notification);
 
-                    var downloadedSetIds = await DownloadSequential(
+                    importedScores = await DownloadSequential(
                         missingSetIds,
                         notification,
-                        getTitle: setId => transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}");
-
-                    if (importScores)
-                        foreach (var setId in downloadedSetIds)
-                            importedScores += importCollectionScores(transferObjects, setId);
+                        transferObjects);
                 }
 
                 // Step 3: Final pass covers beatmaps that already existed locally (never downloaded);
                 // per-set imports from Step 2 are skipped by the duplicate check.
-                if (importScores)
-                {
-                    importedScores += importCollectionScores(transferObjects);
+                importedScores += importCollectionScores(transferObjects);
+
+                if (importedScores > 0)
                     schedule(() => notifications.Post(new SimpleNotification { Text = $"Imported {importedScores} scores." }));
-                }
             }
             catch (JsonException)
             {
@@ -126,15 +118,15 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         /// <summary>
         /// Downloads <paramref name="setIds"/> one at a time (sequential), importing scores per set
-        /// as it lands. Returns the ids of sets successfully downloaded.
+        /// as each one lands in the realm. Returns the number of scores imported.
         /// </summary>
-        private async Task<List<int>> DownloadSequential(
+        private async Task<int> DownloadSequential(
             List<int> setIds,
             ProgressNotification notification,
-            Func<int, string>? getTitle = null)
+            List<CollectionTransferObject> transferObjects)
         {
             var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, schedule);
-            var downloadedSetIds = new List<int>();
+            int importedScores = 0;
             int unavailable = 0;
 
             for (int i = 0; i < setIds.Count; i++)
@@ -142,7 +134,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                 if (notification.State == ProgressNotificationState.Cancelled) break;
 
                 int setId = setIds[i];
-                string title = getTitle?.Invoke(setId) ?? $"Set {setId}";
+                string title = transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}";
 
                 schedule(() =>
                 {
@@ -156,7 +148,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                     continue;
                 }
 
-                downloadedSetIds.Add(setId);
+                importedScores += importCollectionScores(transferObjects, setId);
 
                 schedule(() =>
                 {
@@ -167,14 +159,14 @@ namespace osu.Game.Rulesets.MOsu.Database
 
             schedule(() =>
             {
-                notification.Text = $"Downloaded {downloadedSetIds.Count} maps.";
+                notification.Text = $"Downloaded {setIds.Count - unavailable} maps.";
                 if (unavailable > 0)
                     notification.Text += $" ({unavailable} unavailable)";
                 notification.Progress = 1;
                 notification.State = ProgressNotificationState.Completed;
             });
 
-            return downloadedSetIds;
+            return importedScores;
         }
 
         private (HashSet<int> setIds, int count) importCollections(List<CollectionTransferObject> transferObjects)
