@@ -1467,57 +1467,56 @@
           },
       {
         "BeatmapSetId": 2462926,
-        "BeatmapMD5Hash": "307bf26a85c6fa5fb62ba9fc57622941",
-        "BeatmapTitle": "In And Out Of Love",
+        "BeatmapMD5Hash": "0686f8ed98d7982b8f2fcb3b29fbb700",
+        "BeatmapTitle": "In And Out Of Love feat. Sharon den Adel",
         "BeatmapAuthor": "Armin van Buuren",
         "Scores": [
           {
-            "BeatmapHash": "307bf26a85c6fa5fb62ba9fc57622941",
+            "BeatmapHash": "0686f8ed98d7982b8f2fcb3b29fbb700",
             "RulesetShortName": "mosu",
-            "BeatmapDifficultyName": "why can't you feel it",
-            "TotalScore": 129798,
-            "Accuracy": 0.873550202456935,
-            "MaxCombo": 87,
-            "Rank": "B",
-            "Date": "2026-07-22T04:32:29.7721129+00:00",
+            "BeatmapDifficultyName": "why can't you see it",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-08-05T10:05:08.7885624+00:00",
             "Mods": [
-              {
-                "acronym": "HD"
-              },
               {
                 "acronym": "DA",
                 "settings": {
                   "circle_size": 4.0,
-                  "approach_rate": 10.3,
-                  "extended_limits": true
+                  "approach_rate": 10.0
                 }
               },
               {
                 "acronym": "RDV2",
                 "settings": {
+                  "aim_distance_multiplier": 4.0,
+                  "expo_jumps": true,
                   "stream_distance_multiplier": 4.4,
-                  "seed": 1821236146
+                  "expo_streams": true,
+                  "seed": 1308367848
                 }
               }
             ],
             "Statistics": {
               "None": 0,
-              "Miss": 86,
-              "Meh": 2,
-              "Ok": 46,
+              "Miss": 12,
+              "Meh": 0,
+              "Ok": 0,
               "Good": 0,
-              "Great": 672,
+              "Great": 0,
               "Perfect": 0,
               "SmallTickMiss": 0,
               "SmallTickHit": 0,
               "LargeTickMiss": 0,
-              "LargeTickHit": 19,
-              "SmallBonus": 31,
-              "LargeBonus": 9,
-              "IgnoreMiss": 34,
-              "IgnoreHit": 320,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 12,
+              "IgnoreHit": 0,
               "ComboBreak": 0,
-              "SliderTailHit": 318
+              "SliderTailHit": 0
             },
             "CustomName": "",
             "UserOnlineId": 5652163,
