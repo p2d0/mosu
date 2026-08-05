@@ -86,7 +86,7 @@ namespace osu.Game.Rulesets.MOsu.Database
             {
                 if (!await IsSetAvailable(setId))
                 {
-                    Logger.Log($"Set {setId} not found on osu!, using nekoha mirror backup...");
+                    Logger.Log($"Set {setId} not found on osu!, using beatconnect mirror backup...");
                     DownloadViaMirror(setId);
                 }
                 else if (localDownloader.GetExistingDownload(onlineSet) == null)
@@ -156,7 +156,7 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         private void DownloadViaMirror(int setId)
         {
-            Logger.Log($"Download unavailable for set {setId}, trying nekoha mirror backup...");
+            Logger.Log($"Download unavailable for set {setId}, trying beatconnect mirror backup...");
             Task.Factory.StartNew(() =>
             {
                 try
@@ -164,15 +164,15 @@ namespace osu.Game.Rulesets.MOsu.Database
                     var response = new HttpClient
                     {
                         Timeout = TimeSpan.FromSeconds(60)
-                    }.GetAsync($"https://mirror.nekoha.moe/api4/download/{setId}").Result;
+                    }.GetAsync($"https://beatconnect.io/b/{setId}/").Result;
 
-                    string filename = $"nekoha_{setId}.osz";
+                    string filename = $"beatconnect_{setId}.osz";
                     string path = Path.Combine(Path.GetTempPath(), filename);
 
                     byte[] data = response.Content.ReadAsByteArrayAsync().Result;
-                    Logger.Log($"Nekoha mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={data.Length} bytes");
+                    Logger.Log($"Beatconnect mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={data.Length} bytes");
                     if (!response.IsSuccessStatusCode)
-                        throw new Exception($"Nekoha mirror returned {response.StatusCode}");
+                        throw new Exception($"Beatconnect mirror returned {response.StatusCode}");
                     File.WriteAllBytes(path, data);
 
                     schedule(() =>
@@ -188,12 +188,12 @@ namespace osu.Game.Rulesets.MOsu.Database
                             {
                                 if (result.Any())
                                 {
-                                    Logger.Log($"Imported set {setId} from nekoha mirror backup");
+                                    Logger.Log($"Imported set {setId} from beatconnect mirror backup");
                                 }
                                 else
                                 {
-                                    Logger.Error(new Exception($"Nekoha mirror import returned 0 items for set {setId}. File size: {fileSize} bytes."), "Nekoha mirror import empty");
-                                    notifications.Post(new SimpleErrorNotification { Text = $"Nekoha mirror import failed for set {setId}" });
+                                    Logger.Error(new Exception($"Beatconnect mirror import returned 0 items for set {setId}. File size: {fileSize} bytes."), "Beatconnect mirror import empty");
+                                    notifications.Post(new SimpleErrorNotification { Text = $"Beatconnect mirror import failed for set {setId}" });
                                 }
                             });
                         });
@@ -201,7 +201,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, $"Nekoha mirror backup failed for set {setId}");
+                    Logger.Error(ex, $"Beatconnect mirror backup failed for set {setId}");
                 }
             }, TaskCreationOptions.LongRunning);
         }
