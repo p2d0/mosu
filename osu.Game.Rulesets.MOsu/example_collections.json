@@ -800,6 +800,559 @@
         ]
       },
       {
+        "BeatmapSetId": 151878,
+        "BeatmapMD5Hash": "429443303215087f4de001d76361ec43",
+        "BeatmapTitle": "Lost",
+        "BeatmapAuthor": "Chasers",
+        "Scores": [
+          {
+            "BeatmapHash": "429443303215087f4de001d76361ec43",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 542032,
+            "Accuracy": 0.9159616469261139,
+            "MaxCombo": 449,
+            "Rank": "A",
+            "Date": "2024-12-27T18:02:04.8602494+00:00",
+            "Mods": [],
+            "Statistics": {
+              "None": 0,
+              "Miss": 13,
+              "Meh": 20,
+              "Ok": 65,
+              "Good": 0,
+              "Great": 673,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 100,
+              "SmallBonus": 25,
+              "LargeBonus": 0,
+              "IgnoreMiss": 20,
+              "IgnoreHit": 211,
+              "ComboBreak": 0,
+              "SliderTailHit": 208
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "429443303215087f4de001d76361ec43",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 589417,
+            "Accuracy": 0.9351381838691484,
+            "MaxCombo": 390,
+            "Rank": "A",
+            "Date": "2024-12-30T10:41:49.5202954+00:00",
+            "Mods": [],
+            "Statistics": {
+              "None": 0,
+              "Miss": 11,
+              "Meh": 15,
+              "Ok": 51,
+              "Good": 0,
+              "Great": 694,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 100,
+              "SmallBonus": 22,
+              "LargeBonus": 0,
+              "IgnoreMiss": 20,
+              "IgnoreHit": 211,
+              "ComboBreak": 0,
+              "SliderTailHit": 211
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "429443303215087f4de001d76361ec43",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-08-05T04:39:19.9281509+00:00",
+            "Mods": [
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 6.0,
+                  "divisor": 3,
+                  "seed": 1789984715
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 271339,
+        "BeatmapMD5Hash": "ff356a3a7b50cf8fbee50b29a2f0905e",
+        "BeatmapTitle": "Kisetsu wa Tsugitsugi Shindeiku -Tokyo Ghoul Root A Edit-",
+        "BeatmapAuthor": "amazarashi",
+        "Scores": [
+          {
+            "BeatmapHash": "ff356a3a7b50cf8fbee50b29a2f0905e",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 69812,
+            "Accuracy": 0.9182242990654206,
+            "MaxCombo": 62,
+            "Rank": "F",
+            "Date": "2025-04-21T11:41:04.2760834+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RD",
+                "settings": {
+                  "seed": 208786764
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 10,
+              "Meh": 0,
+              "Ok": 6,
+              "Good": 0,
+              "Great": 123,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 7,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 63,
+              "ComboBreak": 0,
+              "SliderTailHit": 63
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "ff356a3a7b50cf8fbee50b29a2f0905e",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 179604,
+            "Accuracy": 0.9346355487907999,
+            "MaxCombo": 99,
+            "Rank": "A",
+            "Date": "2025-05-05T11:32:56.8525729+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RD",
+                "settings": {
+                  "seed": 791303818
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 19,
+              "Meh": 1,
+              "Ok": 8,
+              "Good": 0,
+              "Great": 287,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 1,
+              "LargeTickHit": 11,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 2,
+              "IgnoreHit": 155,
+              "ComboBreak": 0,
+              "SliderTailHit": 155
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "ff356a3a7b50cf8fbee50b29a2f0905e",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-08-05T04:25:19.450534+00:00",
+            "Mods": [
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 6.0,
+                  "divisor": 3,
+                  "seed": 42733959
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 52361,
+        "BeatmapMD5Hash": "47af17cade3e7e4b570a21075021db63",
+        "BeatmapTitle": "Hero",
+        "BeatmapAuthor": "Skillet",
+        "Scores": [
+          {
+            "BeatmapHash": "47af17cade3e7e4b570a21075021db63",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Fate",
+            "TotalScore": 35444,
+            "Accuracy": 0.955044955044955,
+            "MaxCombo": 78,
+            "Rank": "F",
+            "Date": "2025-04-20T12:44:18.6397634+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RD",
+                "settings": {
+                  "seed": 1882029419
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 26,
+              "Meh": 2,
+              "Ok": 5,
+              "Good": 0,
+              "Great": 566,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 12,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 2,
+              "IgnoreHit": 200,
+              "ComboBreak": 0,
+              "SliderTailHit": 200
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "47af17cade3e7e4b570a21075021db63",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Fate",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-08-05T04:23:06.0635338+00:00",
+            "Mods": [
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 6.0,
+                  "divisor": 3,
+                  "seed": 1393218046
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": ""
+          }
+        ]
+      },
+      {
+        "BeatmapSetId": 1067064,
+        "BeatmapMD5Hash": "46d99b8ad093ef35c14e2cd37b84d334",
+        "BeatmapTitle": "Blue Bird",
+        "BeatmapAuthor": "Ikimonogakari",
+        "Scores": [
+          {
+            "BeatmapHash": "46d99b8ad093ef35c14e2cd37b84d334",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2025-04-09T07:49:07.6576867+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RD",
+                "settings": {
+                  "seed": 627610836
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 6,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 1,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 4,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "46d99b8ad093ef35c14e2cd37b84d334",
+            "RulesetShortName": "osu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 91782,
+            "Accuracy": 0.9525084806284592,
+            "MaxCombo": 145,
+            "Rank": "A",
+            "Date": "2025-04-20T12:26:05.6240851+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RD",
+                "settings": {
+                  "seed": 1595059959
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 29,
+              "Meh": 1,
+              "Ok": 21,
+              "Good": 0,
+              "Great": 773,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 10,
+              "SmallBonus": 19,
+              "LargeBonus": 0,
+              "IgnoreMiss": 18,
+              "IgnoreHit": 217,
+              "ComboBreak": 0,
+              "SliderTailHit": 216
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          },
+          {
+            "BeatmapHash": "46d99b8ad093ef35c14e2cd37b84d334",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "Insane",
+            "TotalScore": 0,
+            "Accuracy": 0.0,
+            "MaxCombo": 0,
+            "Rank": "F",
+            "Date": "2026-08-05T04:17:10.4923748+00:00",
+            "Mods": [
+              {
+                "acronym": "DA",
+                "settings": {
+                  "approach_rate": 10.0
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "aim_distance_multiplier": 6.0,
+                  "divisor": 3,
+                  "seed": 197271021
+                }
+              },
+              {
+                "acronym": "NL",
+                "settings": {
+                  "beat_divisor": 2
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 7,
+              "Meh": 0,
+              "Ok": 0,
+              "Good": 0,
+              "Great": 0,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 0,
+              "SmallBonus": 0,
+              "LargeBonus": 0,
+              "IgnoreMiss": 0,
+              "IgnoreHit": 0,
+              "ComboBreak": 0,
+              "SliderTailHit": 0
+            },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          }
+        ]
+      },
+      {
         "BeatmapSetId": 2459945,
         "BeatmapMD5Hash": "776eef9bbc89af9e18d9d75bf4949c34",
         "BeatmapTitle": "Ava (Speed Up.)",
@@ -912,65 +1465,66 @@
               "SliderTailHit": 0
             }
           },
-            {
-                "BeatmapSetId": 2462926,
-                "BeatmapMD5Hash": "307bf26a85c6fa5fb62ba9fc57622941",
-                "BeatmapTitle": "In And Out Of Love",
-                "BeatmapAuthor": "Armin van Buuren",
-                "Scores": [
-                    {
-                        "BeatmapHash": "307bf26a85c6fa5fb62ba9fc57622941",
-                        "RulesetShortName": "mosu",
-                        "BeatmapDifficultyName": "why can't you feel it",
-                        "TotalScore": 423657,
-                        "Accuracy": 0.9217624047766111,
-                        "MaxCombo": 124,
-                        "Rank": "A",
-                        "Date": "2026-06-26T10:50:28.5275293+00:00",
-                        "Mods": [
-                            {
-                                "acronym": "HD"
-                            },
-                            {
-                                "acronym": "DA",
-                                "settings": {
-                                    "circle_size": 4.0,
-                                    "approach_rate": 10.0,
-                                    "extended_limits": true
-                                }
-                            },
-                            {
-                                "acronym": "RDV2",
-                                "settings": {
-                                    "stream_distance_multiplier": 4.4,
-                                    "aim_distance_multiplier": 4.4,
-                                    "expo_streams": true,
-                                    "divisor": 3
-                                }
-                            }
-                        ],
-                        "Statistics": {
-                            "None": 0,
-                            "Miss": 60,
-                            "Meh": 3,
-                            "Ok": 18,
-                            "Good": 0,
-                            "Great": 725,
-                            "Perfect": 0,
-                            "SmallTickMiss": 0,
-                            "SmallTickHit": 0,
-                            "LargeTickMiss": 0,
-                            "LargeTickHit": 19,
-                            "SmallBonus": 31,
-                            "LargeBonus": 2,
-                            "IgnoreMiss": 30,
-                            "IgnoreHit": 325,
-                            "ComboBreak": 0,
-                            "SliderTailHit": 324
-                        }
-                    }
-                ]
+      {
+        "BeatmapSetId": 2462926,
+        "BeatmapMD5Hash": "307bf26a85c6fa5fb62ba9fc57622941",
+        "BeatmapTitle": "In And Out Of Love",
+        "BeatmapAuthor": "Armin van Buuren",
+        "Scores": [
+          {
+            "BeatmapHash": "307bf26a85c6fa5fb62ba9fc57622941",
+            "RulesetShortName": "mosu",
+            "BeatmapDifficultyName": "why can't you feel it",
+            "TotalScore": 129798,
+            "Accuracy": 0.873550202456935,
+            "MaxCombo": 87,
+            "Rank": "B",
+            "Date": "2026-07-22T04:32:29.7721129+00:00",
+            "Mods": [
+              {
+                "acronym": "HD"
+              },
+              {
+                "acronym": "DA",
+                "settings": {
+                  "circle_size": 4.0,
+                  "approach_rate": 10.3,
+                  "extended_limits": true
+                }
+              },
+              {
+                "acronym": "RDV2",
+                "settings": {
+                  "stream_distance_multiplier": 4.4,
+                  "seed": 1821236146
+                }
+              }
+            ],
+            "Statistics": {
+              "None": 0,
+              "Miss": 86,
+              "Meh": 2,
+              "Ok": 46,
+              "Good": 0,
+              "Great": 672,
+              "Perfect": 0,
+              "SmallTickMiss": 0,
+              "SmallTickHit": 0,
+              "LargeTickMiss": 0,
+              "LargeTickHit": 19,
+              "SmallBonus": 31,
+              "LargeBonus": 9,
+              "IgnoreMiss": 34,
+              "IgnoreHit": 320,
+              "ComboBreak": 0,
+              "SliderTailHit": 318
             },
+            "CustomName": "",
+            "UserOnlineId": 5652163,
+            "UserUsername": "p720"
+          }
+        ]
+      },
           {
             "BeatmapHash": "97ecdbf9beaf931f8510a927d1f4573f",
             "RulesetShortName": "mosu",
