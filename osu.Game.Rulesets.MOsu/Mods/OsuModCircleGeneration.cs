@@ -30,7 +30,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public override string Name => "Circle Generation";
         public override string Acronym => "CG";
         public override ModType Type => ModType.Conversion;
-        public override double ScoreMultiplier => 1;
         public override LocalisableString Description => "Generate hit circles in a square pattern.";
         public override Type[] IncompatibleMods => new[] { typeof(ModHardRock) };
 

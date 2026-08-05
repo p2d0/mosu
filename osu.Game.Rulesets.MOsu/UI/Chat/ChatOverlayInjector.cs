@@ -151,7 +151,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
         private void injectDashboardHideHandler()
         {
-            chatOverlay.State.ValueChanged += state =>
+            chatOverlay!.State.ValueChanged += state =>
             {
                 if (state.NewValue != Visibility.Hidden)
                 {

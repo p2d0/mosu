@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
@@ -117,7 +118,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             var userManager = host.Dependencies.Get<LocalUserManager>();
             if (userManager == null)
             {
-                var config = (MOsuRulesetConfigManager)configCache.GetConfigFor(ruleset);
+                var config = configCache.GetConfigFor(ruleset) as MOsuRulesetConfigManager ?? throw new InvalidOperationException("MOsuRulesetConfigManager not found");
                 userManager = new LocalUserManager(ruleset, realm, config, api);
                 host.Dependencies.Cache(userManager);
             }

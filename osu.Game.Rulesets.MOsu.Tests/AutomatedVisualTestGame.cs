@@ -228,7 +228,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             }, test_timeout);
             Scheduler.Add(timeoutDelegate);
 
-            var scene = (TestScene)Activator.CreateInstance(testType);
+            var scene = (TestScene)Activator.CreateInstance(testType)!;
             activeScene = scene;
             scene.OnLoadComplete += _ => Scheduler.Add(() =>
             {

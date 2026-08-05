@@ -8,8 +8,8 @@ namespace osu.Game.Rulesets.MOsu.Configuration
     {
         private readonly OsuRulesetConfigManager baseConfig;
 
-        public MOsuRulesetConfigManager(SettingsStore settings, RulesetInfo ruleset, int? variant = null)
-            : base(settings, ruleset, variant)
+        public MOsuRulesetConfigManager(SettingsStore? settings, RulesetInfo ruleset, int? variant = null)
+            : base(settings!, ruleset, variant)
         {
             baseConfig = new OsuRulesetConfigManager(settings, ruleset, variant);
         }

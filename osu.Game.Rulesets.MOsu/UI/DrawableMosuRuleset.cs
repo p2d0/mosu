@@ -134,7 +134,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 frameStablePlaybackResetDelegate.RunTask();
 
             // Read current FrameStablePlayback state via reflection
-            bool wasFrameStable = (bool)frameStablePlaybackProperty.GetValue(this);
+            bool wasFrameStable = (bool)frameStablePlaybackProperty.GetValue(this)!;
 
             // Disable frame-stable playback
             frameStablePlaybackProperty.SetValue(this, false);
@@ -148,8 +148,8 @@ namespace osu.Game.Rulesets.MOsu.UI
         }
 
 
-                private ScoreManager scoreManager;
-                private LocalUserManager localUserManager = null!;
+                private ScoreManager scoreManager = null!;
+                private LocalUserManager? localUserManager;
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager? localUserManager, ScoreManager? scoreManager)

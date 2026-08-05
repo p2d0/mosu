@@ -24,7 +24,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public override LocalisableString Description => "Spacing grows/shrinks over time.";
 
-        public override double ScoreMultiplier => 1;
 
         public override string Acronym => "FSA";
 

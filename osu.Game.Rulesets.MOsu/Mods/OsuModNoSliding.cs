@@ -26,7 +26,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public override string Acronym => "NL";
 
-        public override double ScoreMultiplier => 1;
 
         public override LocalisableString Description => @"Convert all sliders to streams.";
 

@@ -38,7 +38,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Screens
                 {
                     OnlineID = 12345,
                     DifficultyName = "Test",
-                    Ruleset = rs,
+                    Ruleset = rs!,
                     Difficulty = new BeatmapDifficulty { OverallDifficulty = 5, CircleSize = 4, ApproachRate = 5, DrainRate = 5 },
                     Metadata = new BeatmapMetadata { Title = "Test", Artist = "Test" },
                     BeatmapSet = beatmapSet,

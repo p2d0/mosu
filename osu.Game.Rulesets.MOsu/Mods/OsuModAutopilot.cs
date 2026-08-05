@@ -24,7 +24,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public override IconUsage? Icon => OsuIcon.ModAutopilot;
         public override ModType Type => ModType.Automation;
         public override LocalisableString Description => @"Automatic cursor movement - just follow the rhythm.";
-        public override double ScoreMultiplier => 0.1;
 
         public override Type[] IncompatibleMods => new[]
         {

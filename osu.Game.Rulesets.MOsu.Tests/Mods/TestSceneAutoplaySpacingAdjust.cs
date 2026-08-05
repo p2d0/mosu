@@ -72,9 +72,9 @@ namespace osu.Game.Rulesets.MOsu.Tests.Mods
 
                 Ruleset.Value = osuRuleset.RulesetInfo;
                 Beatmap.Value = working;
-                SelectedMods.Value = new Mod[] { spacingMod, osuRuleset.GetAutoplayMod() };
+                SelectedMods.Value = new Mod[] { spacingMod, osuRuleset.GetAutoplayMod()! };
 
-                Player = CreatePlayer(osuRuleset);
+                Player = CreatePlayer(osuRuleset)!;
                 LoadScreen(Player);
             });
 

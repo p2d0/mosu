@@ -47,7 +47,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public override string Acronym => "RDV2";
         public override ModType Type => ModType.Conversion;
         public override IconUsage? Icon => OsuIcon.ModRandom;
-        public override double ScoreMultiplier => 1;
         public override LocalisableString Description => "It never gets boring!";
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(OsuModTargetPractice)).ToArray();

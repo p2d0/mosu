@@ -23,7 +23,6 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public override LocalisableString Description => "Adjust object spacing to your liking.";
 
-        public override double ScoreMultiplier => 1;
 
         public override string Acronym => "SA";
 

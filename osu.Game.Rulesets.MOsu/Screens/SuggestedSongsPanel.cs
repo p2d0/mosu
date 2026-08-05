@@ -34,14 +34,14 @@ namespace osu.Game.Rulesets.MOsu.Screens
 {
     public partial class SuggestedSongsPanel : Container
     {
-        private ReverseChildIDFillFlowContainer<BeatmapCard> spotlightGrid;
-        private ReverseChildIDFillFlowContainer<BeatmapCard> suggestionsGrid;
-        private ReverseChildIDFillFlowContainer<BeatmapCard> artistGrid;
-        private LoadingLayer spotlightLoading;
-        private LoadingLayer suggestionsLoading;
-        private LoadingLayer artistLoading;
-        private DifficultyRangeSlider starSlider;
-        private CancellationTokenSource debounceSource;
+        private ReverseChildIDFillFlowContainer<BeatmapCard> spotlightGrid = null!;
+        private ReverseChildIDFillFlowContainer<BeatmapCard> suggestionsGrid = null!;
+        private ReverseChildIDFillFlowContainer<BeatmapCard> artistGrid = null!;
+        private LoadingLayer spotlightLoading = null!;
+        private LoadingLayer suggestionsLoading = null!;
+        private LoadingLayer artistLoading = null!;
+        private DifficultyRangeSlider starSlider = null!;
+        private CancellationTokenSource debounceSource = null!;
         private int requestSequence;
         private int pendingOnlineID;
 
@@ -63,11 +63,11 @@ namespace osu.Game.Rulesets.MOsu.Screens
 
         private class LocalLookupData
         {
-            public HashSet<int> OnlineIDs;
-            public HashSet<(string, string)> TitleArtists;
+            public HashSet<int> OnlineIDs = null!;
+            public HashSet<(string, string)> TitleArtists = null!;
         }
 
-        private Task<LocalLookupData> localLookupTask;
+        private Task<LocalLookupData> localLookupTask = null!;
 
         public SuggestedSongsPanel(ScoreInfo score)
         {
@@ -217,7 +217,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
             suggestionsLoading.Show();
             artistLoading.Show();
 
-            int onlineID = score.BeatmapInfo.BeatmapSet.OnlineID;
+            int onlineID = score.BeatmapInfo?.BeatmapSet?.OnlineID ?? 0;
             Logger.Log($"[MOsu] SuggestedSongsPanel: fetching set {onlineID}", LoggingTarget.Runtime);
             pendingOnlineID = onlineID;
 
@@ -276,7 +276,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
             api.Queue(getSetRequest);
         }
 
-        private void queueSearchRequest(string query, SearchGeneral[] general, SearchGenre genre, SearchLanguage language, ReverseChildIDFillFlowContainer<BeatmapCard> grid, LoadingLayer loading, int currentSequence)
+        private void queueSearchRequest(string query, SearchGeneral[]? general, SearchGenre genre, SearchLanguage language, ReverseChildIDFillFlowContainer<BeatmapCard> grid, LoadingLayer loading, int currentSequence)
         {
             var sortCriteria = random.Next(4) switch
             {
