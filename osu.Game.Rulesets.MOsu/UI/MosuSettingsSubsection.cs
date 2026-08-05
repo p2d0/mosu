@@ -287,6 +287,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         .Filter("DeletePending == false")
                         .ToList()
                         .Where(p => selectedShortNames.Contains(p.Ruleset.ShortName))
+                        .OrderBy(p => p.Name)
                         .Select(p => new ModPresetTransferObject
                         {
                             Name = p.Name,
@@ -440,7 +441,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             realm.Run(r =>
             {
-                foreach (var collection in r.All<BeatmapCollection>().Detach())
+                foreach (var collection in r.All<BeatmapCollection>().OrderBy(c => c.Name).Detach())
                     entries.Add((collection, new Bindable<bool>(true)));
             });
 
