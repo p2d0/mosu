@@ -16,6 +16,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.MOsu.Mods
 {
+    // NOTE cant alias - crashes without
     public class OsuModAutopilot : Mod, IUpdatableByPlayfield, IApplicableToDrawableRuleset<OsuHitObject>
     {
         public override string Name => "Autopilot";
