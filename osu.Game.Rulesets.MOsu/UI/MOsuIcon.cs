@@ -119,60 +119,57 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             await Task.Yield();
 
-            Schedule(() =>
+            Schedule(StepUI);
+        }
+
+        private void StepUI()
+        {
+            var waveContainer = game.GetWaveOverlayPlacementContainer();
+            var toolbarContainer = game.GetToolbarContainer();
+
+            if (waveContainer == null || toolbarContainer == null)
             {
-                var waveContainer = game.GetWaveOverlayPlacementContainer();
-                var toolbarContainer = game.GetToolbarContainer();
+                Schedule(StepUI);
+                return;
+            }
 
-                if (waveContainer == null || toolbarContainer == null)
+            if (host.Dependencies.Get<BackgroundPresetImportProcessor>() == null)
+            {
+                var presetImporter = new BackgroundPresetImportProcessor();
+                host.Dependencies.Cache(presetImporter);
+                game.Add(presetImporter);
+            }
+
+            if (host.Dependencies.Get<BackgroundCollectionImportProcessor>() == null)
+            {
+                var collectionImporter = new BackgroundCollectionImportProcessor();
+                host.Dependencies.Cache(collectionImporter);
+                game.Add(collectionImporter);
+            }
+
+            // Pre-load overlay on bg thread.
+            var overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
+            if (overlay == null)
+            {
+                overlay = waveContainer.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+            }
+            if (overlay == null)
+            {
+                overlay = new LocalUserProfileOverlay();
+                LoadComponentAsync(overlay, o =>
                 {
-                    Schedule(StepUI);
-                    return;
-                }
+                    waveContainer.Add(o);
+                    host.Dependencies.Cache(o);
+                });
+            }
+            else
+            {
+                host.Dependencies.Cache(overlay);
+            }
 
-                StepUI();
-
-                void StepUI()
-                {
-                    if (host.Dependencies.Get<BackgroundPresetImportProcessor>() == null)
-                    {
-                        var presetImporter = new BackgroundPresetImportProcessor();
-                        host.Dependencies.Cache(presetImporter);
-                        game.Add(presetImporter);
-                    }
-
-                    if (host.Dependencies.Get<BackgroundCollectionImportProcessor>() == null)
-                    {
-                        var collectionImporter = new BackgroundCollectionImportProcessor();
-                        host.Dependencies.Cache(collectionImporter);
-                        game.Add(collectionImporter);
-                    }
-
-                    // Pre-load overlay on bg thread.
-                    var overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
-                    if (overlay == null)
-                    {
-                        overlay = waveContainer?.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
-                    }
-                    if (overlay == null)
-                    {
-                        overlay = new LocalUserProfileOverlay();
-                        LoadComponentAsync(overlay, o =>
-                        {
-                            waveContainer?.Add(o);
-                            host.Dependencies.Cache(o);
-                        });
-                    }
-                    else
-                    {
-                        host.Dependencies.Cache(overlay);
-                    }
-
-                    // Add button immediately.
-                    if (toolbarContainer != null && !toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
-                        toolbarContainer.Add(new ToolbarLocalUserButton());
-                }
-            });
+            // Add button immediately.
+            if (!toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any())
+                toolbarContainer.Add(new ToolbarLocalUserButton());
         }
     }
 }
