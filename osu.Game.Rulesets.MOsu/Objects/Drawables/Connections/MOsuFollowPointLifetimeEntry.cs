@@ -6,7 +6,6 @@ using System.Diagnostics;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Performance;
 using osu.Game.Rulesets.Objects;
-using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections

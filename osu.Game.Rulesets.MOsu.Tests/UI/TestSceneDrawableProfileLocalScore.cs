@@ -8,11 +8,9 @@ using osu.Game.Overlays;
 using osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks;
 using osu.Game.Models;
 using osu.Game.Scoring;
-using osu.Game.Users;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Mods;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests.UI
 {

@@ -3,7 +3,6 @@
 
 using System.Linq;
 using System.Runtime.CompilerServices;
-using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Utils

@@ -5,20 +5,16 @@ using System.Linq;
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osu.Framework.Testing;
-using System.Threading;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
 using osu.Game.Tests.Visual;
 using NUnit.Framework;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
-using System.Runtime.Versioning;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {

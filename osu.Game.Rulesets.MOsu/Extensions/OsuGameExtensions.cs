@@ -1,11 +1,8 @@
 
 using System.Linq;
-using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
-using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
-using osu.Game.Overlays.Toolbar;
 
 namespace osu.Game.Rulesets.MOsu.Extensions;
 

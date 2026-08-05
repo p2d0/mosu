@@ -6,7 +6,6 @@
 
 global using OsuAction = osu.Game.Rulesets.Osu.OsuAction;
 global using AccuracyHeatmap = osu.Game.Rulesets.Osu.Statistics.AccuracyHeatmap;
-global using AnyOrderHitPolicy = osu.Game.Rulesets.Osu.UI.AnyOrderHitPolicy;
 global using ArgonCursor = osu.Game.Rulesets.Osu.Skinning.Argon.ArgonCursor;
 global using ArgonCursorTrail = osu.Game.Rulesets.Osu.Skinning.Argon.ArgonCursorTrail;
 global using ArgonFollowCircle = osu.Game.Rulesets.Osu.Skinning.Argon.ArgonFollowCircle;

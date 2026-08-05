@@ -8,9 +8,7 @@ using osu.Game.Graphics;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Header;
-using osu.Game.Overlays.Profile.Header.Components;
 using osu.Game.Resources.Localisation.Web;
-using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets.MOsu.UI.LocalUser.Header;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser

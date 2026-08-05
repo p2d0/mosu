@@ -1,4 +1,3 @@
-using System;
 using osu.Game.Rulesets.MOsu.Mods;
 
 namespace osu.Game.Rulesets.MOsu.UI

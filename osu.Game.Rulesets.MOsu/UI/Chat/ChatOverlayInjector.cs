@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,16 +5,9 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Cursor;
-using osu.Game;
-using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Cursor;
-using osu.Game.Input.Bindings;
 using osu.Game.Online.Chat;
-using osu.Game.Overlays;
 using osu.Game.Overlays.Chat;
-using osu.Game.Overlays.Toolbar;
-using osu.Game.Rulesets.MOsu.Extensions;
 
 namespace osu.Game.Rulesets.MOsu.UI.Chat
 {

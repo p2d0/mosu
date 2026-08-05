@@ -12,7 +12,6 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
-using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Utils;
 using osuTK;
 

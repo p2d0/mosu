@@ -3,16 +3,13 @@ using osu.Game.Online.API.Requests;
 using System;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
-using osu.Game.Online.API.Requests.Responses;
 using System.Collections.Generic;
-using osu.Game.Online.API;
 using osu.Framework.Allocation;
 using osu.Framework.Localisation;
 using APIUser = osu.Game.Online.API.Requests.Responses.APIUser;
 using osu.Game.Scoring;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
-using System.Linq;
 using osu.Game.Overlays.Profile;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks

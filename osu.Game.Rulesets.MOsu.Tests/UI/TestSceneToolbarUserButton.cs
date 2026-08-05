@@ -1,19 +1,13 @@
 using System;
 using NUnit.Framework;
-using osu.Framework.Allocation;
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
-using osu.Game.Database;
-using osu.Game.Overlays.Toolbar;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
 using osu.Game.Models;
 using osu.Game.Scoring;
 using osu.Game.Users;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests.UI
 {

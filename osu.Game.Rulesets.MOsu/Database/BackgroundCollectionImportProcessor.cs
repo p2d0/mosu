@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
-using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Rulesets.MOsu.Configuration;
 

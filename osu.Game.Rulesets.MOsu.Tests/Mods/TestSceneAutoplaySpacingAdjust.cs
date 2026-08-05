@@ -11,12 +11,8 @@ using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Tests.Screens;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.Objects;
-using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
-using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.UI;
-using osu.Game.Tests.Visual;
 
 namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {

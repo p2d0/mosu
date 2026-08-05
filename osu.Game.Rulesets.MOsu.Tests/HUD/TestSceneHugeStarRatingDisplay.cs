@@ -4,7 +4,6 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osuTK;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests.HUD
 {

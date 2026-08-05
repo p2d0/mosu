@@ -8,7 +8,6 @@ using osu.Framework.Logging;
 using osu.Game.Database;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
-using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
 
 namespace osu.Game.Rulesets.MOsu.Database

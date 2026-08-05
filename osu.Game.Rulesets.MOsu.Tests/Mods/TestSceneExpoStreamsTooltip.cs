@@ -9,7 +9,6 @@ using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Tests.Visual;
 using osuTK;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests.Mods
 {

@@ -1,6 +1,5 @@
 using System;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -14,7 +13,6 @@ using osu.Game.Overlays;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Rulesets.MOsu.Models;
-using osu.Game.Users;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser

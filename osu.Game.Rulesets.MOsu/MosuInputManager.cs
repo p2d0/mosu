@@ -6,8 +6,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Input.Bindings;
 using osu.Game.Database;
 using osu.Game.Input.Bindings;
-using osu.Game.Rulesets.Osu.Objects.Drawables;
-using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.MOsu
 {

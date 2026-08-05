@@ -1,6 +1,5 @@
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Configuration;
-using osu.Game.Rulesets.Osu.Configuration;
 
 namespace osu.Game.Rulesets.MOsu.Configuration
 {

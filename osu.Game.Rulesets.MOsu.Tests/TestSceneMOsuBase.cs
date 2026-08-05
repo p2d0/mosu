@@ -1,15 +1,10 @@
-using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Platform;
 using osu.Game.Configuration;
-using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Rulesets.MOsu.Configuration;
-using osu.Game.Rulesets.MOsu.UI.LocalUser;
-using osu.Game.Rulesets.Osu;
 using osu.Game.Tests.Visual;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {

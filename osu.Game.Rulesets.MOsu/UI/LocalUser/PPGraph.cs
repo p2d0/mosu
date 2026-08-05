@@ -1,16 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Humanizer;
-using osu.Framework.Bindables;
 using osu.Framework.Extensions.LocalisationExtensions;
-using osu.Framework.Graphics;
-using osu.Game.Graphics;
-using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Header.Components;
-using osu.Game.Resources.Localisation.Web;
-using osu.Game.Users;
 
 namespace osu.Game.Rulesets.MOsu.UI.LocalUser
 {

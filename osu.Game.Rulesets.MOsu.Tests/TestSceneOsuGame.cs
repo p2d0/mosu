@@ -9,7 +9,6 @@ using osu.Framework.Platform;
 using osu.Game.Tests.Visual;
 using osuTK.Graphics;
 
-using osu.Game.Rulesets.MOsu.Tests;
 
 namespace osu.Game.Rulesets.MOsu.Tests
 {

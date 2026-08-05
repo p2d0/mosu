@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {

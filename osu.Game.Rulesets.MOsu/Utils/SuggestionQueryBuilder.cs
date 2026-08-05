@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
-using osu.Game.Online.API.Requests;
-using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays.BeatmapListing;
 
 namespace osu.Game.Rulesets.MOsu.Utils

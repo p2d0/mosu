@@ -8,7 +8,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Graphics;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
@@ -16,7 +15,6 @@ using osu.Game.Configuration;
 using osu.Game.Replays;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Screens.Play.PlayerSettings;
 
 namespace osu.Game.Rulesets.MOsu.UI
