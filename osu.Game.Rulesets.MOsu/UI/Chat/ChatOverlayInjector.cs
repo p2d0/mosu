@@ -19,14 +19,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         private FieldInfo? chatOverlayField;
         private FieldInfo? overlayContentField;
         private FieldInfo? focusedOverlaysField;
-        private FieldInfo? newsField;
-        private FieldInfo? dashboardField;
-        private FieldInfo? beatmapListingField;
-        private FieldInfo? changelogOverlayField;
-        private FieldInfo? rankingsOverlayField;
-        private FieldInfo? wikiOverlayField;
-        private FieldInfo? settingsField;
-        private FieldInfo? notificationsField;
 
         private osu.Game.Overlays.ChatOverlay? chatOverlay;
         private bool hasInjected;
@@ -43,14 +35,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             chatOverlayField = getFieldInHierarchy(type, "chatOverlay");
             overlayContentField = getFieldInHierarchy(type, "overlayContent");
             focusedOverlaysField = getFieldInHierarchy(type, "focusedOverlays");
-            newsField = getFieldInHierarchy(type, "news");
-            dashboardField = getFieldInHierarchy(type, "dashboard");
-            beatmapListingField = getFieldInHierarchy(type, "beatmapListing");
-            changelogOverlayField = getFieldInHierarchy(type, "changelogOverlay");
-            rankingsOverlayField = getFieldInHierarchy(type, "rankingsOverlay");
-            wikiOverlayField = getFieldInHierarchy(type, "wikiOverlay");
-            settingsField = getFieldInHierarchy(type, "settings");
-            notificationsField = getFieldInHierarchy(type, "notifications");
         }
 
         protected override void LoadComplete()
@@ -72,7 +56,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             }
 
             injectTextBar();
-            injectDashboardHideHandler();
             injectMOsuChatLine();
 
             hasInjected = true;
@@ -88,11 +71,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 type = type.BaseType!;
             }
             return null;
-        }
-
-        private OverlayContainer? getOverlay(FieldInfo? field)
-        {
-            return field?.GetValue(game) as OverlayContainer;
         }
 
         private void injectTextBar()
@@ -138,24 +116,6 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
             parent.Remove(oldTextBar, false);
             parent.Add(wrapper);
             textBarField?.SetValue(chatOverlay, newTextBar);
-        }
-
-        private void injectDashboardHideHandler()
-        {
-            chatOverlay!.State.ValueChanged += state =>
-            {
-                if (state.NewValue != Visibility.Hidden)
-                {
-                    getOverlay(newsField)?.Hide();
-                    getOverlay(dashboardField)?.Hide();
-                    getOverlay(beatmapListingField)?.Hide();
-                    getOverlay(changelogOverlayField)?.Hide();
-                    getOverlay(rankingsOverlayField)?.Hide();
-                    getOverlay(wikiOverlayField)?.Hide();
-                    getOverlay(settingsField)?.Hide();
-                    getOverlay(notificationsField)?.Hide();
-                }
-            };
         }
 
         private void injectMOsuChatLine()
