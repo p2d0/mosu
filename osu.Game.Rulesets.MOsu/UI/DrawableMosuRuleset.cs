@@ -158,11 +158,15 @@ namespace osu.Game.Rulesets.MOsu.UI
                 void countPlay()
                 {
                     var scoreInfo = player.Score.ScoreInfo;
+                    // Count against the active profile, not the score's RealmUser: osu core attributes scores to the
+                    // logged-in API user (p720 here), but MOsu profiles are the local abstraction (Guest). The score's
+                    // RealmUser is rewritten to the active profile on results anyway.
+                    string profileName = localUserManager?.ActiveProfile.Value ?? scoreInfo.RealmUser.Username;
                     if (playCounted || !LocalUserManager.ShouldCountPlay(scoreInfo))
                         return;
 
                     playCounted = true;
-                    localUserManager?.IncrementPlayCount(scoreInfo.RealmUser.Username);
+                    localUserManager?.IncrementPlayCount(profileName);
                 }
 
                 // Pass: the score has been recorded and results are being shown.
