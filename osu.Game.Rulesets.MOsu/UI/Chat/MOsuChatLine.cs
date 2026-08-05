@@ -17,6 +17,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.MOsu.UI.Chat
@@ -43,6 +44,9 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
         [Resolved(CanBeNull = true)]
         private INotificationOverlay? notifications { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private RulesetStore? rulesetStore { get; set; }
 
         public MenuItem[] ContextMenuItems
         {
@@ -108,36 +112,44 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         }
 
         /// <summary>
-        /// Resolves a preset's mods into mod instances for the current ruleset (empty on failure).
+        /// Resolves a preset's mods into mod instances for the preset's own ruleset (empty on failure).
         /// </summary>
         private List<Mod> resolvePresetMods(PresetExportDto preset)
         {
-            if (currentRuleset == null || preset.Mods.Count == 0)
+            if (preset.Mods.Count == 0)
                 return new List<Mod>();
 
-            try
-            {
-                var rulesetInstance = currentRuleset.Value.CreateInstance();
-                var mods = new List<Mod>();
+            var rulesetInstance = getPresetRulesetInstance(preset);
+            if (rulesetInstance == null)
+                return new List<Mod>();
 
-                foreach (var apiMod in preset.Mods)
+            var mods = new List<Mod>();
+
+            foreach (var apiMod in preset.Mods)
+            {
+                try
                 {
-                    try
-                    {
-                        mods.Add(apiMod.ToMod(rulesetInstance));
-                    }
-                    catch
-                    {
-                        // skip mods that fail to resolve
-                    }
+                    var mod = apiMod.ToMod(rulesetInstance);
+                    // unknown mods (no ruleset knows the acronym) are skipped; display falls back to raw acronyms
+                    if (mod is not UnknownMod)
+                        mods.Add(mod);
                 }
+                catch
+                {
+                    // skip mods that fail to resolve
+                }
+            }
 
-                return mods;
-            }
-            catch
-            {
-                return new List<Mod>();
-            }
+            return mods;
+        }
+
+        /// <summary>
+        /// Creates a ruleset instance from the preset's encoded ruleset, falling back to the current one.
+        /// </summary>
+        private Ruleset? getPresetRulesetInstance(PresetExportDto preset)
+        {
+            var info = rulesetStore?.GetRuleset(preset.RulesetShortName) ?? currentRuleset?.Value;
+            return info?.CreateInstance();
         }
 
         /// <summary>
