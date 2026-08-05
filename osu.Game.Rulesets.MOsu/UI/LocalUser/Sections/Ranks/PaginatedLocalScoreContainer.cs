@@ -66,6 +66,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
             Logger.Log($"Loading local scores for {user.User.Id} {user.User.Username}, ruleset: {user.Ruleset.ShortName}", level: LogLevel.Debug);
             return await getScores(user).ConfigureAwait(false);
         }
+
         private Task<List<ScoreInfo>> getScores(UserProfileData user){
             return Task.Run(() => {
                 switch (type) {
@@ -76,7 +77,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                         return LocalUserManager.GetBestScores(user.User.Username,user.Ruleset);
 
                 }});
-                }
+        }
 
         private int drawableItemIndex;
 

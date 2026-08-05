@@ -8,7 +8,6 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics;
 using osu.Game.Screens.Select;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
@@ -45,10 +44,20 @@ namespace osu.Game.Rulesets.MOsu.Screens
         private CancellationTokenSource debounceSource;
         private int requestSequence;
         private int pendingOnlineID;
-        private IAPIProvider api = null!;
+
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmapManager { get; set; } = null!;
+
+        [Resolved]
+        private IRulesetConfigCache configCache { get; set; } = null!;
+
+        [Resolved]
+        private RulesetStore rulesets { get; set; } = null!;
+
         private RulesetInfo ruleset = null!;
-        private BeatmapManager beatmapManager = null!;
-        private IRulesetConfigCache configCache = null!;
         private readonly ScoreInfo score;
         private readonly Random random = new Random();
 
@@ -65,13 +74,11 @@ namespace osu.Game.Rulesets.MOsu.Screens
             this.score = score;
         }
 
-        [BackgroundDependencyLoader]
-        private void load(IAPIProvider api, RulesetStore rulesets, BeatmapManager beatmapManager, IRulesetConfigCache configCache)
+        protected override void LoadComplete()
         {
-            this.api = api;
-            this.ruleset = rulesets.GetRuleset(score.BeatmapInfo?.Ruleset.ShortName ?? "osu") ?? rulesets.AvailableRulesets.First();
-            this.beatmapManager = beatmapManager;
-            this.configCache = configCache;
+            base.LoadComplete();
+
+            ruleset = rulesets.GetRuleset(score.BeatmapInfo?.Ruleset.ShortName ?? "osu") ?? rulesets.AvailableRulesets.First();
 
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -161,11 +168,7 @@ namespace osu.Game.Rulesets.MOsu.Screens
                     },
                 },
             };
-        }
 
-        protected override void LoadComplete()
-        {
-            base.LoadComplete();
             if (!api.IsLoggedIn)
             {
                 Logger.Log("[MOsu] SuggestedSongsPanel: user not logged in, hiding", LoggingTarget.Runtime);
