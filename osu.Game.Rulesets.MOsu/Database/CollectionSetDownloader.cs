@@ -17,9 +17,9 @@ using Realms;
 namespace osu.Game.Rulesets.MOsu.Database
 {
     /// <summary>
-    /// Shared sequential download of unavailable beatmap sets for collection imports:
-    /// checks availability on osu!, routes unavailable maps to the nekoha mirror backup,
-    /// and waits for each set to land in realm before moving on.
+    /// Per-set beatmap download primitives for MOsu imports: availability check, official download
+    /// with mirror fallback, and waiting for a set to land in realm. Used by collection imports
+    /// (sequential loop) and single-set downloads.
     /// </summary>
     public class CollectionSetDownloader
     {
@@ -51,78 +51,43 @@ namespace osu.Game.Rulesets.MOsu.Database
         }
 
         /// <summary>
-        /// Downloads <paramref name="setIds"/> one at a time (sequential), routing unavailable maps
-        /// straight to the mirror backup. Returns the number of sets successfully downloaded.
-        /// <paramref name="onSetDownloaded"/> fires for each set once it is confirmed in the realm
-        /// (after the download completes).
+        /// Downloads a single set: official osu! download when available, mirror fallback otherwise.
+        /// Returns true once the set is confirmed in the realm. Single-set entry point — sequential
+        /// callers await each set in turn.
         /// </summary>
-        public async Task<int> DownloadSequential(
-            List<int> setIds,
-            ProgressNotification notification,
-            Func<int, string>? getTitle = null,
-            Action<int>? onSetDownloaded = null)
+        /// <summary>
+        /// Downloads a single set: official osu! download when available, mirror fallback otherwise.
+        /// Returns true once the set is confirmed in the realm. Single-set entry point — sequential
+        /// callers await each set in turn.
+        /// </summary>
+        public async Task<bool> DownloadSet(int setId)
         {
+            await ResolveSet(setId);
+            return await WaitForSetInRealm(setId);
+        }
+
+        /// <summary>
+        /// Attempts a download of <paramref name="setId"/>: official osu! download when available,
+        /// mirror fallback otherwise. Failures post their own notifications.
+        /// </summary>
+        private async Task ResolveSet(int setId)
+        {
+            var onlineSet = new APIBeatmapSet { OnlineID = setId };
+
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
-            var failedSets = new HashSet<int>();
-            var syncLock = new object();
-            int downloaded = 0;
 
             localDownloader.DownloadFailed += req =>
             {
                 // official download failed -> fall back to the mirror
-                DownloadViaMirror(req.Model.OnlineID, notification, syncLock, failedSets);
+                DownloadViaMirror(req.Model.OnlineID);
             };
-
-            for (int i = 0; i < setIds.Count; i++)
-            {
-                if (notification.State == ProgressNotificationState.Cancelled) break;
-
-                int setId = setIds[i];
-                string title = getTitle?.Invoke(setId) ?? $"Set {setId}";
-
-                schedule(() =>
-                {
-                    notification.Text = $"Downloading \"{title}\" ({i + 1}/{setIds.Count})...";
-                    notification.Progress = (float)i / setIds.Count;
-                });
-
-                await ResolveSet(setId, localDownloader, notification, syncLock, failedSets);
-                await WaitForSetInRealm(setId);
-
-                if (failedSets.Contains(setId)) continue;
-                downloaded++;
-
-                onSetDownloaded?.Invoke(setId);
-
-                schedule(() =>
-                {
-                    notification.Text = $"Downloaded \"{title}\" ({i + 1}/{setIds.Count})...";
-                    notification.Progress = (float)(i + 1) / setIds.Count;
-                });
-            }
-
-            schedule(() =>
-            {
-                notification.Text = $"Downloaded {downloaded} maps.";
-                if (failedSets.Count > 0)
-                    notification.Text += $" ({failedSets.Count} unavailable)";
-                notification.Progress = 1;
-                notification.State = ProgressNotificationState.Completed;
-            });
-
-            return downloaded;
-        }
-
-        private async Task ResolveSet(int setId, BeatmapModelDownloader localDownloader, ProgressNotification notification, object syncLock, HashSet<int> failedSets)
-        {
-            var onlineSet = new APIBeatmapSet { OnlineID = setId };
 
             try
             {
                 if (!await IsSetAvailable(setId))
                 {
                     Logger.Log($"Set {setId} not found on osu!, using nekoha mirror backup...");
-                    DownloadViaMirror(setId, notification, syncLock, failedSets);
+                    DownloadViaMirror(setId);
                 }
                 else if (localDownloader.GetExistingDownload(onlineSet) == null)
                 {
@@ -161,35 +126,35 @@ namespace osu.Game.Rulesets.MOsu.Database
             }
         }
 
-        private async Task WaitForSetInRealm(int setId)
+        /// <summary>
+        /// Waits until <paramref name="setId"/> appears in the realm, or returns false after a timeout
+        /// (the mirror backup's HTTP budget — a dead mirror never lands a set).
+        /// </summary>
+        private async Task<bool> WaitForSetInRealm(int setId)
         {
             var tcs = new TaskCompletionSource<bool>();
-            IDisposable? subscription = null;
 
-            subscription = realm.RegisterForNotifications(
-                r => r.All<BeatmapSetInfo>().Where(s => !s.DeletePending),
-                (sender, _) =>
+            using (realm.RegisterForNotifications(
+                       r => r.All<BeatmapSetInfo>().Where(s => s.OnlineID == setId && !s.DeletePending),
+                       (items, _) =>
+                       {
+                           if (items.Any())
+                               tcs.TrySetResult(true);
+                       }))
+                  {
+                try
                 {
-                    if (sender.ToList().Any(s => s.OnlineID == setId))
-                    {
-                        subscription?.Dispose();
-                        tcs.TrySetResult(true);
-                    }
-                });
-
-            // Check if already present
-            var existing = realm.Run(r => r.All<BeatmapSetInfo>().Filter("DeletePending == false && OnlineID == $0", setId).FirstOrDefault());
-            if (existing != null)
-            {
-                subscription?.Dispose();
-                tcs.TrySetResult(true);
+                    // the initial notification fires immediately, covering sets already present
+                    return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                }
+                catch (TimeoutException)
+                {
+                    return false;
+                }
             }
-
-            await tcs.Task.WaitAsync(TimeSpan.FromMinutes(2));
-            subscription?.Dispose();
         }
 
-        private void DownloadViaMirror(int setId, ProgressNotification notification, object syncLock, HashSet<int> failedSets)
+        private void DownloadViaMirror(int setId)
         {
             Logger.Log($"Download unavailable for set {setId}, trying nekoha mirror backup...");
             Task.Factory.StartNew(() =>
@@ -212,8 +177,6 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                     schedule(() =>
                     {
-                        notification.Text = $"Importing set {setId} from nekoha mirror...";
-
                         // throwaway notification so the shared progress notification isn't mutated/completed by the importer
                         var importNotification = new ProgressNotification();
                         Task.Run(async () =>
@@ -225,13 +188,12 @@ namespace osu.Game.Rulesets.MOsu.Database
                             {
                                 if (result.Any())
                                 {
-                                    notification.Text = $"Imported set {setId} from nekoha mirror backup";
+                                    Logger.Log($"Imported set {setId} from nekoha mirror backup");
                                 }
                                 else
                                 {
                                     Logger.Error(new Exception($"Nekoha mirror import returned 0 items for set {setId}. File size: {fileSize} bytes."), "Nekoha mirror import empty");
                                     notifications.Post(new SimpleErrorNotification { Text = $"Nekoha mirror import failed for set {setId}" });
-                                    lock (syncLock) failedSets.Add(setId);
                                 }
                             });
                         });
@@ -240,7 +202,6 @@ namespace osu.Game.Rulesets.MOsu.Database
                 catch (Exception ex)
                 {
                     Logger.Error(ex, $"Nekoha mirror backup failed for set {setId}");
-                    lock (syncLock) failedSets.Add(setId);
                 }
             }, TaskCreationOptions.LongRunning);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Game.Database;
@@ -32,9 +33,9 @@ namespace osu.Game.Rulesets.MOsu.Database
         /// <summary>
         /// Imports mod presets from JSON, deduplicating by name.
         /// <paramref name="onImported"/> fires on the update thread with the number of newly imported presets.
-        /// Never throws — errors are posted as notifications.
+        /// Never throws — errors are posted as notifications. Completes synchronously.
         /// </summary>
-        public void Import(string json, Action<int>? onImported = null)
+        public Task Import(string json, Action<int>? onImported = null)
         {
             try
             {
@@ -43,7 +44,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                 if (transferObjects == null || transferObjects.Count == 0)
                 {
                     schedule(() => notifications.Post(new SimpleErrorNotification { Text = "No presets found in file." }));
-                    return;
+                    return Task.CompletedTask;
                 }
 
                 int importedCount = 0;
@@ -91,6 +92,8 @@ namespace osu.Game.Rulesets.MOsu.Database
                 Logger.Error(ex, "Failed to import presets.");
                 schedule(() => notifications.Post(new SimpleErrorNotification { Text = $"Failed to import presets: {ex.Message}" }));
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

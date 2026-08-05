@@ -14,9 +14,6 @@ namespace osu.Game.Rulesets.MOsu.Database
         }
 
         protected override Task Import(string json, Action<Action> schedule)
-        {
-            new ModPresetImportProcessor(realm, notifications, schedule).Import(json);
-            return Task.CompletedTask;
-        }
+            => new ModPresetImportProcessor(realm, notifications, schedule).Import(json);
     }
 }

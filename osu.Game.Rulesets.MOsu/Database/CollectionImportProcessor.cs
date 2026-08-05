@@ -94,12 +94,14 @@ namespace osu.Game.Rulesets.MOsu.Database
                     };
                     notifications.Post(notification);
 
-                    var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, schedule);
-                    await downloader.DownloadSequential(
+                    var downloadedSetIds = await DownloadSequential(
                         missingSetIds,
                         notification,
-                        getTitle: setId => transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}",
-                        onSetDownloaded: importScores ? setId => importedScores += importCollectionScores(transferObjects, setId) : null);
+                        getTitle: setId => transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}");
+
+                    if (importScores)
+                        foreach (var setId in downloadedSetIds)
+                            importedScores += importCollectionScores(transferObjects, setId);
                 }
 
                 // Step 3: Final pass covers beatmaps that already existed locally (never downloaded);
@@ -120,6 +122,59 @@ namespace osu.Game.Rulesets.MOsu.Database
                 Logger.Error(ex, "Failed to import collections.");
                 schedule(() => notifications.Post(new SimpleErrorNotification { Text = $"Failed to import collections: {ex.Message}" }));
             }
+        }
+
+        /// <summary>
+        /// Downloads <paramref name="setIds"/> one at a time (sequential), importing scores per set
+        /// as it lands. Returns the ids of sets successfully downloaded.
+        /// </summary>
+        private async Task<List<int>> DownloadSequential(
+            List<int> setIds,
+            ProgressNotification notification,
+            Func<int, string>? getTitle = null)
+        {
+            var downloader = new CollectionSetDownloader(api, beatmapManager, notifications, realm, schedule);
+            var downloadedSetIds = new List<int>();
+            int unavailable = 0;
+
+            for (int i = 0; i < setIds.Count; i++)
+            {
+                if (notification.State == ProgressNotificationState.Cancelled) break;
+
+                int setId = setIds[i];
+                string title = getTitle?.Invoke(setId) ?? $"Set {setId}";
+
+                schedule(() =>
+                {
+                    notification.Text = $"Downloading \"{title}\" ({i + 1}/{setIds.Count})...";
+                    notification.Progress = (float)i / setIds.Count;
+                });
+
+                if (!await downloader.DownloadSet(setId))
+                {
+                    unavailable++;
+                    continue;
+                }
+
+                downloadedSetIds.Add(setId);
+
+                schedule(() =>
+                {
+                    notification.Text = $"Downloaded \"{title}\" ({i + 1}/{setIds.Count})...";
+                    notification.Progress = (float)(i + 1) / setIds.Count;
+                });
+            }
+
+            schedule(() =>
+            {
+                notification.Text = $"Downloaded {downloadedSetIds.Count} maps.";
+                if (unavailable > 0)
+                    notification.Text += $" ({unavailable} unavailable)";
+                notification.Progress = 1;
+                notification.State = ProgressNotificationState.Completed;
+            });
+
+            return downloadedSetIds;
         }
 
         private (HashSet<int> setIds, int count) importCollections(List<CollectionTransferObject> transferObjects)
