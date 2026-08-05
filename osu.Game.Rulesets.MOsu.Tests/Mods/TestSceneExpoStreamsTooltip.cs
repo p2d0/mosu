@@ -5,6 +5,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Platform;
 using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Tests.Visual;
 using osuTK;
 
