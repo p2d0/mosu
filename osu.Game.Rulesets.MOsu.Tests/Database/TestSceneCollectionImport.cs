@@ -10,6 +10,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Online.Chat;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.MOsu.Configuration;
@@ -418,6 +419,40 @@ namespace osu.Game.Rulesets.MOsu.Tests.Database
                 message.Links.Any(l => l.Url.StartsWith("osu://preset/")));
 
                     }
+
+        [Test]
+        public void TestRejectsNestedBeatmapInScores()
+        {
+            const string nested_json = @"[
+  {
+    ""Name"": ""Broken"",
+    ""Beatmaps"": [
+      {
+        ""BeatmapSetId"": 1646582,
+        ""BeatmapMD5Hash"": ""aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"",
+        ""Scores"": [
+          { ""BeatmapHash"": ""aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"", ""RulesetShortName"": ""mosu"", ""TotalScore"": 100, ""Date"": ""2026-01-01T00:00:00+00:00"" },
+          { ""BeatmapSetId"": 2462926, ""BeatmapMD5Hash"": ""bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"", ""Scores"": [] }
+        ]
+      }
+    ]
+  }
+]";
+
+            var notifications = new TestNotificationOverlay();
+
+            AddStep("import nested json", () =>
+            {
+                var processor = new CollectionImportProcessor(Realm, notifications, new DummyAPIAccess(), beatmapManager, action => action());
+                _ = processor.Import(nested_json);
+            });
+
+            AddAssert("structural error notification posted", () =>
+                notifications.Posted.OfType<SimpleErrorNotification>().Any(n => n.Text.ToString().Contains("nested inside the Scores")));
+
+            AddAssert("nothing imported from nested file", () =>
+                Realm.Run(r => !r.All<BeatmapCollection>().ToList().Any(c => c.Name == "Broken")));
+        }
 
         private void SeedBeatmapsAndScores()
         {

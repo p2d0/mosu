@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Collections;
@@ -51,6 +52,11 @@ namespace osu.Game.Rulesets.MOsu.Database
         {
             try
             {
+                // Reject structurally malformed files up front (e.g. a beatmap object pasted inside
+                // another beatmap's Scores array) so the user gets a clear error instead of a
+                // silently-missing beatmap that never reaches the download queue.
+                validateJsonStructure(json);
+
                 var transferObjects = JsonConvert.DeserializeObject<List<CollectionTransferObject>>(json);
 
                 if (transferObjects == null || transferObjects.Count == 0)
@@ -103,6 +109,10 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                 if (importedScores > 0)
                     schedule(() => notifications.Post(new SimpleNotification { Text = $"Imported {importedScores} scores." }));
+            }
+            catch (CollectionJsonStructureException ex)
+            {
+                schedule(() => notifications.Post(new SimpleErrorNotification { Text = $"Invalid file: {ex.Message}" }));
             }
             catch (JsonException)
             {
@@ -167,6 +177,65 @@ namespace osu.Game.Rulesets.MOsu.Database
             });
 
             return importedScores;
+        }
+
+        /// <summary>
+        /// Rejects structurally invalid collection JSON: beatmap entries nested inside another
+        /// beatmap's <c>Scores</c> array would be invisible to the import (never queued for
+        /// download, never scored), and score entries missing required fields would import garbage
+        /// — fail loudly instead.
+        /// </summary>
+        private static void validateJsonStructure(string json)
+        {
+            var root = JArray.Parse(json);
+
+            for (int ci = 0; ci < root.Count; ci++)
+            {
+                var collection = root[ci];
+
+                string collectionName = (string?)collection["Name"] ?? $"#{ci + 1}";
+
+                if (collection["Beatmaps"] is not JArray beatmaps)
+                    throw new CollectionJsonStructureException($"Collection \"{collectionName}\" is missing a \"Beatmaps\" array.");
+
+                foreach (var beatmap in beatmaps)
+                {
+                    int? setId = (int?)beatmap["BeatmapSetId"];
+
+                    if (setId == null)
+                        throw new CollectionJsonStructureException($"Collection \"{collectionName}\" contains a beatmap entry without a \"BeatmapSetId\".");
+
+                    if (beatmap["BeatmapMD5Hash"] is not JValue { Type: JTokenType.String } md5 || string.IsNullOrEmpty((string?)md5))
+                        throw new CollectionJsonStructureException($"Beatmap (set {setId}) is missing a \"BeatmapMD5Hash\".");
+
+                    if (beatmap["Scores"] is not JArray scores) continue;
+
+                    foreach (var score in scores)
+                    {
+                        // a score entry carrying beatmap-level keys is a beatmap object in the wrong array
+                        foreach (var nestedKey in new[] { "BeatmapSetId", "BeatmapMD5Hash", "BeatmapTitle", "BeatmapAuthor", "Scores" })
+                        {
+                            if (score[nestedKey] != null)
+                                throw new CollectionJsonStructureException($"Beatmap (set {score["BeatmapSetId"]?.Value<string>() ?? score["BeatmapMD5Hash"]?.Value<string>()}) is nested inside the Scores array of set {setId}. Move it to the top-level \"Beatmaps\" array.");
+                        }
+
+                        // scores missing these fields would import as garbage or silently skip
+                        foreach (var required in new[] { "BeatmapHash", "RulesetShortName", "TotalScore", "Date" })
+                        {
+                            if (score[required] == null)
+                                throw new CollectionJsonStructureException($"Score in set {setId} is missing \"{required}\".");
+                        }
+                    }
+                }
+            }
+        }
+
+        private class CollectionJsonStructureException : Exception
+        {
+            public CollectionJsonStructureException(string message)
+                : base(message)
+            {
+            }
         }
 
         private (HashSet<int> setIds, int count) importCollections(List<CollectionTransferObject> transferObjects)
