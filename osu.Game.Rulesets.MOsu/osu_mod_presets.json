@@ -12,7 +12,7 @@
   {
     "Name": " RD SuperAim 1/4",
     "Description": "Like superaim but increases distance of everything ≤1/4 beat",
-    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":10.0, \"divisor\":4}},{\"acronym\":\"NL\"}]"
+    "ModsJson": "[{\"acronym\":\"DA\",\"settings\":{\"approach_rate\":10.0}},{\"acronym\":\"RDV2\",\"settings\":{\"aim_distance_multiplier\":6.0,\"expo_jumps\":true,\"divisor\":4}},{\"acronym\":\"NL\"}]",
   },
   {
     "Name": "CG Tap aim 1/4",
