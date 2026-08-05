@@ -53,11 +53,14 @@ namespace osu.Game.Rulesets.MOsu.Database
         /// <summary>
         /// Downloads <paramref name="setIds"/> one at a time (sequential), routing unavailable maps
         /// straight to the mirror backup. Returns the number of sets successfully downloaded.
+        /// <paramref name="onSetDownloaded"/> fires for each set once it is confirmed in the realm
+        /// (after the download completes).
         /// </summary>
         public async Task<int> DownloadSequential(
             List<int> setIds,
             ProgressNotification notification,
-            Func<int, string>? getTitle = null)
+            Func<int, string>? getTitle = null,
+            Action<int>? onSetDownloaded = null)
         {
             var localDownloader = new BeatmapModelDownloader(beatmapManager, api);
             var failedSets = new HashSet<int>();
@@ -88,6 +91,8 @@ namespace osu.Game.Rulesets.MOsu.Database
 
                 if (failedSets.Contains(setId)) continue;
                 downloaded++;
+
+                onSetDownloaded?.Invoke(setId);
 
                 schedule(() =>
                 {

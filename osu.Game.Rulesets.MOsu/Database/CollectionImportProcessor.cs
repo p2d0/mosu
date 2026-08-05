@@ -42,7 +42,8 @@ namespace osu.Game.Rulesets.MOsu.Database
 
         /// <summary>
         /// Imports collections from JSON: writes collections, downloads missing beatmap sets
-        /// (with mirror fallback), and imports scores when the JSON contains any.
+        /// (with mirror fallback), and imports scores when the JSON contains any — each set's scores
+        /// land as soon as that set is downloaded, plus a final pass for beatmaps already present locally.
         /// <paramref name="onCollectionsImported"/> fires once collections are written (before any downloads).
         /// Never throws — errors are posted as notifications.
         /// </summary>
@@ -76,6 +77,8 @@ namespace osu.Game.Rulesets.MOsu.Database
                 // Step 2: Download missing beatmap sets
                 var missingSetIds = CollectionSetDownloader.GetMissingSetIds(realm, allSetIds);
 
+                int importedScores = 0;
+
                 if (missingSetIds.Count > 0)
                 {
                     if (!api.IsLoggedIn)
@@ -95,13 +98,15 @@ namespace osu.Game.Rulesets.MOsu.Database
                     await downloader.DownloadSequential(
                         missingSetIds,
                         notification,
-                        getTitle: setId => transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}");
+                        getTitle: setId => transferObjects.SelectMany(c => c.Beatmaps).FirstOrDefault(b => b.BeatmapSetId == setId)?.BeatmapTitle ?? $"Set {setId}",
+                        onSetDownloaded: importScores ? setId => importedScores += importCollectionScores(transferObjects, setId) : null);
                 }
 
-                // Step 3: Import scores last so freshly downloaded sets are included
+                // Step 3: Final pass covers beatmaps that already existed locally (never downloaded);
+                // per-set imports from Step 2 are skipped by the duplicate check.
                 if (importScores)
                 {
-                    int importedScores = importCollectionScores(transferObjects);
+                    importedScores += importCollectionScores(transferObjects);
                     schedule(() => notifications.Post(new SimpleNotification { Text = $"Imported {importedScores} scores." }));
                 }
             }
@@ -147,7 +152,7 @@ namespace osu.Game.Rulesets.MOsu.Database
             return (allSetIds, importedCollections);
         }
 
-        private int importCollectionScores(List<CollectionTransferObject> transferObjects)
+        private int importCollectionScores(List<CollectionTransferObject> transferObjects, int? setId = null)
         {
             int importedScores = 0;
 
@@ -155,7 +160,7 @@ namespace osu.Game.Rulesets.MOsu.Database
             {
                 foreach (var dto in transferObjects)
                 {
-                    foreach (var beatmapEntry in dto.Beatmaps)
+                    foreach (var beatmapEntry in dto.Beatmaps.Where(b => setId == null || b.BeatmapSetId == setId))
                     {
                         foreach (var sDto in beatmapEntry.Scores)
                         {
