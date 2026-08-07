@@ -2,9 +2,6 @@
 
 A custom osu! ruleset with unique mods and local PP tracking.
 
-https://github.com/user-attachments/assets/a94b24b1-2ad0-4456-87fa-0d8f1d29181a
-
-
 
 ## Features
 
