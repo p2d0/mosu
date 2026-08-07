@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.HUD
 
             AddStep("add star rating display (3.88 stars)", () =>
             {
-                starRating = new StarRatingDisplay(new StarDifficulty(8.56, 0))
+                starRating = new StarRatingDisplay(new StarDifficulty(8.92, 0))
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,

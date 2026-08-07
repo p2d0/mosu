@@ -145,7 +145,7 @@ namespace osu.Game.Rulesets.MOsu.Database
                 try
                 {
                     // the initial notification fires immediately, covering sets already present
-                    return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                    return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(60));
                 }
                 catch (TimeoutException)
                 {
