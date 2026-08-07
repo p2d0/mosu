@@ -42,9 +42,9 @@ namespace osu.Game.Rulesets.MOsu.Database
         }
 
         /// <summary>
-        /// Imports collections from JSON: writes collections, downloads missing beatmap sets
-        /// (with mirror fallback), and imports scores when the JSON contains any — each set's scores
-        /// land as soon as that set is downloaded, plus a final pass for beatmaps already present locally.
+        /// Imports collections from JSON: writes collections, imports scores for beatmaps already
+        /// present locally, then downloads missing beatmap sets (with mirror fallback) importing
+        /// each set's scores as soon as it lands.
         /// <paramref name="onCollectionsImported"/> fires once collections are written (before any downloads).
         /// Never throws — errors are posted as notifications.
         /// </summary>
@@ -77,19 +77,16 @@ namespace osu.Game.Rulesets.MOsu.Database
                     });
                 });
 
-                // Step 2: Download missing beatmap sets
+                // Step 2: Import scores for beatmaps already present locally, so they land
+                // immediately instead of waiting for any downloads to finish.
+                int importedScores = importCollectionScores(transferObjects);
+
+                // Step 3: Download missing beatmap sets; per-set imports skip the early
+                // existing-beatmap imports via the duplicate check.
                 var missingSetIds = CollectionSetDownloader.GetMissingSetIds(realm, allSetIds);
 
-                int importedScores = 0;
-
-                if (missingSetIds.Count > 0)
+                if (missingSetIds.Count > 0 && api.IsLoggedIn)
                 {
-                    if (!api.IsLoggedIn)
-                    {
-                        schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." }));
-                        return;
-                    }
-
                     var notification = new ProgressNotification
                     {
                         State = ProgressNotificationState.Active,
@@ -97,15 +94,15 @@ namespace osu.Game.Rulesets.MOsu.Database
                     };
                     notifications.Post(notification);
 
-                    importedScores = await DownloadSequential(
+                    importedScores += await DownloadSequential(
                         missingSetIds,
                         notification,
                         transferObjects);
                 }
-
-                // Step 3: Final pass covers beatmaps that already existed locally (never downloaded);
-                // per-set imports from Step 2 are skipped by the duplicate check.
-                importedScores += importCollectionScores(transferObjects);
+                else if (missingSetIds.Count > 0)
+                {
+                    schedule(() => notifications.Post(new SimpleErrorNotification { Text = "Cannot download maps: not logged in." }));
+                }
 
                 if (importedScores > 0)
                     schedule(() => notifications.Post(new SimpleNotification { Text = $"Imported {importedScores} scores." }));
