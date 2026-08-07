@@ -216,13 +216,14 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
         {
             if (selectedMods == null || currentRuleset == null) return;
 
+            // Switch to the preset's ruleset instead of refusing to apply it.
             if (preset.RulesetShortName != currentRuleset.Value.ShortName)
             {
-                notifications?.Post(new SimpleErrorNotification
-                {
-                    Text = $"Preset is for {preset.RulesetShortName}, but you are playing {currentRuleset.Value.ShortName}."
-                });
-                return;
+                var rulesetInfo = rulesetStore?.GetRuleset(preset.RulesetShortName);
+                if (rulesetInfo == null)
+                    return;
+
+                currentRuleset.Value = rulesetInfo;
             }
 
             var mods = resolvePresetMods(preset);

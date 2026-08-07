@@ -16,7 +16,6 @@ using osu.Game.Database;
 using osu.Game.Online;
 using Realms;
 using osu.Game.Users;
-using osu.Framework.Graphics;
 
 namespace osu.Game.Rulesets.MOsu
 {
