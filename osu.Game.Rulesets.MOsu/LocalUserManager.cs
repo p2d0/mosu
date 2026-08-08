@@ -117,9 +117,12 @@ namespace osu.Game.Rulesets.MOsu
         /// <summary>
         /// Whether a play should count towards play count, mirroring the main game's score submission
         /// gates: at least one successful hit (misses don't count) and a non-zero total score.
+        /// Autoplay/cinema plays are never counted (not a real play).
         /// </summary>
         public static bool ShouldCountPlay(ScoreInfo score)
-            => score.TotalScore > 0 && score.Statistics.Any(s => s.Key.IsHit() && s.Value > 0);
+            => score.TotalScore > 0
+               && score.Statistics.Any(s => s.Key.IsHit() && s.Value > 0)
+               && score.Mods.All(m => m is not OsuModAutoplay && m is not OsuModCinema);
 
         /// <summary>
         /// Increments the persisted play count for a profile, mirroring the main game:
