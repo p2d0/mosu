@@ -7,6 +7,7 @@ using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
+using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
@@ -124,7 +125,10 @@ namespace osu.Game.Rulesets.MOsu.Mods
                     new PathControlPoint(new Vector2((float)targetDistance, 0))
                 })
             };
-            slider.Samples = firstCircle?.Samples;
+            slider.Samples = new List<HitSampleInfo>
+            {
+                new HitSampleInfo(HitSampleInfo.HIT_NORMAL)
+            };
             slider.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
             return slider;
         }
@@ -190,7 +194,11 @@ namespace osu.Game.Rulesets.MOsu.Mods
                 {
                     Position = position,
                     NewCombo = cornerIndex == 0,
-                    Samples = firstCircle?.Samples
+                    Samples = new List<HitSampleInfo>
+                    {
+                        new HitSampleInfo(HitSampleInfo.HIT_NORMAL)
+                    }
+
                 };
 
                 circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
