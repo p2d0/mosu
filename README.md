@@ -1,6 +1,6 @@
 # MOsu
 
-A custom osu! ruleset with unique mods and local PP tracking.
+osu! practice ruleset with unique mods and local PP tracking.
 
 [![Watch the video](https://img.youtube.com/vi/nWBAsAGQIVM/maxresdefault.jpg)](https://youtu.be/nWBAsAGQIVM)
 
