@@ -2,7 +2,7 @@
 
 A custom osu! ruleset with unique mods and local PP tracking.
 
-[![Watch the video](https://img.youtube.com/vi/I1UD6QGJKok/maxresdefault.jpg)](https://youtu.be/I1UD6QGJKok)
+[![Watch the video](https://img.youtube.com/vi/nWBAsAGQIVM/maxresdefault.jpg)](https://youtu.be/nWBAsAGQIVM)
 
 
 ## Features
