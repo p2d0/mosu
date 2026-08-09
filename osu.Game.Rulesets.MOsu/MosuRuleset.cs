@@ -238,7 +238,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override string ShortName => SHORT_NAME;
 
-        public override string PlayingVerb => "Clicking cocks";
+        public override string PlayingVerb => "MOsu! Clicking circles";
 
         public override RulesetSettingsSubsection CreateSettings() => new MosuSettingsSubsection(this);
 
