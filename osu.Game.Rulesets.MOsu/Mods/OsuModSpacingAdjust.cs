@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Object spacing", "Modifies the spacing between objects.")]
         public BindableNumber<float> ObjectSpacing { get; } = new BindableFloat
         {
-            MinValue = 0.1f,
+            MinValue = 0.01f,
             MaxValue = 3,
             Default = 1,
             Value = 1,
