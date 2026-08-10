@@ -7,20 +7,20 @@ osu! practice ruleset with unique mods and local PP tracking.
 
 ## Features
 
-- **Local PP** — calculates and tracks performance points locally (with local profiles)
+- **Local PP** — (with local profiles)
 - **Skip breaks** — button to skip break sections
-- **ModRandomV2** — randomizes hit object positions with configurable patterns
+- **ModRandomV2** — like random but you can increase the distances between objects, separate for aim and stream (configured by divisor)
   - Make any map an aim practice map
   - Make any map a stream practice map
+- **ModCircleGen** — generate a long stream practice map from any map (or you can do 32x 16x triples etc...)
+- **Miss Challenge** — fail if your miss count exceeds a configurable limit (1–100). Option to auto-set from your best local score for the beatmap, matching by active mods (DT rate, AR/CS).
 - **Merged mods** — includes [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
 - **Live star rating** — HUD element showing cumulative star rating as you play, updating in real-time (like pp counter)
 - Mod preset import/export — share presets via JSON files
 - Collection import/export — back up and share beatmap collections
 - Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
+- Suggested songs at the expanded score view.
 
-## Mods
-
-- **Miss Challenge** — fail if your miss count exceeds a configurable limit (1–100). Option to auto-set from your best local score for the beatmap, matching by active mods (DT rate, AR/CS).
 
 ## Install
 
