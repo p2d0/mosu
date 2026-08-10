@@ -19,7 +19,18 @@ osu! practice ruleset with unique mods and local PP tracking.
 - **Live star rating** — HUD element showing cumulative star rating as you play, updating in real-time (like pp counter)
 - Mod preset import/export — share presets via JSON files
 - Collection import/export — back up and share beatmap collections
-- Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
+  
+
+
+
+https://github.com/user-attachments/assets/862ee4f3-dc3b-48cd-9b4a-bce583774099
+
+
+
+
+- Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them, or type /md or /mods to send and click the link to apply.
+<img width="749" height="359" alt="image" src="https://github.com/user-attachments/assets/545c2144-1ad1-4958-ab46-42f9550991d6" />
+
 - Suggested songs at the expanded score view.
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ac1c1909-a4e9-49eb-84fc-a2f12ca4c02f" />
 
