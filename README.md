@@ -1,3 +1,4 @@
+
 # MOsu
 
 osu! practice ruleset with unique mods and local PP tracking.
@@ -20,6 +21,7 @@ osu! practice ruleset with unique mods and local PP tracking.
 - Collection import/export — back up and share beatmap collections
 - Chat mod sharing — right-click a chat line to send current mods, right-click a message to apply them
 - Suggested songs at the expanded score view.
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ac1c1909-a4e9-49eb-84fc-a2f12ca4c02f" />
 
 
 ## Install
