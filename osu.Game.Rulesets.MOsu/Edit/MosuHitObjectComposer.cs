@@ -28,6 +28,7 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Compose.Components;
 using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.Edit
@@ -133,6 +134,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             // real user edits count as unsaved changes.
             savedStateHash = computeStateHash();
         }
+
+        protected override ComposeBlueprintContainer CreateBlueprintContainer()
+            => new MosuBlueprintContainer(this);
 
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             => editorDrawableRuleset = new MosuEditorDrawableRuleset(ruleset, beatmap, mods);

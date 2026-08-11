@@ -61,6 +61,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             text += MosuGimmickSerializer.Serialize(playable.Gimmicks.Sections, playable.Gimmicks.HitObjectGimmicks);
 
+            Logger.Log($"[MOsu] save writing {playable.Gimmicks.HitObjectGimmicks.Entries.Count} hitobject gimmick entries");
+
             byte[] data = Encoding.UTF8.GetBytes(text);
             string filename = $"{info.Metadata.Artist} - {info.Metadata.Title} ({info.Metadata.Author.Username}) [{info.DifficultyName}].osu".GetValidFilename();
 

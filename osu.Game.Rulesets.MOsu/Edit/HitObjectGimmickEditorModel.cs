@@ -97,6 +97,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private void onHitObjectRemoved(HitObject hitObject)
         {
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] HitObjectRemoved fired: {hitObject.GetType().Name}@{hitObject.StartTime} entriesBefore={playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count}");
+
             if (hitObject is not OsuHitObject osuHitObject)
                 return;
 
@@ -108,11 +110,13 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             if (playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count != before)
             {
-                osu.Framework.Logging.Logger.Log($"[MOsu-Model] removed {before - playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count} gimmick entries for deleted object@{osuHitObject.StartTime}");
+                osu.Framework.Logging.Logger.Log($"[MOsu-Model] removed {before - playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count} gimmick entries for deleted object@{osuHitObject.StartTime} id={objectId}");
                 playableBeatmap.Gimmicks.Applied = false;
                 MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
                 Changed?.Invoke();
             }
+            else
+                osu.Framework.Logging.Logger.Log($"[MOsu-Model] no gimmick entries matched deleted object@{osuHitObject.StartTime} id={objectId}");
         }
 
         public bool HasSelection => editorBeatmap.SelectedHitObjects.OfType<OsuHitObject>().Any();
