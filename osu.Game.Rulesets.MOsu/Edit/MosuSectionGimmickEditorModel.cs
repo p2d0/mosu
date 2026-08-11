@@ -19,6 +19,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private SectionGimmickSettings? copiedSettings;
 
+        /// <summary>
+        /// Fired after a mutation has been written and re-applied to the playable beatmap.
+        /// </summary>
+        public event Action? Changed;
+
         public readonly BindableList<SectionGimmickSection> Sections = new BindableList<SectionGimmickSection>();
 
         public readonly BindableInt SelectedSectionId = new BindableInt(-1);
@@ -236,6 +241,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 editorBeatmap.EndChange();
             }
+
+            Changed?.Invoke();
         }
 
         private void syncFromBeatmap(int? preferredSelection = null)

@@ -13,6 +13,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using osuTK.Graphics;
@@ -54,7 +55,21 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                 }
             }
 
+            dedupeHitObjectEntries(hitObjectGimmicks);
             return (sections, hitObjectGimmicks);
+        }
+
+        private static void dedupeHitObjectEntries(BeatmapHitObjectGimmicks gimmicks)
+        {
+            var seen = new HashSet<(double StartTime, int ComboIndexWithOffsets)>();
+
+            for (int i = gimmicks.Entries.Count - 1; i >= 0; i--)
+            {
+                var e = gimmicks.Entries[i];
+
+                if (!seen.Add((e.StartTime, e.ComboIndexWithOffsets)))
+                    gimmicks.Entries.RemoveAt(i);
+            }
         }
 
         private static void handleSectionGimmick(string line, BeatmapSectionGimmicks sections)

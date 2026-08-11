@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Gimmicks;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 
@@ -75,12 +76,39 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private readonly EditorBeatmap editorBeatmap;
         private readonly MosuBeatmap playableBeatmap;
 
+        /// <summary>
+        /// Fired after a mutation has been written and re-applied to the playable beatmap.
+        /// </summary>
+        public event Action? Changed;
+
         private BeatmapHitObjectGimmicks gimmicks => playableBeatmap.Gimmicks.HitObjectGimmicks;
 
         public HitObjectGimmickEditorModel(EditorBeatmap editorBeatmap)
         {
             this.editorBeatmap = editorBeatmap;
             playableBeatmap = editorBeatmap.PlayableBeatmap as MosuBeatmap ?? throw new InvalidOperationException("Mosu editor requires a MosuBeatmap playable beatmap.");
+
+            // When a hitobject is deleted, remove its gimmick entries so they don't get
+            // rebound onto other objects by the legacy-key re-sync.
+            editorBeatmap.HitObjectRemoved += onHitObjectRemoved;
+        }
+
+        private void onHitObjectRemoved(HitObject hitObject)
+        {
+            if (hitObject is not OsuHitObject osuHitObject)
+                return;
+
+            int before = playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count;
+            playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.RemoveAll(e =>
+                e.StartTime == osuHitObject.StartTime && e.ComboIndexWithOffsets == osuHitObject.ComboIndexWithOffsets);
+
+            if (playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count != before)
+            {
+                osu.Framework.Logging.Logger.Log($"[MOsu-Model] removed {before - playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count} gimmick entries for deleted object@{osuHitObject.StartTime}");
+                playableBeatmap.Gimmicks.Applied = false;
+                MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+                Changed?.Invoke();
+            }
         }
 
         public bool HasSelection => editorBeatmap.SelectedHitObjects.OfType<OsuHitObject>().Any();
@@ -217,6 +245,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public void SetSelectionBoolSetting(System.Action<HitObjectGimmickSettings, bool> setter, bool enabled)
@@ -240,6 +271,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public void SetSelectionFakePunishMode(FakePunishMode mode)
@@ -263,6 +297,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public void SetSelectionFloatSetting(System.Action<HitObjectGimmickSettings, float> setter, float value)
@@ -287,6 +324,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public void SetSelectionIntSetting(System.Action<HitObjectGimmickSettings, int> setter, int value)
@@ -311,6 +351,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public void SetSelectionDoubleSetting(System.Action<HitObjectGimmickSettings, double> setter, double value)
@@ -335,6 +378,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
             playableBeatmap.Gimmicks.Applied = false;
             MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
             editorBeatmap.EndChange();
+
+            osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
+            Changed?.Invoke();
         }
 
         public static BeatmapHitObjectGimmicks CloneHitObjectGimmicks(BeatmapHitObjectGimmicks source)
@@ -450,11 +496,16 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private static HitObjectGimmickEntry getOrCreateEntry(BeatmapHitObjectGimmicks gimmicks, OsuHitObject hitObject)
         {
-            var existing = gimmicks.Entries.FirstOrDefault(e =>
+            // Last-wins so commit and the state-read dictionary agree; collapse any accumulated duplicates.
+            var existing = gimmicks.Entries.LastOrDefault(e =>
                 e.StartTime == hitObject.StartTime && e.ComboIndexWithOffsets == hitObject.ComboIndexWithOffsets);
 
             if (existing != null)
+            {
+                gimmicks.Entries.RemoveAll(e => !ReferenceEquals(e, existing)
+                    && e.StartTime == existing.StartTime && e.ComboIndexWithOffsets == existing.ComboIndexWithOffsets);
                 return existing;
+            }
 
             existing = new HitObjectGimmickEntry
             {

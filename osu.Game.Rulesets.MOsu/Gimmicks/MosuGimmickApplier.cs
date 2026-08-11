@@ -28,6 +28,14 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         public const float PLAYFIELD_HEIGHT = 384;
 
         /// <summary>
+        /// Instance-stable binding of gimmick settings to hitobjects, resolved once per apply
+        /// by legacy key. Keeps settings bound to the same object even if another object is
+        /// moved to the same position/time afterwards.
+        /// </summary>
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings> object_settings_bindings =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings>();
+
+        /// <summary>
         /// Applies per-section/per-object difficulty overrides and forced mod flags.
         /// Idempotent per beatmap instance via <paramref name="data"/>.<see cref="MosuGimmickData.Applied"/>.
         /// Only mutates object properties in place - never the hitobject list (the drawable
@@ -44,6 +52,8 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             data.Applied = true;
             Logger.Log($"[MOsu] applying to {beatmap.HitObjects.Count} objects: {data.Sections.Sections.Count} sections, {data.HitObjectGimmicks.Entries.Count} entries");
 
+            synchroniseEntriesWithHitObjects(beatmap, data);
+            bindObjectSettings(beatmap, data);
             applySectionDifficultyOverrides(beatmap, data);
             applySectionForcedMods(beatmap, data);
 
@@ -60,10 +70,32 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         /// </summary>
         public static HitObjectGimmickSettings? GetObjectSettings(IBeatmap beatmap, MosuGimmickData data, HitObject hitObject)
         {
-            if (data.HitObjectGimmicks.Entries.Count == 0)
+            if (hitObject is not osu.Game.Rulesets.Osu.Objects.OsuHitObject osuHitObject)
                 return null;
 
+            // Prefer the instance binding (stable across object moves); fall back to legacy-key resolution.
+            if (object_settings_bindings.TryGetValue(osuHitObject, out var bound))
+                return bound;
+
             return getObjectSettings(hitObject, createObjectSettingsLookup(data.HitObjectGimmicks));
+        }
+
+        /// <summary>
+        /// Binds each hitobject to its resolved gimmick settings by legacy key, once per apply.
+        /// </summary>
+        private static void bindObjectSettings(IBeatmap beatmap, MosuGimmickData data)
+        {
+            var lookup = createObjectSettingsLookup(data.HitObjectGimmicks);
+
+            foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>())
+            {
+                var settings = getObjectSettings(o, lookup);
+
+                object_settings_bindings.Remove(o);
+
+                if (settings != null)
+                    object_settings_bindings.Add(o, settings);
+            }
         }
 
         /// <summary>
@@ -140,6 +172,38 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             }
         }
 
+        /// <summary>
+        /// Re-binds gimmick entries whose legacy key no longer matches any hitobject.
+        /// When an entry's (StartTime, ComboIndexWithOffsets) is missing but an object with
+        /// the same StartTime exists, rebind the entry to that object. Keeps matching correct
+        /// when combo indices drift across an encode/decode round trip.
+        /// </summary>
+        private static void synchroniseEntriesWithHitObjects(IBeatmap beatmap, MosuGimmickData data)
+        {
+            if (data.HitObjectGimmicks.Entries.Count == 0)
+                return;
+
+            var objects = beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().ToList();
+
+            var objectKeys = objects
+                             .Select(o => (o.StartTime, o.ComboIndexWithOffsets))
+                             .ToHashSet();
+
+            foreach (var entry in data.HitObjectGimmicks.Entries)
+            {
+                if (objectKeys.Contains((entry.StartTime, entry.ComboIndexWithOffsets)))
+                    continue;
+
+                // Combo drifted on round trip: rebind to the object with the same start time.
+                var candidate = objects.FirstOrDefault(o => o.StartTime == entry.StartTime);
+                if (candidate != null)
+                {
+                    entry.StartTime = candidate.StartTime;
+                    entry.ComboIndexWithOffsets = candidate.ComboIndexWithOffsets;
+                }
+            }
+        }
+
         private static Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings> createObjectSettingsLookup(BeatmapHitObjectGimmicks gimmicks)
             => HitObjectGimmickBindingUtils.CreateLookupByLegacyKey(gimmicks);
 
@@ -162,6 +226,11 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             target.NewCombo = source.NewCombo;
             target.ComboOffset = source.ComboOffset;
             target.Samples = source.Samples.ToList();
+
+            target.ComboIndex = source.ComboIndex;
+            target.ComboIndexWithOffsets = source.ComboIndexWithOffsets;
+            target.IndexInCurrentCombo = source.IndexInCurrentCombo;
+            target.LastInCombo = source.LastInCombo;
         }
 
         private static void applySectionForcedMods(IBeatmap beatmap, MosuGimmickData data)

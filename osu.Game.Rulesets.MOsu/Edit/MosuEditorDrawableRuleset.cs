@@ -1,6 +1,7 @@
 // Editor-safe drawable ruleset: applies gimmicks to the compose playfield without
 // any gameplay-only dependencies (Player, GameplayClockContainer, ...).
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -56,10 +57,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
                 MosuGimmickRuntime.EnsureApplied(Beatmap, working);
 
-                if (Beatmap is MosuBeatmap mosuBeatmap2)
-                {
-                    Logger.Log($"[MOsu-Editor] after apply: entries={mosuBeatmap2.Gimmicks.HitObjectGimmicks.Entries.Count} applied={mosuBeatmap2.Gimmicks.Applied} firstObject={Beatmap.HitObjects.FirstOrDefault()?.GetType().Name}");
-                }
             }
 
             {
@@ -81,5 +78,22 @@ namespace osu.Game.Rulesets.MOsu.Edit
         }
 
         private bool reportedGimmickDrawable;
+
+        /// <summary>
+        /// Re-creates the compose playfield drawables so fake/hidden type changes and
+        /// difficulty overrides become visible immediately after a model mutation.
+        /// </summary>
+        public void RefreshDrawables()
+        {
+            Logger.Log($"[MOsu-Editor] refreshDrawables: {Beatmap.HitObjects.Count} objects");
+
+            foreach (var h in Beatmap.HitObjects.ToList())
+            {
+                RemoveHitObject(h);
+                AddHitObject(h);
+            }
+
+            Logger.Log($"[MOsu-Editor] refreshDrawables done; fake objects now: {Beatmap.HitObjects.Count(o => MosuGimmickApplier.CreateFakeObject(Beatmap, ((MosuBeatmap)Beatmap).Gimmicks, o) != null)}");
+        }
     }
 }

@@ -416,9 +416,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private void updateFromSelection()
         {
+            osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] updateFromSelection start (was updating={updatingControls})");
             updatingControls = true;
 
-            var state = model.GetSelectionState();
+            try
+            {
+                var state = model.GetSelectionState();
             bool hasSelection = state.HasSelection;
 
             selectionStatus.Text = hasSelection
@@ -565,7 +568,16 @@ namespace osu.Game.Rulesets.MOsu.Edit
                     fakeRevealLeadInStartMs, fakeRevealLeadInLengthMs, fakeRevealFadeOutStartMs, fakeRevealFadeOutLengthMs);
             }
 
-            updatingControls = false;
+            }
+            catch (Exception e)
+            {
+                osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] updateFromSelection FAILED: {e}");
+            }
+            finally
+            {
+                updatingControls = false;
+                osu.Framework.Logging.Logger.Log("[MOsu-Toolbox] updateFromSelection done");
+            }
         }
 
         protected override void LoadComplete()
@@ -587,12 +599,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private void setBool(bool value, Action<osu.Game.Rulesets.MOsu.Gimmicks.HitObjectGimmickSettings, bool> setter)
         {
-            if (updatingControls)
-                return;
-
+            // No updatingControls guard here: control refresh sets the same value the model already
+            // holds (idempotent, no echo), and dropping the guard means user clicks always apply.
             if (!model.HasSelection)
                 return;
 
+            osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] setBool applying: value={value}");
             model.SetSelectionBoolSetting(setter, value);
             scheduleSelectionUpdate();
         }

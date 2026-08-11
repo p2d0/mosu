@@ -32,6 +32,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private RealmAccess realm = null!;
         private Storage storage = null!;
 
+        private MosuEditorDrawableRuleset editorDrawableRuleset = null!;
+
         [Cached]
         protected readonly SectionGimmickToolboxGroup SectionGimmickToolboxGroup = new SectionGimmickToolboxGroup();
 
@@ -67,8 +69,22 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             MosuGimmickRuntime.EnsureApplied(editorBeatmap.PlayableBeatmap, working);
 
-            dependencies.CacheAs(new MosuSectionGimmickEditorModel(editorBeatmap));
-            dependencies.CacheAs(new HitObjectGimmickEditorModel(editorBeatmap));
+            var sectionModel = new MosuSectionGimmickEditorModel(editorBeatmap);
+            var hitObjectModel = new HitObjectGimmickEditorModel(editorBeatmap);
+
+            dependencies.CacheAs(sectionModel);
+            dependencies.CacheAs(hitObjectModel);
+
+            // DI in the editor context is unreliable for the drawable ruleset, so wire the
+            // drawable refresh directly through the composer.
+            if (editorDrawableRuleset != null)
+            {
+                sectionModel.Changed += editorDrawableRuleset.RefreshDrawables;
+                hitObjectModel.Changed += editorDrawableRuleset.RefreshDrawables;
+                osu.Framework.Logging.Logger.Log("[MOsu-Composer] wired model changes to drawable refresh");
+            }
+            else
+                osu.Framework.Logging.Logger.Log("[MOsu-Composer] editorDrawableRuleset null at wiring time");
 
             try
             {
@@ -93,7 +109,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
         }
 
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
-            => new MosuEditorDrawableRuleset(ruleset, beatmap, mods);
+            => editorDrawableRuleset = new MosuEditorDrawableRuleset(ruleset, beatmap, mods);
 
         private void save()
         {
