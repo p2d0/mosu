@@ -48,6 +48,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private Storage storage = null!;
 
         private MosuEditorDrawableRuleset editorDrawableRuleset = null!;
+        private MosuEditorChangeHandler? editorChangeHandler;
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -110,6 +111,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
             // The list now holds fake clones in place of their sources; re-key the editor's
             // startTimeBindables so deleting a fake finds its bindable (RemoveAt keys by instance).
             rekeyStartTimeBindables(editorBeatmap);
+
+            // The core only builds a change handler for savable rulesets; provide our own so
+            // undo/redo works (states include the gimmick sections).
+            editorChangeHandler = new MosuEditorChangeHandler(editorBeatmap);
+            dependencies.CacheAs<IEditorChangeHandler>(editorChangeHandler);
+            AddInternal(editorChangeHandler);
 
             var sectionModel = new MosuSectionGimmickEditorModel(editorBeatmap);
             var hitObjectModel = new HitObjectGimmickEditorModel(editorBeatmap);
@@ -285,6 +292,14 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
                 case PlatformAction.Paste:
                     pasteWithGimmicks();
+                    return true;
+
+                case PlatformAction.Undo:
+                    editorChangeHandler?.RestoreState(-1);
+                    return true;
+
+                case PlatformAction.Redo:
+                    editorChangeHandler?.RestoreState(1);
                     return true;
             }
 
