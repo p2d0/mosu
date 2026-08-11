@@ -6,6 +6,7 @@ using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
@@ -16,7 +17,9 @@ using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Overlays.OSD;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Gimmicks;
@@ -48,6 +51,9 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         [Resolved(CanBeNull = true)]
         private IDialogOverlay? dialogOverlay { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private OnScreenDisplay onScreenDisplay { get; set; }
 
         private string? savedStateHash;
 
@@ -141,6 +147,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             savedStateHash = computeStateHash();
 
+            onScreenDisplay?.Display(new MosuBeatmapEditorToast(ToastStrings.BeatmapSaved, EditorBeatmap.BeatmapInfo.GetDisplayTitle()));
+
             // Defer the recalc a frame so the freshly-written file is fully flushed to storage
             // before a fresh working beatmap reads it (first save otherwise reads stale data).
             Scheduler.AddOnce(recalculateDifficulty);
@@ -160,6 +168,15 @@ namespace osu.Game.Rulesets.MOsu.Edit
             difficultyCache.Invalidate(info, working.BeatmapInfo);
 
             workingBeatmapCache.Invalidate(info);
+        }
+
+        private partial class MosuBeatmapEditorToast : Toast
+        {
+            public MosuBeatmapEditorToast(LocalisableString value, string beatmapDisplayName)
+                : base(InputSettingsStrings.EditorSection, value)
+            {
+                ExtraText = beatmapDisplayName;
+            }
         }
 
         private bool hasUnsavedChanges => savedStateHash != null && computeStateHash() != savedStateHash;
