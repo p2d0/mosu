@@ -153,6 +153,17 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return sawFake && sawHidden;
             });
 
+
+            AddAssert("unsafe CS override applied in editor", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
+                    return false;
+
+                var target = mosuBeatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault(o => o.StartTime == 45752);
+                Logger.Log($"[TEST] editor object@45752 Scale={target?.Scale} (CS -30 unsafe -> > 1)");
+                return target != null && target.Scale > 1;
+            });
+
             AddAssert("difficulty overrides applied to editor objects", () =>
             {
                 if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)

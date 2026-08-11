@@ -109,6 +109,16 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 Logger.Log($"[TEST] object@14680 TimePreempt={target.TimePreempt} (expected ~570)");
                 return Math.Abs(target.TimePreempt - 570) < 2;
             });
+
+            AddAssert("unsafe CS override applied (-30)", () =>
+            {
+                if (playable.HitObjects.OfType<OsuHitObject>().FirstOrDefault(o => o.StartTime == 45752) is not OsuHitObject target)
+                    return false;
+
+                // base CS 4.1 -> scale ~0.8; CS -30 (unsafe) -> much larger scale
+                Logger.Log($"[TEST] object@45752 Scale={target.Scale} (CS -30 unsafe -> scale > 1)");
+                return target.Scale > 1;
+            });
         }
     }
 }
