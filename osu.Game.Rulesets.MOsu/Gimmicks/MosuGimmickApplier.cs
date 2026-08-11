@@ -46,7 +46,13 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
             applySectionDifficultyOverrides(beatmap, data);
             applySectionForcedMods(beatmap, data);
-            Logger.Log($"[MOsu] apply done; sample object scale={beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().FirstOrDefault()?.Scale}");
+
+            foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().Where(o => o is HitCircle || o is Slider))
+            {
+                var s = getObjectSettings(o, createObjectSettingsLookup(data.HitObjectGimmicks));
+                if (s?.EnableDifficultyOverrides == true && !float.IsNaN(s.SectionCircleSize))
+                    Logger.Log($"[MOsu] apply: object@{o.StartTime} CS={s.SectionCircleSize} Scale={o.Scale}");
+            }
         }
 
         /// <summary>

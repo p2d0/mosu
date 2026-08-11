@@ -62,6 +62,13 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 }
             }
 
+            {
+                var osuH = h;
+                var settings = MosuGimmickApplier.GetObjectSettings(Beatmap, (Beatmap as MosuBeatmap)?.Gimmicks ?? new Gimmicks.MosuGimmickData(), osuH);
+                if (settings?.EnableDifficultyOverrides == true && !float.IsNaN(settings.SectionCircleSize))
+                    Logger.Log($"[MOsu-Editor] drawable-creation: object@{osuH.StartTime} CS={settings.SectionCircleSize} Scale={osuH.Scale}");
+            }
+
             var drawable = MosuGimmickRuntime.CreateGimmickDrawableRepresentation(Beatmap, h);
 
             if (drawable != null && !reportedGimmickDrawable)

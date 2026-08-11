@@ -164,6 +164,10 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return target != null && target.Scale > 1;
             });
 
+
+
+
+
             AddAssert("difficulty overrides applied to editor objects", () =>
             {
                 if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
