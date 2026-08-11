@@ -19,6 +19,7 @@ using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.UI;
@@ -149,6 +150,31 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             this.scoreManager = scoreManager!;
             this.localUserManager = localUserManager;
+
+            // Section gimmick overlays (gimmicks are parsed/applied before drawables are created).
+            if (!Mods.Any(m => m is ModFlashlight) && SectionGimmickFlashlightOverlay.HasAnyForcedFlashlightSection(Beatmap))
+            {
+                Overlays.Add(new SectionGimmickFlashlightOverlay(Beatmap, this)
+                {
+                    Depth = float.MinValue,
+                });
+            }
+
+            if (!Mods.Any(m => m is InputBlockingMod) && SectionGimmickInputBlockingOverlay.HasAnyForcedInputBlockingSection(Beatmap))
+            {
+                Overlays.Add(new SectionGimmickInputBlockingOverlay(Beatmap, this)
+                {
+                    Depth = float.MinValue,
+                });
+            }
+
+            if (SectionGimmickFunModsOverlay.HasAnyForcedFunMods(Beatmap))
+            {
+                Overlays.Add(new SectionGimmickFunModsOverlay(Beatmap, this, Mods)
+                {
+                    Depth = float.MinValue,
+                });
+            }
 
             // Attach dummy replay file to mosu scores that have no files,
             // so the delete button appears in the leaderboard context menu.
@@ -313,16 +339,41 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             ensureGimmicksApplied();
 
-            if (playableBeatmap is MosuBeatmap mosuBeatmap
-                && MosuGimmickApplier.CreateFakeObject(playableBeatmap, mosuBeatmap.Gimmicks, h) is OsuHitObject fakeObject)
+            if (playableBeatmap is not MosuBeatmap mosuBeatmap)
+                return null;
+
+            var data = mosuBeatmap.Gimmicks;
+
+            if (data.HitObjectGimmicks.Entries.Count == 0 && data.Sections.Sections.Count == 0)
+                return null;
+
+            var objectSettings = MosuGimmickApplier.GetObjectSettings(playableBeatmap, data, h);
+
+            if (objectSettings?.IsFakeNote == true
+                && MosuGimmickApplier.CreateFakeObject(playableBeatmap, data, h) is OsuHitObject fakeObject)
             {
-                fakeObject.ApplyDefaults(playableBeatmap.ControlPointInfo, MosuGimmickApplier.ResolveDifficultyForObject(playableBeatmap, mosuBeatmap.Gimmicks, h));
-                MosuGimmickApplier.ApplyForcedModsToObject(playableBeatmap, mosuBeatmap.Gimmicks, fakeObject);
+                fakeObject.ApplyDefaults(playableBeatmap.ControlPointInfo, MosuGimmickApplier.ResolveDifficultyForObject(playableBeatmap, data, h));
+                MosuGimmickApplier.ApplyForcedModsToObject(playableBeatmap, data, fakeObject);
 
                 return fakeObject switch
                 {
                     FakeHitCircle fakeCircle => new DrawableFakeHitCircle(fakeCircle),
                     FakeSlider fakeSlider => new DrawableFakeSlider(fakeSlider),
+                    _ => null
+                };
+            }
+
+            var section = data.Sections.FindSectionAt(h.StartTime);
+            bool hidden = section?.Settings.ForceHidden == true || objectSettings?.ForceHidden == true;
+            bool noApproach = section?.Settings.ForceNoApproachCircle == true || objectSettings?.ForceNoApproachCircle == true;
+
+            if (hidden || noApproach)
+            {
+                return h switch
+                {
+                    HitCircle circle => new MosuDrawableHitCircle(circle, hidden, noApproach),
+                    Slider slider => new MosuDrawableSlider(slider, hidden, noApproach),
+                    Spinner spinner => new MosuDrawableSpinner(spinner, hidden, noApproach),
                     _ => null
                 };
             }
