@@ -6,12 +6,12 @@ using osu.Framework.Allocation;
 using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osuTK.Input;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.MOsu.Beatmaps;
-using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Edit;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
@@ -472,6 +472,17 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 Logger.Log($"[TEST] object@15037 TimePreempt={target?.TimePreempt} (base AR 9.2 -> ~570, override AR 9.8 -> ~480)");
                 return target != null && Math.Abs(target.TimePreempt - 480) < 2;
             });
+
+            // Escape-with-unsaved-changes pushes the game's "Save my masterpiece!"
+            // PromptForSaveDialog via the dialog overlay; visual tests host no dialog overlay,
+            // so the composer lets the editor handle the exit there. Verify the dirty detection.
+            AddAssert("no unsaved changes after load", () =>
+                !Editor.ChildrenOfType<MosuHitObjectComposer>().Single().HasUnsavedChanges);
+            AddStep("make an edit (remove first object)", () => EditorBeatmap.Remove(EditorBeatmap.HitObjects[0]));
+            AddAssert("unsaved changes detected", () =>
+                Editor.ChildrenOfType<MosuHitObjectComposer>().Single().HasUnsavedChanges);
+            AddStep("press escape", () => InputManager.Key(Key.Escape));
+            AddUntilStep("editor exits after escape", () => !Editor.IsLoaded);
         }
     }
 }

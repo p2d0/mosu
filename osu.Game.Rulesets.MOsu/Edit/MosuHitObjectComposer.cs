@@ -2,6 +2,7 @@
 // playfield and adds the section/hitobject gimmick toolbox groups.
 
 using System.Collections.Generic;
+using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -14,16 +15,20 @@ using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Overlays;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit;
+using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
-    public partial class MosuHitObjectComposer : OsuHitObjectComposer, IKeyBindingHandler<PlatformAction>
+    public partial class MosuHitObjectComposer : OsuHitObjectComposer, IKeyBindingHandler<PlatformAction>, IKeyBindingHandler<GlobalAction>
     {
         private IReadOnlyDependencyContainer parentDependencies = null!;
         private DependencyContainer dependencies = null!;
@@ -33,6 +38,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private Storage storage = null!;
 
         private MosuEditorDrawableRuleset editorDrawableRuleset = null!;
+
+        [Resolved(CanBeNull = true)]
+        private IDialogOverlay? dialogOverlay { get; set; }
+
+        private string? savedStateHash;
 
         [Cached]
         protected readonly SectionGimmickToolboxGroup SectionGimmickToolboxGroup = new SectionGimmickToolboxGroup();
@@ -105,6 +115,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 HitObjectGimmickToolboxGroup,
                 SectionGimmickToolboxGroup,
             });
+
+            // baseline: the state as loaded (after the initial gimmick application), so only
+            // real user edits count as unsaved changes.
+            savedStateHash = computeStateHash();
         }
 
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
@@ -115,7 +129,45 @@ namespace osu.Game.Rulesets.MOsu.Edit
             if (realm == null || storage == null)
                 return;
 
-            MosuEditorSaver.Save(EditorBeatmap, realm, storage);
+            if (MosuEditorSaver.Save(EditorBeatmap, realm, storage))
+                savedStateHash = computeStateHash();
+        }
+
+        private bool hasUnsavedChanges => savedStateHash != null && computeStateHash() != savedStateHash;
+
+        /// <summary>
+        /// Whether the beatmap differs from its last-saved state (used by the tests).
+        /// </summary>
+        internal bool HasUnsavedChanges => hasUnsavedChanges;
+
+        private string computeStateHash()
+        {
+            var sb = new StringBuilder();
+
+            foreach (var o in EditorBeatmap.HitObjects)
+            {
+                sb.Append(o.GetType().Name).Append('@').Append(o.StartTime).Append(';');
+
+                if (o is IHasPosition p)
+                    sb.Append(p.Position.X).Append(',').Append(p.Position.Y).Append(';');
+            }
+
+            if (EditorBeatmap.PlayableBeatmap is MosuBeatmap mosu && mosu.Gimmicks != null)
+                sb.Append(MosuGimmickSerializer.Serialize(mosu.Gimmicks.Sections, mosu.Gimmicks.HitObjectGimmicks));
+
+            return sb.ToString();
+        }
+
+        private void exitEditor()
+        {
+            for (Drawable? d = this; d != null; d = d.Parent)
+            {
+                if (d is Editor editor)
+                {
+                    editor.Exit();
+                    return;
+                }
+            }
         }
 
         public bool OnPressed(KeyBindingPressEvent<PlatformAction> e)
@@ -130,6 +182,35 @@ namespace osu.Game.Rulesets.MOsu.Edit
         }
 
         public void OnReleased(KeyBindingReleaseEvent<PlatformAction> e)
+        {
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (e.Action != GlobalAction.Back)
+                return false;
+
+            if (!hasUnsavedChanges)
+                return false;
+
+            // a dialog is already displayed: consume so the editor doesn't exit, but don't
+            // re-push (pushing would dismiss the currently displayed dialog).
+            if (dialogOverlay?.CurrentDialog != null)
+                return true;
+
+            if (dialogOverlay == null)
+                return false; // no dialog overlay (e.g. visual tests): let the editor handle the exit.
+
+            dialogOverlay.Push(new PromptForSaveDialog(exitEditor, () =>
+            {
+                save();
+                exitEditor();
+            }, () => { }));
+
+            return true;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
         }
     }
