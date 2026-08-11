@@ -1221,6 +1221,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 if (!updatingControls && v.NewValue)
                     postUnsafeDifficultyWarning();
 
+                updateDifficultySliderRanges();
                 mutateSetting(s => s.AllowUnsafeDifficultyOverrideValues = v.NewValue);
             });
             allowUnsafeStackLeniencyOverrideValues.Current.BindValueChanged(v =>
@@ -1426,6 +1427,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
                 enableDifficultyOverrides.Current.Value = settings.EnableDifficultyOverrides;
                 allowUnsafeDifficultyOverrideValues.Current.Value = settings.AllowUnsafeDifficultyOverrideValues;
+                updateDifficultySliderRanges();
                 allowUnsafeStackLeniencyOverrideValues.Current.Value = settings.AllowUnsafeStackLeniencyOverrideValues;
                 allowUnsafeTickRateOverrideValues.Current.Value = settings.AllowUnsafeTickRateOverrideValues;
                 difficultyOverrideStartWithBeatmapValues.Current.Value = settings.DifficultyOverrideStartWithBeatmapValues;
@@ -1874,6 +1876,15 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private bool isUnsafeDifficultyOverrideEnabled()
             => allowUnsafeDifficultyOverrideValues.Current.Value;
+
+        private void updateDifficultySliderRanges()
+        {
+            bool unsafeEnabled = isUnsafeDifficultyOverrideEnabled();
+
+            sectionCircleSize.SetRange(unsafeEnabled ? -1000f : 0f, unsafeEnabled ? 1000f : 11f);
+            sectionApproachRate.SetRange(unsafeEnabled ? -1000f : 0f, unsafeEnabled ? 1000f : 11f);
+            sectionOverallDifficulty.SetRange(unsafeEnabled ? -1000f : 0f, unsafeEnabled ? 1000f : 11f);
+        }
 
         private bool isUnsafeStackLeniencyOverrideEnabled()
             => allowUnsafeStackLeniencyOverrideValues.Current.Value;

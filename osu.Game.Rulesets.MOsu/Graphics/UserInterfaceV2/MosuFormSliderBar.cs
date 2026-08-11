@@ -5,6 +5,7 @@
 // default, which is the stock behaviour), so the property is accepted but inert.
 
 using System.Numerics;
+using osu.Framework.Bindables;
 using osu.Game.Graphics.UserInterfaceV2;
 
 namespace osu.Game.Rulesets.MOsu.Graphics.UserInterfaceV2
@@ -17,5 +18,17 @@ namespace osu.Game.Rulesets.MOsu.Graphics.UserInterfaceV2
         /// If <see langword="false"/>, empty commit resets to the default value (stock behaviour).
         /// </summary>
         public bool CommitEmptyAsNaN { get; init; }
+
+        /// <summary>
+        /// Switches the slider's editable range (e.g. normal vs unsafe/over-the-top values).
+        /// </summary>
+        public void SetRange(T min, T max)
+        {
+            if (Current is BindableNumber<T> number)
+            {
+                number.MinValue = min;
+                number.MaxValue = max;
+            }
+        }
     }
 }

@@ -39,6 +39,11 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                 if (cached != null)
                 {
                     data = mosuBeatmap.Gimmicks = cached;
+
+                    // The cached data is shared across beatmap instances, but Applied is per-beatmap:
+                    // this beatmap's objects still need the gimmicks applied.
+                    data.Applied = false;
+
                     Logger.Log($"[MOsu] gimmick cache hit: {cacheKey}");
                 }
                 else

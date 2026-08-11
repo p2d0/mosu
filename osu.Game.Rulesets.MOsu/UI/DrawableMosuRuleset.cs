@@ -342,6 +342,14 @@ namespace osu.Game.Rulesets.MOsu.UI
         public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h)
         {
             ensureGimmicksApplied();
+
+            if (playableBeatmap is MosuBeatmap mosuBeatmap)
+            {
+                var settings = MosuGimmickApplier.GetObjectSettings(playableBeatmap, mosuBeatmap.Gimmicks, h);
+                if (settings?.EnableDifficultyOverrides == true && !float.IsNaN(settings.SectionCircleSize))
+                    Logger.Log($"[MOsu-Gameplay] drawable-creation: object@{h.StartTime} CS={settings.SectionCircleSize} Scale={h.Scale}");
+            }
+
             return MosuGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
         }
 
