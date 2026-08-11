@@ -16,6 +16,7 @@ using osu.Game.Rulesets.MOsu.Edit;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Tests.Visual;
 
@@ -36,6 +37,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
 
         private Live<BeatmapSetInfo>? importedSet;
         private WorkingBeatmap? importedWorking;
+        private MosuGimmickData? preParsedGimmicks;
 
         protected override bool UseFreshStoragePerRun => true;
 
@@ -59,8 +61,27 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 importedWorking = beatmapManager.GetWorkingBeatmap(beatmapInfo);
             });
 
-            // The editor's working beatmap resolves the imported map's file, so the runtime's
-            // EnsureApplied parses the gimmick sections itself (no cache seeding needed).
+            AddStep("pre-parse gimmick sections", () =>
+            {
+                var storagePath = importedWorking!.BeatmapInfo.BeatmapSet?.GetPathForFile(importedWorking.BeatmapInfo.Path);
+                Assert.That(storagePath, Is.Not.Null);
+
+                using var stream = importedWorking.GetStream(storagePath!);
+                Assert.That(stream, Is.Not.Null);
+
+                using var reader = new StreamReader(stream);
+                var (sections, hitObjectGimmicks) = MosuGimmickParser.Parse(reader);
+
+                preParsedGimmicks = new MosuGimmickData
+                {
+                    Sections = sections,
+                    HitObjectGimmicks = hitObjectGimmicks,
+                    Parsed = true,
+                };
+
+                Logger.Log($"[TEST] pre-parsed {sections.Sections.Count} sections, {hitObjectGimmicks.Entries.Count} hitobject gimmicks");
+            });
+
             base.SetUpSteps();
         }
 
@@ -68,9 +89,40 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
         {
             // The editor converts with the map's BeatmapInfo.Ruleset, and the Frums map is osu-mode,
             // so force the ruleset to mosu to exercise the mosu editor + gimmick application.
-            var beatmap = importedWorking!.Beatmap;
-            beatmap.BeatmapInfo.Ruleset = ruleset;
-            return beatmap;
+            var source = importedWorking!.Beatmap;
+            source.BeatmapInfo.Ruleset = ruleset;
+
+            // The imported Beatmap holds generic HitObjects; convert to osu objects first (the
+            // same step GetPlayableBeatmap performs), then wrap in a MosuBeatmap carrying the
+            // pre-parsed gimmicks (the editor test's working beatmap has no file access, so the
+            // runtime cannot parse it itself).
+            var converted = new OsuBeatmapConverter(source, new osu.Game.Rulesets.Osu.OsuRuleset()).Convert() as Beatmap<OsuHitObject>;
+
+            // the converter alone leaves slider velocity/end-times unset; the editor's processor
+            // would normally do this, so replicate it before wrapping
+            if (converted != null)
+            {
+                foreach (var o in converted.HitObjects)
+                    o.ApplyDefaults(converted.ControlPointInfo, converted.Difficulty);
+            }
+
+            var mosu = new MosuBeatmap
+            {
+                BeatmapInfo = converted?.BeatmapInfo ?? source.BeatmapInfo,
+                Difficulty = source.Difficulty,
+                ControlPointInfo = converted?.ControlPointInfo ?? source.ControlPointInfo,
+                Gimmicks = preParsedGimmicks ?? new MosuGimmickData(),
+            };
+
+            if (converted != null)
+            {
+                foreach (var o in converted.HitObjects)
+                    mosu.HitObjects.Add(o);
+            }
+
+            Logger.Log($"[TEST] CreateBeatmap: convertedObjects={converted?.HitObjects.Count} mosu={mosu.HitObjects.Count} gimmicksParsed={mosu.Gimmicks.Parsed} entries={mosu.Gimmicks.HitObjectGimmicks.Entries.Count} firstType={source.HitObjects.FirstOrDefault()?.GetType().Name}");
+
+            return mosu;
         }
 
         [Test]
