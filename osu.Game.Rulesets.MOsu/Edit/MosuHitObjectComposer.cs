@@ -6,6 +6,7 @@ using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Logging;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
@@ -38,6 +39,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private Storage storage = null!;
 
         private MosuEditorDrawableRuleset editorDrawableRuleset = null!;
+
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
+
+        [Resolved]
+        private IWorkingBeatmapCache workingBeatmapCache { get; set; } = null!;
 
         [Resolved(CanBeNull = true)]
         private IDialogOverlay? dialogOverlay { get; set; }
@@ -129,8 +136,30 @@ namespace osu.Game.Rulesets.MOsu.Edit
             if (realm == null || storage == null)
                 return;
 
-            if (MosuEditorSaver.Save(EditorBeatmap, realm, storage))
-                savedStateHash = computeStateHash();
+            if (!MosuEditorSaver.Save(EditorBeatmap, realm, storage))
+                return;
+
+            savedStateHash = computeStateHash();
+
+            // Defer the recalc a frame so the freshly-written file is fully flushed to storage
+            // before a fresh working beatmap reads it (first save otherwise reads stale data).
+            Scheduler.AddOnce(recalculateDifficulty);
+        }
+
+        private void recalculateDifficulty()
+        {
+            // The editor's BeatmapInfo is a copy and lags the realm after save; re-fetch the
+            // live model so the caches invalidate against the file just written.
+            var info = realm.Run(r => r.Find<BeatmapInfo>(EditorBeatmap.BeatmapInfo.ID));
+
+            if (info == null)
+                return;
+
+            workingBeatmapCache.Invalidate(info);
+            var working = workingBeatmapCache.GetWorkingBeatmap(info);
+            difficultyCache.Invalidate(info, working.BeatmapInfo);
+
+            workingBeatmapCache.Invalidate(info);
         }
 
         private bool hasUnsavedChanges => savedStateHash != null && computeStateHash() != savedStateHash;
