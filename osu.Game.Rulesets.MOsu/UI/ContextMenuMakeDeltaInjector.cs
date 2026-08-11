@@ -1,8 +1,9 @@
-// Injects an "Edit delta" item into the song select beatmap right-click menu via reflection
+// Injects a "Make map delta" item into the song select beatmap right-click menu via reflection
 // (same pattern as the toolbar/wave-container and chat injections).
 //
-// The item flips the current beatmap's realm ruleset to mosu and opens the editor, which
-// makes the mosu composer (gimmick preview/toolbox) engage for maps registered as osu.
+// The item flips the current beatmap's realm ruleset to mosu, so the map is treated as a mosu
+// beatmap when played: the mosu converter wraps it and the gameplay runtime parses + applies its
+// delta gimmick sections. It does not open the editor.
 //
 // Only the song select screen's own context menu container is hooked (it persists for the
 // lifetime of the screen), never context menus elsewhere in the game.
@@ -14,19 +15,18 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Logging;
-using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.UserInterface;
-using osu.Game.Screens;
-using osu.Game.Screens.Edit;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
 using osu.Game.Screens.Select;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public static class ContextMenuEditDeltaInjector
+    public static class ContextMenuMakeDeltaInjector
     {
         private static readonly FieldInfo? menu_field = typeof(ContextMenuContainer).GetField("menu", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -35,7 +35,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private static bool enabled = menu_field != null;
 
         /// <summary>
-        /// Hooks the currently active song select screen's context menu so it gains an "Edit delta"
+        /// Hooks the currently active song select screen's context menu so it gains a "Make map delta"
         /// entry. Safe to call repeatedly (no double-hooking); no-op outside song select.
         /// </summary>
         public static void Hook(OsuGame game, RealmAccess realm)
@@ -47,7 +47,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 return;
 
             var beatmap = (IBindable<WorkingBeatmap>)game.Dependencies.Get(typeof(IBindable<WorkingBeatmap>));
-            var performer = (IPerformFromScreenRunner)game.Dependencies.Get(typeof(IPerformFromScreenRunner));
 
             foreach (var container in songSelect.ChildrenOfType<OsuContextMenuContainer>())
             {
@@ -63,19 +62,42 @@ namespace osu.Game.Rulesets.MOsu.UI
                     if (state != MenuState.Open)
                         return;
 
-                    if (menu.Items.Any(i => string.Equals(i.Text.ToString(), @"Edit delta", StringComparison.Ordinal)))
+                    if (menu.Items.Any(i => string.Equals(i.Text.ToString(), @"Make map delta", StringComparison.Ordinal)))
                         return;
 
-                    menu.Items = menu.Items
-                                     .Append(new OsuMenuItem(@"Edit delta", MenuItemType.Destructive, () => editDelta(beatmap, realm, performer)))
-                                     .ToArray();
+                    var existing = menu.Items.ToList();
+                    existing.Insert(1, new OsuMenuItem(@"Make map delta", MenuItemType.Destructive, () => makeMapDelta(game, beatmap, realm)));
+                    menu.Items = existing.ToArray();
                 };
 
-                Logger.Log($"[MOsu] Hooked song select context menu for Edit delta");
+                Logger.Log($"[MOsu] Hooked song select context menu for Make map delta");
             }
         }
 
-        private static void editDelta(IBindable<WorkingBeatmap> beatmap, RealmAccess realm, IPerformFromScreenRunner performer)
+        private static void makeMapDelta(OsuGame game, IBindable<WorkingBeatmap> beatmap, RealmAccess realm)
+        {
+            var info = beatmap.Value?.BeatmapInfo;
+            if (info == null)
+                return;
+
+            IDialogOverlay? dialogOverlay = null;
+            try
+            {
+                dialogOverlay = game.Dependencies.Get(typeof(IDialogOverlay)) as IDialogOverlay;
+            }
+            catch
+            {
+            }
+
+            if (dialogOverlay == null)
+                flipToMosu(beatmap, realm);
+            else
+                dialogOverlay.Push(new ConfirmDialog(
+                    "Make this map a mosu (delta) map? Will allow editing delta gimmicks but the map wont be available in regular osu! (only mosu!)",
+                    () => flipToMosu(beatmap, realm)));
+        }
+
+        private static void flipToMosu(IBindable<WorkingBeatmap> beatmap, RealmAccess realm)
         {
             var info = beatmap.Value?.BeatmapInfo;
             if (info == null)
@@ -92,8 +114,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 if (managed.Ruleset.ShortName != mosuRuleset.ShortName)
                     managed.Ruleset = mosuRuleset;
             });
-
-            performer.PerformFromScreen(screen => screen.Push(new EditorLoader()));
         }
     }
 }
