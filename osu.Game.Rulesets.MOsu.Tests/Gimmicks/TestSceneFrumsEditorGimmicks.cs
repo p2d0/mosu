@@ -5,11 +5,13 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Edit;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
@@ -25,6 +27,12 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
 
         [Resolved]
         private BeatmapManager beatmapManager { get; set; } = null!;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private Storage storage { get; set; } = null!;
 
         private Live<BeatmapSetInfo>? importedSet;
         private WorkingBeatmap? importedWorking;
@@ -167,6 +175,38 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
 
 
 
+
+
+            AddAssert("save writes .osu with gimmick sections", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
+                    return false;
+
+                if (!MosuEditorSaver.Save(EditorBeatmap, realm, storage))
+                    return false;
+
+                var info = realm.Run(r => r.Find<BeatmapInfo>(mosuBeatmap.BeatmapInfo.ID)?.Detach());
+                if (info == null || info.Path == null)
+                    return false;
+
+                var storagePath = info.BeatmapSet?.GetPathForFile(info.Path);
+                if (storagePath == null)
+                    return false;
+
+                using var stream = storage.GetStorageForDirectory("files").GetStream(storagePath);
+                if (stream == null)
+                    return false;
+
+                using var reader = new StreamReader(stream);
+                var text = reader.ReadToEnd();
+
+                bool hasSections = text.Contains("[BeatmapSectionGimmicks]");
+                bool hasHitObjectSections = text.Contains("[BeatmapHitObjectGimmicks]");
+                bool hasFakeEntries = text.Contains("IsFakeNote=True");
+
+                Logger.Log($"[TEST] saved file has sections={hasSections} hitobj={hasHitObjectSections} fakes={hasFakeEntries} len={text.Length}");
+                return hasHitObjectSections && hasFakeEntries;
+            });
 
             AddAssert("difficulty overrides applied to editor objects", () =>
             {
