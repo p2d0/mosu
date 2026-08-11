@@ -22,7 +22,10 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         public static void EnsureApplied(IBeatmap playableBeatmap, WorkingBeatmap? workingBeatmap)
         {
             if (playableBeatmap is not Beatmaps.MosuBeatmap mosuBeatmap)
+            {
+                Logger.Log($"[MOsu] gimmicks skipped: playable beatmap is {playableBeatmap.GetType().Name}");
                 return;
+            }
 
             var data = mosuBeatmap.Gimmicks;
 
@@ -36,30 +39,47 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                 if (cached != null)
                 {
                     data = mosuBeatmap.Gimmicks = cached;
+                    Logger.Log($"[MOsu] gimmick cache hit: {cacheKey}");
                 }
                 else
                 {
                     var path = workingBeatmap?.BeatmapInfo.Path;
+                    Logger.Log($"[MOsu] gimmick cache miss: {cacheKey} working={workingBeatmap?.GetType().Name} path={path}");
 
                     if (workingBeatmap == null || string.IsNullOrEmpty(path))
+                    {
+                        Logger.Log("[MOsu] gimmicks skipped: no working beatmap or path");
                         return;
+                    }
 
                     var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
+
                     if (storagePath == null)
+                    {
+                        Logger.Log($"[MOsu] gimmicks skipped: no storage path for {path}");
                         return;
+                    }
 
                     using var stream = workingBeatmap.GetStream(storagePath);
+
                     if (stream == null)
+                    {
+                        Logger.Log($"[MOsu] gimmicks skipped: stream null for {storagePath}");
                         return;
+                    }
 
                     using var reader = new StreamReader(stream);
                     (data.Sections, data.HitObjectGimmicks) = MosuGimmickParser.Parse(reader);
                     MosuGimmickCache.Set(cacheKey, data);
+                    Logger.Log($"[MOsu] parsed gimmicks: {data.Sections.Sections.Count} sections, {data.HitObjectGimmicks.Entries.Count} hitobject entries");
                 }
             }
 
             if (data.Sections.Sections.Count == 0 && data.HitObjectGimmicks.Entries.Count == 0)
+            {
+                Logger.Log("[MOsu] gimmicks skipped: no entries after parse");
                 return;
+            }
 
             Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
             MosuGimmickApplier.Apply(mosuBeatmap, data);

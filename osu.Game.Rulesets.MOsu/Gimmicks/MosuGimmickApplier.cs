@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Logging;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Objects;
@@ -35,12 +36,17 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         public static void Apply(IBeatmap beatmap, MosuGimmickData data)
         {
             if (data.Applied)
+            {
+                Logger.Log($"[MOsu] apply skipped: already applied (entries={data.HitObjectGimmicks.Entries.Count})");
                 return;
+            }
 
             data.Applied = true;
+            Logger.Log($"[MOsu] applying to {beatmap.HitObjects.Count} objects: {data.Sections.Sections.Count} sections, {data.HitObjectGimmicks.Entries.Count} entries");
 
             applySectionDifficultyOverrides(beatmap, data);
             applySectionForcedMods(beatmap, data);
+            Logger.Log($"[MOsu] apply done; sample object scale={beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().FirstOrDefault()?.Scale}");
         }
 
         /// <summary>

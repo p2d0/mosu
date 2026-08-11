@@ -52,6 +52,10 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
         {
+            // [Resolved] fields come back null in the ruleset context (gameplay and editor alike),
+            // so capture the parent chain and resolve dependencies manually (same pattern the editor ruleset uses).
+            parentDependencies = parent;
+
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
             var dependencies = base.CreateChildDependencies(parent);
             if (osuConfig != null)
@@ -356,13 +360,26 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             try
             {
-                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, beatmap?.Value);
+                WorkingBeatmap? working = null;
+
+                try
+                {
+                    working = parentDependencies.Get<IBindable<WorkingBeatmap>>()?.Value;
+                }
+                catch
+                {
+                }
+
+                Logger.Log($"[MOsu] gameplay ensure: working={working?.GetType().Name} path={working?.BeatmapInfo.Path}");
+                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, working);
             }
             catch (Exception e)
             {
                 Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
             }
         }
+
+        private IReadOnlyDependencyContainer parentDependencies = null!;
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true; // always show the gameplay cursor
 
