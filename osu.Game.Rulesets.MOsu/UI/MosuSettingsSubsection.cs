@@ -92,6 +92,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     }
                 },
                 new ImportFromClipboardButton(),
+                new ImportDeltaBeatmapButton(),
                 new SettingsButtonV2
                 {
                     Text = "Load examples",

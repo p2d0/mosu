@@ -338,56 +338,14 @@ namespace osu.Game.Rulesets.MOsu.UI
         public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h)
         {
             ensureGimmicksApplied();
-
-            if (playableBeatmap is not MosuBeatmap mosuBeatmap)
-                return null;
-
-            var data = mosuBeatmap.Gimmicks;
-
-            if (data.HitObjectGimmicks.Entries.Count == 0 && data.Sections.Sections.Count == 0)
-                return null;
-
-            var objectSettings = MosuGimmickApplier.GetObjectSettings(playableBeatmap, data, h);
-
-            if (objectSettings?.IsFakeNote == true
-                && MosuGimmickApplier.CreateFakeObject(playableBeatmap, data, h) is OsuHitObject fakeObject)
-            {
-                fakeObject.ApplyDefaults(playableBeatmap.ControlPointInfo, MosuGimmickApplier.ResolveDifficultyForObject(playableBeatmap, data, h));
-                MosuGimmickApplier.ApplyForcedModsToObject(playableBeatmap, data, fakeObject);
-
-                return fakeObject switch
-                {
-                    FakeHitCircle fakeCircle => new DrawableFakeHitCircle(fakeCircle),
-                    FakeSlider fakeSlider => new DrawableFakeSlider(fakeSlider),
-                    _ => null
-                };
-            }
-
-            var section = data.Sections.FindSectionAt(h.StartTime);
-            bool hidden = section?.Settings.ForceHidden == true || objectSettings?.ForceHidden == true;
-            bool noApproach = section?.Settings.ForceNoApproachCircle == true || objectSettings?.ForceNoApproachCircle == true;
-            bool traceable = section?.Settings.ForceTraceable == true || objectSettings?.ForceTraceable == true;
-
-            if (hidden || noApproach || traceable)
-            {
-                return h switch
-                {
-                    HitCircle circle => new MosuDrawableHitCircle(circle, hidden, noApproach, traceable),
-                    Slider slider => new MosuDrawableSlider(slider, hidden, noApproach, traceable),
-                    Spinner spinner => new MosuDrawableSpinner(spinner, hidden, noApproach, traceable),
-                    _ => null
-                };
-            }
-
-            return null;
+            return MosuGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
         }
 
         private bool gimmicksApplied;
 
         /// <summary>
         /// Ensures the delta gimmick sections (skipped by the stock decoder) are parsed and applied
-        /// to the playable beatmap before any drawables are created. The .osu file is parsed once
-        /// per map (cached), not per play.
+        /// to the playable beatmap before any drawables are created.
         /// </summary>
         private void ensureGimmicksApplied()
         {
@@ -398,49 +356,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             try
             {
-                if (playableBeatmap is not MosuBeatmap mosuBeatmap)
-                    return;
-
-                var data = mosuBeatmap.Gimmicks;
-
-                if (!data.Parsed)
-                {
-                    data.Parsed = true;
-
-                    string cacheKey = $"{mosuBeatmap.BeatmapInfo.OnlineID}:{mosuBeatmap.BeatmapInfo.MD5Hash}:{mosuBeatmap.BeatmapInfo.Path}";
-                    var cached = MosuGimmickCache.TryGet(cacheKey);
-
-                    if (cached != null)
-                    {
-                        data = mosuBeatmap.Gimmicks = cached;
-                    }
-                    else
-                    {
-                        var workingBeatmap = beatmap?.Value;
-                        var path = workingBeatmap?.BeatmapInfo.Path;
-
-                        if (workingBeatmap == null || string.IsNullOrEmpty(path))
-                            return;
-
-                        var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
-                        if (storagePath == null)
-                            return;
-
-                        using var stream = workingBeatmap.GetStream(storagePath);
-                        if (stream == null)
-                            return;
-
-                        using var reader = new StreamReader(stream);
-                        (data.Sections, data.HitObjectGimmicks) = MosuGimmickParser.Parse(reader);
-                        MosuGimmickCache.Set(cacheKey, data);
-                    }
-                }
-
-                if (data.Sections.Sections.Count == 0 && data.HitObjectGimmicks.Entries.Count == 0)
-                    return;
-
-                Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
-                MosuGimmickApplier.Apply(mosuBeatmap, data);
+                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, beatmap?.Value);
             }
             catch (Exception e)
             {

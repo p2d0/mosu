@@ -23,6 +23,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Edit;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Screens;
 using osu.Game.Rulesets.MOsu.Scoring;
@@ -232,7 +233,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override PerformanceCalculator CreatePerformanceCalculator() => new OsuPerformanceCalculator();
 
-        public override HitObjectComposer CreateHitObjectComposer() => new OsuHitObjectComposer(this);
+        public override HitObjectComposer CreateHitObjectComposer() => new MosuHitObjectComposer(this);
 
         public override IBeatmapVerifier CreateBeatmapVerifier() => new OsuBeatmapVerifier();
 
