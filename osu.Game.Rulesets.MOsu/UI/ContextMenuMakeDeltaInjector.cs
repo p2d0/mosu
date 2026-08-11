@@ -93,7 +93,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 flipToMosu(beatmap, realm);
             else
                 dialogOverlay.Push(new ConfirmDialog(
-                    "Make this map a mosu (delta) map? Will allow editing delta gimmicks but the map wont be available in regular osu! (only mosu!)",
+                    "Make this map a mosu (delta) map? Will allow editing delta gimmicks but the map will not be available in regular osu! (only mosu!)",
                     () => flipToMosu(beatmap, realm)));
         }
 
