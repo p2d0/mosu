@@ -17,31 +17,16 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
     public static class MosuGimmickRuntime
     {
         /// <summary>
-        /// Applies gimmicks from the static cache when available, without needing the working
-        /// beatmap. Used by drawable-ruleset constructors so the fake replacements land in the
-        /// playable before the max-combo simulation and the drawable enumeration.
+        /// Fired after gimmicks have been parsed + applied to a playable beatmap, so a score
+        /// processor that simulated max stats before the parse can re-simulate.
         /// </summary>
-        public static void EnsureAppliedFromCache(IBeatmap playableBeatmap)
-        {
-            if (playableBeatmap is not Beatmaps.MosuBeatmap mosuBeatmap || mosuBeatmap.Gimmicks.Parsed)
-                return;
-
-            string cacheKey = $"{mosuBeatmap.BeatmapInfo.OnlineID}:{mosuBeatmap.BeatmapInfo.MD5Hash}:{mosuBeatmap.BeatmapInfo.Path}";
-            var cached = MosuGimmickCache.TryGet(cacheKey);
-
-            if (cached == null)
-                return;
-
-            mosuBeatmap.Gimmicks = cached;
-            cached.Applied = false;
-            MosuGimmickApplier.Apply(mosuBeatmap, cached);
-        }
+        public static event Action? GimmicksApplied;
 
         /// <summary>
         /// Parses the delta gimmick sections (skipped by the stock decoder) and applies them to the
         /// playable beatmap, if not already done. The .osu file is parsed once per map (cached).
         /// </summary>
-        public static void EnsureApplied(IBeatmap playableBeatmap, WorkingBeatmap? workingBeatmap)
+        public static void EnsureApplied(IBeatmap playableBeatmap, WorkingBeatmap? workingBeatmap, bool mutateList = true)
         {
             if (playableBeatmap is not Beatmaps.MosuBeatmap mosuBeatmap)
             {
@@ -55,49 +40,31 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             {
                 data.Parsed = true;
 
-                string cacheKey = $"{mosuBeatmap.BeatmapInfo.OnlineID}:{mosuBeatmap.BeatmapInfo.MD5Hash}:{mosuBeatmap.BeatmapInfo.Path}";
-                var cached = MosuGimmickCache.TryGet(cacheKey);
+                var path = workingBeatmap?.BeatmapInfo.Path;
 
-                if (cached != null)
+                if (workingBeatmap == null || string.IsNullOrEmpty(path))
                 {
-                    data = mosuBeatmap.Gimmicks = cached;
-
-                    // The cached data is shared across beatmap instances, but Applied is per-beatmap:
-                    // this beatmap's objects still need the gimmicks applied.
-                    data.Applied = false;
-
-                    Logger.Log($"[MOsu] gimmick cache hit: {cacheKey}");
+                    Logger.Log("[MOsu] gimmicks skipped: no working beatmap or path");
+                    return;
                 }
-                else
+
+                var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
+
+                // After a MOsu save the realm Path may lag the actual file name; the working
+                // beatmap can still resolve the stream itself.
+                using var stream = storagePath != null
+                    ? workingBeatmap.GetStream(storagePath)
+                    : workingBeatmap.GetStream(path);
+
+                if (stream == null)
                 {
-                    var path = workingBeatmap?.BeatmapInfo.Path;
-                    Logger.Log($"[MOsu] gimmick cache miss: {cacheKey} working={workingBeatmap?.GetType().Name} path={path}");
-
-                    if (workingBeatmap == null || string.IsNullOrEmpty(path))
-                    {
-                        Logger.Log("[MOsu] gimmicks skipped: no working beatmap or path");
-                        return;
-                    }
-
-                    var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
-
-                    // After a MOsu save the realm Path may lag the actual file name; the working
-                    // beatmap can still resolve the stream itself.
-                    using var stream = storagePath != null
-                        ? workingBeatmap.GetStream(storagePath)
-                        : workingBeatmap.GetStream(path);
-
-                    if (stream == null)
-                    {
-                        Logger.Log($"[MOsu] gimmicks skipped: stream null for {path}");
-                        return;
-                    }
-
-                    using var reader = new StreamReader(stream);
-                    (data.Sections, data.HitObjectGimmicks) = MosuGimmickParser.Parse(reader);
-                    MosuGimmickCache.Set(cacheKey, data);
-                    Logger.Log($"[MOsu] parsed gimmicks: {data.Sections.Sections.Count} sections, {data.HitObjectGimmicks.Entries.Count} hitobject entries");
+                    Logger.Log($"[MOsu] gimmicks skipped: stream null for {path}");
+                    return;
                 }
+
+                using var reader = new StreamReader(stream);
+                (data.Sections, data.HitObjectGimmicks) = MosuGimmickParser.Parse(reader);
+                Logger.Log($"[MOsu] parsed gimmicks: {data.Sections.Sections.Count} sections, {data.HitObjectGimmicks.Entries.Count} hitobject entries");
             }
 
             if (data.Sections.Sections.Count == 0 && data.HitObjectGimmicks.Entries.Count == 0)
@@ -107,7 +74,8 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             }
 
             Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
-            MosuGimmickApplier.Apply(mosuBeatmap, data);
+            MosuGimmickApplier.Apply(mosuBeatmap, data, mutateList);
+            GimmicksApplied?.Invoke();
         }
 
         /// <summary>

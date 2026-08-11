@@ -48,18 +48,6 @@ namespace osu.Game.Rulesets.MOsu.UI
             : base(ruleset, beatmap, mods)
         {
             this.playableBeatmap = beatmap!;
-
-            // The max-combo simulation (ScoreProcessor.ApplyBeatmap) runs right after this
-            // constructor, before any drawable is created. Apply gimmicks from the cache now
-            // so the fake replacements are in the playable when the simulation runs.
-            try
-            {
-                MosuGimmickRuntime.EnsureAppliedFromCache(beatmap);
-            }
-            catch (Exception e)
-            {
-                Logger.Log($"[MOsu] cache-apply failed: {e}");
-            }
         }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)

@@ -112,15 +112,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 var (sections, hitObjectGimmicks) = MosuGimmickParser.Parse(reader);
                 Assert.That(hitObjectGimmicks.Entries.Count, Is.GreaterThan(0));
 
-                string key = $"{working.BeatmapInfo.OnlineID}:{working.BeatmapInfo.MD5Hash}:{working.BeatmapInfo.Path}";
-                MosuGimmickCache.Set(key, new MosuGimmickData
-                {
-                    Sections = sections,
-                    HitObjectGimmicks = hitObjectGimmicks,
-                    Parsed = true,
-                });
-
-                Logger.Log($"[TEST] pre-parsed {sections.Sections.Count} sections, {hitObjectGimmicks.Entries.Count} hitobject gimmicks (key: {key})");
+                Logger.Log($"[TEST] file parses {sections.Sections.Count} sections, {hitObjectGimmicks.Entries.Count} hitobject gimmicks");
             });
 
             AddStep("load player with autoplay", () =>

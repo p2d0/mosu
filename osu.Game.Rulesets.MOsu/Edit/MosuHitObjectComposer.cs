@@ -67,7 +67,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
             }
 
-            MosuGimmickRuntime.EnsureApplied(editorBeatmap.PlayableBeatmap, working);
+            MosuGimmickRuntime.EnsureApplied(editorBeatmap.PlayableBeatmap, working, mutateList: false);
 
             var sectionModel = new MosuSectionGimmickEditorModel(editorBeatmap);
             var hitObjectModel = new HitObjectGimmickEditorModel(editorBeatmap);

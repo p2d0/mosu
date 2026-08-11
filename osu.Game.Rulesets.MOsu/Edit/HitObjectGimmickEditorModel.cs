@@ -271,7 +271,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
@@ -301,7 +301,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
@@ -327,7 +327,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
@@ -354,7 +354,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
@@ -381,7 +381,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");
@@ -408,7 +408,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             editorBeatmap.BeginChange();
             playableBeatmap.Gimmicks.HitObjectGimmicks = updated;
             playableBeatmap.Gimmicks.Applied = false;
-            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks);
+            MosuGimmickApplier.Apply(playableBeatmap, playableBeatmap.Gimmicks, mutateList: false);
             editorBeatmap.EndChange();
 
             osu.Framework.Logging.Logger.Log($"[MOsu-Model] committed {updated.Entries.Count} entries, firing Changed");

@@ -9,9 +9,12 @@
 // future osu version, the adjustment silently disables itself instead of crashing.
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using osu.Framework.Logging;
+using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Judgements;
+using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.Scoring;
 
@@ -24,10 +27,53 @@ namespace osu.Game.Rulesets.MOsu.Scoring
 
         private static bool adjustmentEnabled = max_base_score_field != null && accuracy_judgement_count_field != null;
 
+        private IBeatmap? appliedBeatmap;
+        private bool needsResim;
+
         public MosuScoreProcessor()
         {
             NewJudgement += onNewJudgement;
             JudgementReverted += onJudgementReverted;
+            MosuGimmickRuntime.GimmicksApplied += onGimmicksApplied;
+        }
+
+        public override void ApplyBeatmap(IBeatmap beatmap)
+        {
+            appliedBeatmap = beatmap;
+
+            // If the gimmicks aren't parsed yet, the fake sources are still normal objects in
+            // the list, so this simulation will count them. The drawable ruleset's constructor
+            // normally applies from the cache first; when that missed, re-simulate after parse.
+            needsResim = beatmap is Beatmaps.MosuBeatmap mosu
+                         && !mosu.Gimmicks.Parsed
+                         && !beatmap.HitObjects.OfType<FakeHitCircle>().Any()
+                         && !beatmap.HitObjects.OfType<FakeSlider>().Any();
+
+            base.ApplyBeatmap(beatmap);
+        }
+
+        private void onGimmicksApplied()
+        {
+            if (!needsResim || appliedBeatmap == null)
+                return;
+
+            try
+            {
+                // Replicate ApplyBeatmap's tail: zero, simulate against the now-mutated playable
+                // (fakes judge as IgnoreHit, no combo), snapshot the maximum stats, zero again.
+                // This runs before gameplay starts, so there is no live state to disturb.
+                Reset(false);
+                SimulateAutoplay(appliedBeatmap);
+                Reset(true);
+                Reset(false);
+
+                Logger.Log($"[MOsu-Score] resimulated max stats: {string.Join(',', MaximumResultCounts.Select(k => $"{k.Key}={k.Value}"))}");
+                needsResim = false;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "resimulate max stats failed");
+            }
         }
 
         private void onNewJudgement(JudgementResult result)

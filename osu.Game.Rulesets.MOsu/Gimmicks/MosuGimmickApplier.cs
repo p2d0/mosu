@@ -73,7 +73,7 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         /// Only mutates object properties in place - never the hitobject list (the drawable
         /// ruleset enumerates it while creating drawables).
         /// </summary>
-        public static void Apply(IBeatmap beatmap, MosuGimmickData data)
+        public static void Apply(IBeatmap beatmap, MosuGimmickData data, bool mutateList = true)
         {
             if (data.Applied)
             {
@@ -92,7 +92,10 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             // Delta-style: replace fake-note sources in the playable's HitObjects list in place.
             // The max-combo autoplay simulation then judges the Fake* objects (IgnoreHit, no
             // combo) and the drawable ruleset creates fake drawables for them directly.
-            replaceFakeObjects(beatmap, data);
+            // Skipped in the editor, where the playable must keep the original object instances
+            // (EditorBeatmap keys its internal dictionaries by them).
+            if (mutateList)
+                replaceFakeObjects(beatmap, data);
 
             foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().Where(o => o is HitCircle || o is Slider))
             {

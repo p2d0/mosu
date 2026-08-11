@@ -59,29 +59,8 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 importedWorking = beatmapManager.GetWorkingBeatmap(beatmapInfo);
             });
 
-            // The editor's working beatmap is a test wrapper with no file access, so seed the
-            // gimmick cache from the real imported map (same key the runtime uses).
-            AddStep("pre-parse gimmicks into cache", () =>
-            {
-                var storagePath = importedWorking!.BeatmapInfo.BeatmapSet?.GetPathForFile(importedWorking.BeatmapInfo.Path);
-                Assert.That(storagePath, Is.Not.Null);
-
-                using var stream = importedWorking.GetStream(storagePath!);
-                Assert.That(stream, Is.Not.Null);
-
-                using var reader = new StreamReader(stream);
-                var (sections, hitObjectGimmicks) = MosuGimmickParser.Parse(reader);
-                Assert.That(hitObjectGimmicks.Entries.Count, Is.GreaterThan(0));
-
-                string key = $"{importedWorking.BeatmapInfo.OnlineID}:{importedWorking.BeatmapInfo.MD5Hash}:{importedWorking.BeatmapInfo.Path}";
-                MosuGimmickCache.Set(key, new MosuGimmickData
-                {
-                    Sections = sections,
-                    HitObjectGimmicks = hitObjectGimmicks,
-                    Parsed = true,
-                });
-            });
-
+            // The editor's working beatmap resolves the imported map's file, so the runtime's
+            // EnsureApplied parses the gimmick sections itself (no cache seeding needed).
             base.SetUpSteps();
         }
 

@@ -233,7 +233,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
                 // Re-apply gimmicks so the compose playfield preview updates immediately.
                 data.Applied = false;
-                MosuGimmickApplier.Apply(playableBeatmap, data);
+                MosuGimmickApplier.Apply(playableBeatmap, data, mutateList: false);
 
                 syncFromBeatmap(preferredSelection);
             }

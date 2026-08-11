@@ -27,16 +27,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
         public MosuEditorDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             : base(ruleset, beatmap, mods)
         {
-            // Apply gimmicks from the cache before loadObjects enumerates the playable, so the
-            // in-place fake replacements never happen mid-enumeration.
-            try
-            {
-                MosuGimmickRuntime.EnsureAppliedFromCache(beatmap);
-            }
-            catch (Exception e)
-            {
-                Logger.Log($"[MOsu-Editor] cache-apply failed: {e}");
-            }
         }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
@@ -49,7 +39,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
             try
             {
-                MosuGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
+                MosuGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value, mutateList: false);
             }
             catch (Exception e)
             {
@@ -75,7 +65,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 {
                 }
 
-                MosuGimmickRuntime.EnsureApplied(Beatmap, working);
+                MosuGimmickRuntime.EnsureApplied(Beatmap, working, mutateList: false);
 
             }
 
