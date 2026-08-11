@@ -9,6 +9,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
+using osu.Framework.Utils;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
@@ -16,13 +17,14 @@ using osu.Game.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
-using osu.Game.Database;
+using osu.Game.IO.Serialization;using osu.Game.Database;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.OSD;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Objects;
@@ -30,7 +32,7 @@ using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.UI;
-using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit;using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Framework.Screens;
 
@@ -58,6 +60,15 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         [Resolved(canBeNull: true)]
         private OnScreenDisplay onScreenDisplay { get; set; }
+
+        [Resolved]
+        private EditorClipboard editorClipboard { get; set; } = null!;
+
+        [Resolved]
+        private IBeatSnapProvider beatSnapProvider { get; set; } = null!;
+
+        [Resolved]
+        private EditorClock clock { get; set; } = null!;
 
         private string? savedStateHash;
 
@@ -257,10 +268,24 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         public bool OnPressed(KeyBindingPressEvent<PlatformAction> e)
         {
-            if (e.Action == PlatformAction.Save)
+            switch (e.Action)
             {
-                save();
-                return true;
+                case PlatformAction.Save:
+                    save();
+                    return true;
+
+                case PlatformAction.Copy:
+                    copyWithGimmicks();
+                    return true;
+
+                case PlatformAction.Cut:
+                    copyWithGimmicks();
+                    EditorBeatmap.RemoveRange(EditorBeatmap.SelectedHitObjects.OfType<OsuHitObject>().Select(i => MosuSelectionHandler.ResolveToSource(i, EditorBeatmap)).ToArray());
+                    return true;
+
+                case PlatformAction.Paste:
+                    pasteWithGimmicks();
+                    return true;
             }
 
             return false;
@@ -268,6 +293,72 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         public void OnReleased(KeyBindingReleaseEvent<PlatformAction> e)
         {
+        }
+
+        private void copyWithGimmicks()
+        {
+            if (!EditorBeatmap.SelectedHitObjects.Any())
+                return;
+
+            editorClipboard.Content.Value = new MosuClipboardContent(EditorBeatmap).Serialize();
+        }
+
+        private void pasteWithGimmicks()
+        {
+            var content = editorClipboard.Content.Value.Deserialize<MosuClipboardContent>();
+            if (content?.HitObjects == null || content.HitObjects.Count == 0)
+                return;
+
+            double timeOffset = beatSnapProvider.SnapTime(clock.CurrentTime) - content.HitObjects.Min(o => o.StartTime);
+
+            foreach (var h in content.HitObjects)
+                h.StartTime += timeOffset;
+
+            EditorBeatmap.BeginChange();
+
+            EditorBeatmap.SelectedHitObjects.Clear();
+
+            EditorBeatmap.AddRange(content.HitObjects);
+            EditorBeatmap.SelectedHitObjects.AddRange(content.HitObjects);
+
+            rebindPastedGimmicks(content, timeOffset);
+
+            EditorBeatmap.EndChange();
+        }
+
+        private void rebindPastedGimmicks(MosuClipboardContent content, double timeOffset)
+        {
+            if (content.Gimmicks == null || content.Gimmicks.Count == 0)
+                return;
+
+            if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosu)
+                return;
+
+            var pasted = content.HitObjects.OfType<OsuHitObject>().ToList();
+            bool any = false;
+
+            foreach (var entry in content.Gimmicks)
+            {
+                var target = pasted.FirstOrDefault(o =>
+                    Precision.AlmostEquals(o.StartTime, entry.StartTime + timeOffset) && o.ComboIndexWithOffsets == entry.ComboIndexWithOffsets);
+
+                if (target == null)
+                    continue;
+
+                var newEntry = MosuClipboardContent.CloneEntry(entry);
+                newEntry.ObjectId = MosuGimmickApplier.GetObjectId(target);
+                newEntry.StartTime = target.StartTime;
+                newEntry.HitObjectIndex = mosu.HitObjects.IndexOf(target);
+
+                mosu.Gimmicks.HitObjectGimmicks.Entries.Add(newEntry);
+                any = true;
+            }
+
+            if (any)
+            {
+                mosu.Gimmicks.Applied = false;
+                MosuGimmickApplier.Apply(mosu, mosu.Gimmicks, mutateList: false);
+            }
         }
 
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)

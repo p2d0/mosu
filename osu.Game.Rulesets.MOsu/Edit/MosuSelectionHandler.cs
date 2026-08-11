@@ -12,6 +12,7 @@ using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
@@ -22,20 +23,20 @@ namespace osu.Game.Rulesets.MOsu.Edit
             var list = items.ToList();
             Logger.Log($"[MOsu-Select] DeleteItems called with {list.Count} items: {string.Join(", ", list.Select(i => $"{i.GetType().Name}@{i.StartTime} id={MosuGimmickApplier.GetObjectId(i as OsuHitObject)}"))}");
 
-            var resolved = list.Select(resolveToSource).ToList();
+            var resolved = list.Select(i => ResolveToSource(i, EditorBeatmap)).ToList();
             Logger.Log($"[MOsu-Select] resolved to: {string.Join(", ", resolved.Select(i => $"{i.GetType().Name}@{i.StartTime} id={MosuGimmickApplier.GetObjectId(i as OsuHitObject)}"))}");
 
             base.DeleteItems(resolved);
         }
 
-        private HitObject resolveToSource(HitObject item)
+        public static HitObject ResolveToSource(HitObject item, EditorBeatmap editorBeatmap)
         {
             if (item is not OsuHitObject osuItem)
                 return item;
 
             long id = MosuGimmickApplier.GetObjectId(osuItem);
 
-            foreach (var h in EditorBeatmap.HitObjects.OfType<OsuHitObject>())
+            foreach (var h in editorBeatmap.HitObjects.OfType<OsuHitObject>())
             {
                 if (MosuGimmickApplier.GetObjectId(h) == id)
                 {
