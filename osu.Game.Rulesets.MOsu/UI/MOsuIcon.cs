@@ -27,6 +27,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         private static bool _injected;
 
         private readonly MosuRuleset ruleset;
+        private OsuSpriteText text = null!;
 
         public MOsuIcon(MosuRuleset ruleset)
         {
@@ -46,13 +47,12 @@ namespace osu.Game.Rulesets.MOsu.UI
                     RelativeSizeAxes = Axes.Both,
                     Colour = Color4.White,
                 },
-                new OsuSpriteText
+                text = new OsuSpriteText
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     Colour = Color4.Black,
                     Text = "M",
-                    Font = OsuFont.Default.With(size: 32)
                 }
             };
 
@@ -61,6 +61,16 @@ namespace osu.Game.Rulesets.MOsu.UI
                 _injected = true;
                 Schedule(LoadInjection);
             }
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // Parent is null during load() (async load runs before attachment), so the
+            // fillflow check only works once attached.
+            if (Parent is not FillFlowContainer)
+                text.Font = OsuFont.Default.With(size: 32);
         }
 
         private void LoadInjection()
