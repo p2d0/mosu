@@ -62,7 +62,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 approachCircles = new ProxyContainer { RelativeSizeAxes = Axes.Both },
             };
 
-            HitPolicy = new StartTimeOrderedHitPolicy();
+            HitPolicy = new MosuStartTimeOrderedHitPolicy();
 
             AddInternal(judgementPooler = new JudgementPooler<DrawableOsuJudgement>(new[]
             {

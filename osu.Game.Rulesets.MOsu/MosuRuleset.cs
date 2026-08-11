@@ -44,7 +44,7 @@ namespace osu.Game.Rulesets.MOsu
     {
         public override DrawableRuleset CreateDrawableRulesetWith(IBeatmap beatmap, IReadOnlyList<Mod>? mods = null) => new DrawableMosuRuleset(this, beatmap, mods);
 
-        public override ScoreProcessor CreateScoreProcessor() => new OsuScoreProcessor();
+        public override ScoreProcessor CreateScoreProcessor() => new MosuScoreProcessor();
 
         public override HealthProcessor CreateHealthProcessor(double drainStartTime) => new MosuSectionGimmickHealthProcessor(drainStartTime);
 
