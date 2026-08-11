@@ -37,9 +37,10 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                 {
                     var pairs = SerialiseHitObjectSettings(entry.Settings);
 
-                    sb.AppendLine(entry.ObjectId.HasValue
-                        ? FormattableString.Invariant($"{entry.StartTime},{entry.ComboIndexWithOffsets},ObjectId={entry.ObjectId.Value}|{string.Join('|', pairs)}")
-                        : FormattableString.Invariant($"{entry.StartTime},{entry.ComboIndexWithOffsets},{string.Join('|', pairs)}"));
+                    string idPair = entry.ObjectId.HasValue ? $"ObjectId={entry.ObjectId.Value}|" : "";
+                    string indexPair = entry.HitObjectIndex.HasValue ? $"Index={entry.HitObjectIndex.Value}|" : "";
+
+                    sb.AppendLine(FormattableString.Invariant($"{entry.StartTime},{entry.ComboIndexWithOffsets},{idPair}{indexPair}{string.Join('|', pairs)}"));
                 }
             }
 

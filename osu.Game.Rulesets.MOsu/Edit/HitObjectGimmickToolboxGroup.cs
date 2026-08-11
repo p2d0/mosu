@@ -281,8 +281,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private void bindControlEvents()
         {
-            enableHpGimmick.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.EnableHPGimmick = value));
-            fakeNote.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.IsFakeNote = value));
+            enableHpGimmick.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionEnableHPGimmick, (s, value) => s.EnableHPGimmick = value));
+            fakeNote.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionFakeNote, (s, value) => s.IsFakeNote = value));
             fakePunishMode.Current.BindValueChanged(v =>
             {
                 if (updatingControls)
@@ -294,10 +294,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 model.SetSelectionFakePunishMode(v.NewValue);
                 scheduleSelectionUpdate();
             });
-            fakePlayHitsound.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.FakePlayHitsound = value));
-            fakeAutoHitOnApproachClose.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.FakeAutoHitOnApproachClose = value));
-            fakeAutoHitPlayHitsound.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.FakeAutoHitPlayHitsound = value));
-            fakeRevealEnabled.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.FakeRevealEnabled = value));
+            fakePlayHitsound.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionFakePlayHitsound, (s, value) => s.FakePlayHitsound = value));
+            fakeAutoHitOnApproachClose.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionFakeAutoHitOnApproachClose, (s, value) => s.FakeAutoHitOnApproachClose = value));
+            fakeAutoHitPlayHitsound.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionFakeAutoHitPlayHitsound, (s, value) => s.FakeAutoHitPlayHitsound = value));
+            fakeRevealEnabled.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionFakeRevealEnabled, (s, value) => s.FakeRevealEnabled = value));
             bindSlider(fakeRevealStrength, (s, value) => s.FakeRevealStrength = value, v => Math.Clamp(v, 0f, 1f));
             bindFloat(fakeRevealRed, (s, value) => s.FakeRevealRed = value, v => Math.Clamp(v, 0f, 1f));
             bindFloat(fakeRevealGreen, (s, value) => s.FakeRevealGreen = value, v => Math.Clamp(v, 0f, 1f));
@@ -307,14 +307,14 @@ namespace osu.Game.Rulesets.MOsu.Edit
             bindFloat(fakeRevealFadeOutStartMs, (s, value) => s.FakeRevealFadeOutStartMs = value, v => Math.Max(0f, v));
             bindFloat(fakeRevealFadeOutLengthMs, (s, value) => s.FakeRevealFadeOutLengthMs = value, v => Math.Max(0f, v));
 
-            enableNoMiss.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.EnableNoMiss = value));
-            enableCountLimits.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.EnableCountLimits = value));
-            enableGreatOffsetPenalty.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.EnableGreatOffsetPenalty = value));
+            enableNoMiss.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionEnableNoMiss, (s, value) => s.EnableNoMiss = value));
+            enableCountLimits.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionEnableCountLimits, (s, value) => s.EnableCountLimits = value));
+            enableGreatOffsetPenalty.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionEnableGreatOffsetPenalty, (s, value) => s.EnableGreatOffsetPenalty = value));
             enableDifficultyOverrides.Current.BindValueChanged(v =>
             {
                 bool wasEnabled = previousDifficultyOverridesEnabled;
 
-                setBool(v.NewValue, (s, value) => s.EnableDifficultyOverrides = value);
+                setBool(v.NewValue, () => model.IsSelectionEnableDifficultyOverrides, (s, value) => s.EnableDifficultyOverrides = value);
 
                 if (!updatingControls)
                     previousDifficultyOverridesEnabled = v.NewValue;
@@ -330,28 +330,28 @@ namespace osu.Game.Rulesets.MOsu.Edit
                     postUnsafeDifficultyWarning();
 
                 updateDifficultySliderRanges();
-                setBool(v.NewValue, (s, value) => s.AllowUnsafeDifficultyOverrideValues = value);
+                setBool(v.NewValue, () => model.IsSelectionAllowUnsafeDifficultyOverrideValues, (s, value) => s.AllowUnsafeDifficultyOverrideValues = value);
             });
             allowUnsafeStackLeniencyOverrideValues.Current.BindValueChanged(v =>
             {
                 if (!updatingControls && v.NewValue)
                     postUnsafeDifficultyWarning();
 
-                setBool(v.NewValue, (s, value) => s.AllowUnsafeStackLeniencyOverrideValues = value);
+                setBool(v.NewValue, () => model.IsSelectionAllowUnsafeStackLeniencyOverrideValues, (s, value) => s.AllowUnsafeStackLeniencyOverrideValues = value);
             });
             allowUnsafeTickRateOverrideValues.Current.BindValueChanged(v =>
             {
                 if (!updatingControls && v.NewValue)
                     postUnsafeDifficultyWarning();
 
-                setBool(v.NewValue, (s, value) => s.AllowUnsafeTickRateOverrideValues = value);
+                setBool(v.NewValue, () => model.IsSelectionAllowUnsafeTickRateOverrideValues, (s, value) => s.AllowUnsafeTickRateOverrideValues = value);
             });
 
-            forceHidden.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.ForceHidden = value));
-            forceHardRock.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.ForceHardRock = value));
-            forceFlashlight.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.ForceFlashlight = value));
+            forceHidden.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionForceHidden, (s, value) => s.ForceHidden = value));
+            forceHardRock.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionForceHardRock, (s, value) => s.ForceHardRock = value));
+            forceFlashlight.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionForceFlashlight, (s, value) => s.ForceFlashlight = value));
             bindFloatOnCommitOnly(flashlightRadius, (s, value) => s.FlashlightRadius = value, v => Math.Clamp(v, 20f, 400f));
-            forceNoApproachCircle.Current.BindValueChanged(v => setBool(v.NewValue, (s, value) => s.ForceNoApproachCircle = value));
+            forceNoApproachCircle.Current.BindValueChanged(v => setBool(v.NewValue, () => model.IsSelectionForceNoApproachCircle, (s, value) => s.ForceNoApproachCircle = value));
 
             bindFloat(hp300, (s, value) => s.HP300 = value, v => Math.Clamp(v, -2f, 2f));
             bindFloat(hp100, (s, value) => s.HP100 = value, v => Math.Clamp(v, -2f, 2f));
@@ -416,7 +416,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private void updateFromSelection()
         {
-            osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] updateFromSelection start (was updating={updatingControls})");
             updatingControls = true;
 
             try
@@ -597,14 +596,15 @@ namespace osu.Game.Rulesets.MOsu.Edit
             fadeSchedules[slot] = Scheduler.AddDelayed(() => container.FadeTo(target, 150), 0);
         }
 
-        private void setBool(bool value, Action<osu.Game.Rulesets.MOsu.Gimmicks.HitObjectGimmickSettings, bool> setter)
+        private void setBool(bool value, Func<bool> current, Action<osu.Game.Rulesets.MOsu.Gimmicks.HitObjectGimmickSettings, bool> setter)
         {
-            // No updatingControls guard here: control refresh sets the same value the model already
-            // holds (idempotent, no echo), and dropping the guard means user clicks always apply.
-            if (!model.HasSelection)
+            // Commit only when the value actually differs from the model state: the selection
+            // refresh sets controls to the current state (same value -> no-op), while a user
+            // click flips the value (commit + drawable refresh). This avoids the selection-
+            // triggered full-map re-render from the old feedback loop.
+            if (!model.HasSelection || current() == value)
                 return;
 
-            osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] setBool applying: value={value}");
             model.SetSelectionBoolSetting(setter, value);
             scheduleSelectionUpdate();
         }

@@ -136,6 +136,20 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                         continue;
                     }
 
+                    if (pair.Key == "Index")
+                    {
+                        if (int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index))
+                            entry.HitObjectIndex = index;
+                        continue;
+                    }
+
+                    if (pair.Key == "Index")
+                    {
+                        if (int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index))
+                            entry.HitObjectIndex = index;
+                        continue;
+                    }
+
                     applyHitObjectKeyValue(entry.Settings, pair.Key, pair.Value);
                 }
             }

@@ -59,17 +59,15 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
                     var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
 
-                    if (storagePath == null)
-                    {
-                        Logger.Log($"[MOsu] gimmicks skipped: no storage path for {path}");
-                        return;
-                    }
-
-                    using var stream = workingBeatmap.GetStream(storagePath);
+                    // After a MOsu save the realm Path may lag the actual file name; the working
+                    // beatmap can still resolve the stream itself.
+                    using var stream = storagePath != null
+                        ? workingBeatmap.GetStream(storagePath)
+                        : workingBeatmap.GetStream(path);
 
                     if (stream == null)
                     {
-                        Logger.Log($"[MOsu] gimmicks skipped: stream null for {storagePath}");
+                        Logger.Log($"[MOsu] gimmicks skipped: stream null for {path}");
                         return;
                     }
 

@@ -12,6 +12,12 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
         public int ComboIndexWithOffsets { get; set; }
 
+        /// <summary>
+        /// Index of the bound object in the playable beatmap's HitObjects list at save/bind time.
+        /// Disambiguates objects that share the same legacy key when list order is unstable.
+        /// </summary>
+        public int? HitObjectIndex { get; set; }
+
         public HitObjectGimmickSettings Settings { get; set; } = new HitObjectGimmickSettings();
     }
 }

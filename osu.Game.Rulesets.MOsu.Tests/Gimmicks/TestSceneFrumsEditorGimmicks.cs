@@ -178,6 +178,81 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
 
 
 
+            AddAssert("reload binds fake to the same object when two share a slot", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap sourceMosu)
+                    return false;
+
+                // Find two objects at the same (StartTime, Combo): the fake's source + a plain
+                // circle moved onto its slot (same time, same combo).
+                var a = sourceMosu.HitObjects.OfType<OsuHitObject>().First(o => o.StartTime == 14680);
+                var aIndex = sourceMosu.HitObjects.IndexOf(a);
+
+                var b = new HitCircle { StartTime = a.StartTime, Position = new osuTK.Vector2(a.Position.X + 40, a.Position.Y), NewCombo = a.NewCombo, ComboOffset = a.ComboOffset };
+                b.ComboIndex = a.ComboIndex;
+                b.ComboIndexWithOffsets = a.ComboIndexWithOffsets;
+                b.IndexInCurrentCombo = a.IndexInCurrentCombo;
+
+                // session: A is fake; B sorted immediately before A (unstable re-sort), so A's
+                // saved index is aIndex + 1 and the legacy fallback would wrongly match B first.
+                var session = new MosuGimmickData();
+                var sessionEntry = new HitObjectGimmickEntry { ObjectId = MosuGimmickApplier.GetObjectId(a), StartTime = a.StartTime, ComboIndexWithOffsets = a.ComboIndexWithOffsets, HitObjectIndex = aIndex + 1, Settings = new HitObjectGimmickSettings { IsFakeNote = true } };
+                session.HitObjectGimmicks.Entries.Add(sessionEntry);
+
+                // serialize, then reload into a fresh beatmap with fresh object instances
+                string text = MosuGimmickSerializer.Serialize(session.Sections, session.HitObjectGimmicks);
+                using var reader = new StringReader(text);
+                var reparsed = MosuGimmickParser.Parse(reader);
+
+                var freshBeatmap = new MosuBeatmap { BeatmapInfo = sourceMosu.BeatmapInfo };
+
+                OsuHitObject? freshA = null;
+                OsuHitObject? freshB = null;
+
+                // clone all source objects into fresh instances, inserting B right before A's index
+                int cursor = 0;
+                foreach (var src in sourceMosu.HitObjects.OfType<OsuHitObject>())
+                {
+                    if (cursor == aIndex)
+                    {
+                        freshB = cloneObject(b);
+                        freshBeatmap.HitObjects.Add(freshB);
+                        cursor++;
+                    }
+
+                    var clone = cloneObject(src);
+                    if (ReferenceEquals(src, a))
+                        freshA = clone;
+
+                    freshBeatmap.HitObjects.Add(clone);
+                    cursor++;
+                }
+
+                if (freshA == null || freshB == null)
+                    return false;
+
+                freshBeatmap.Gimmicks.HitObjectGimmicks = reparsed.HitObjects;
+                freshBeatmap.Gimmicks.Applied = false;
+
+                MosuGimmickApplier.Apply(freshBeatmap, freshBeatmap.Gimmicks);
+
+                bool aFake = MosuGimmickApplier.GetObjectSettings(freshBeatmap, freshBeatmap.Gimmicks, freshA)?.IsFakeNote == true;
+                bool bFake = MosuGimmickApplier.GetObjectSettings(freshBeatmap, freshBeatmap.Gimmicks, freshB)?.IsFakeNote == true;
+
+                Logger.Log($"[TEST] reload: aFake={aFake} bFake={bFake} aIndex={aIndex} entryIndex={freshBeatmap.Gimmicks.HitObjectGimmicks.Entries.FirstOrDefault()?.HitObjectIndex} aId={MosuGimmickApplier.GetObjectId(freshA)} bId={MosuGimmickApplier.GetObjectId(freshB)}");
+
+                return aFake && !bFake;
+            });
+
+            static OsuHitObject cloneObject(OsuHitObject src)
+            {
+                var clone = new HitCircle { StartTime = src.StartTime, Position = src.Position, NewCombo = src.NewCombo, ComboOffset = src.ComboOffset };
+                clone.ComboIndex = src.ComboIndex;
+                clone.ComboIndexWithOffsets = src.ComboIndexWithOffsets;
+                clone.IndexInCurrentCombo = src.IndexInCurrentCombo;
+                return clone;
+            }
+
             AddAssert("fake note apply/clear data path", () =>
             {
                 if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
@@ -194,9 +269,13 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 bool applied = fakeObj is FakeHitCircle or FakeSlider;
                 int entriesAfterApply = mosuBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count;
 
+                // the editor selects the drawable's HitObject (the fake clone), not the source
+                bool cloneResolves = fakeObj != null
+                    && MosuGimmickApplier.GetObjectSettings(mosuBeatmap, mosuBeatmap.Gimmicks, fakeObj)?.IsFakeNote == true;
+
                 var newEntry = mosuBeatmap.Gimmicks.HitObjectGimmicks.Entries.FirstOrDefault(e => e.StartTime == 14680);
                 var resolved = MosuGimmickApplier.GetObjectSettings(mosuBeatmap, mosuBeatmap.Gimmicks, target);
-                Logger.Log($"[TEST] after fake apply: created={applied}({fakeObj?.GetType().Name}) entries={entriesAfterApply} entryFake={newEntry?.Settings.IsFakeNote} combo={newEntry?.ComboIndexWithOffsets} objCombo={target.ComboIndexWithOffsets} resolvedFake={resolved?.IsFakeNote}");
+                Logger.Log($"[TEST] after fake apply: created={applied}({fakeObj?.GetType().Name}) cloneResolves={cloneResolves} entries={entriesAfterApply} entryFake={newEntry?.Settings.IsFakeNote} combo={newEntry?.ComboIndexWithOffsets} objCombo={target.ComboIndexWithOffsets} resolvedFake={resolved?.IsFakeNote}");
 
                 // clear fake
                 model.SetSelectionBoolSetting((s, v) => s.IsFakeNote = v, false);
@@ -205,7 +284,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 Logger.Log($"[TEST] after fake clear: cleared={cleared} entries={entriesAfterClear}");
 
                 EditorBeatmap.SelectedHitObjects.Remove(target);
-                return applied && cleared && entriesAfterApply > entriesAfterClear;
+                return applied && cloneResolves && cleared && entriesAfterApply > entriesAfterClear;
             });
 
 
@@ -255,10 +334,45 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return applied && entriesAfterAdd > entriesAfterDelete && deleted && persisted;
             });
 
+            AddAssert("toggle ON from a cleared entry sticks", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
+                    return false;
+
+                var model = new HitObjectGimmickEditorModel(EditorBeatmap);
+                var target = mosuBeatmap.HitObjects.OfType<OsuHitObject>().First(o => o.StartTime == 15037);
+
+                // simulate the user's corrupted state: the entry for this object has IsFakeNote=false
+                var existing = mosuBeatmap.Gimmicks.HitObjectGimmicks.Entries.FirstOrDefault(e => e.StartTime == 15037);
+                if (existing == null)
+                    return false;
+
+                existing.Settings.IsFakeNote = false;
+
+                EditorBeatmap.SelectedHitObjects.Add(target);
+                model.SetSelectionBoolSetting((s, v) => s.IsFakeNote = v, true);
+
+                var after = mosuBeatmap.Gimmicks.HitObjectGimmicks.Entries.FirstOrDefault(e => e.StartTime == 15037);
+                var resolved = MosuGimmickApplier.GetObjectSettings(mosuBeatmap, mosuBeatmap.Gimmicks, target);
+
+                Logger.Log($"[TEST] cleared-entry toggle ON: entryFake={after?.Settings.IsFakeNote} resolvedFake={resolved?.IsFakeNote} entryObjectId={after?.ObjectId} objId={MosuGimmickApplier.GetObjectId(target)}");
+
+                EditorBeatmap.SelectedHitObjects.Remove(target);
+                return after?.Settings.IsFakeNote == true && resolved?.IsFakeNote == true;
+            });
+
             AddAssert("save writes .osu with gimmick sections", () =>
             {
                 if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
                     return false;
+
+                var model = new HitObjectGimmickEditorModel(EditorBeatmap);
+                var target = mosuBeatmap.HitObjects.OfType<OsuHitObject>().First(o => o.StartTime == 14680);
+                EditorBeatmap.SelectedHitObjects.Add(target);
+
+                // ensure a fake is active at 14680 so the save round-trip has something to reload
+                if (MosuGimmickApplier.GetObjectSettings(mosuBeatmap, mosuBeatmap.Gimmicks, target)?.IsFakeNote != true)
+                    model.SetSelectionBoolSetting((s, v) => s.IsFakeNote = v, true);
 
                 if (!MosuEditorSaver.Save(EditorBeatmap, realm, storage))
                     return false;
@@ -283,7 +397,39 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 bool hasFakeEntries = text.Contains("IsFakeNote=True");
 
                 Logger.Log($"[TEST] saved file has sections={hasSections} hitobj={hasHitObjectSections} fakes={hasFakeEntries} len={text.Length}");
-                return hasHitObjectSections && hasFakeEntries;
+
+                // Full reload round-trip: parse the saved file into a fresh beatmap with fresh
+                // object instances and verify the fake resolves (the editor re-enter path).
+                using var parseReader = new StringReader(text);
+                var reparsed = MosuGimmickParser.Parse(parseReader);
+
+                var freshBeatmap = new MosuBeatmap { BeatmapInfo = mosuBeatmap.BeatmapInfo };
+
+                OsuHitObject? freshTarget = null;
+
+                foreach (var src in mosuBeatmap.HitObjects.OfType<OsuHitObject>())
+                {
+                    var clone = new HitCircle { StartTime = src.StartTime, Position = src.Position, NewCombo = src.NewCombo, ComboOffset = src.ComboOffset };
+                    clone.ComboIndex = src.ComboIndex;
+                    clone.ComboIndexWithOffsets = src.ComboIndexWithOffsets;
+                    clone.IndexInCurrentCombo = src.IndexInCurrentCombo;
+
+                    if (src.StartTime == 14680)
+                        freshTarget = clone;
+
+                    freshBeatmap.HitObjects.Add(clone);
+                }
+
+                freshBeatmap.Gimmicks.HitObjectGimmicks = reparsed.HitObjects;
+                freshBeatmap.Gimmicks.Applied = false;
+                MosuGimmickApplier.Apply(freshBeatmap, freshBeatmap.Gimmicks);
+
+                bool reloadedFake = freshTarget != null
+                    && MosuGimmickApplier.GetObjectSettings(freshBeatmap, freshBeatmap.Gimmicks, freshTarget)?.IsFakeNote == true;
+
+                Logger.Log($"[TEST] saved-file reload: fake@14680 resolves={reloadedFake}");
+
+                return hasHitObjectSections && hasFakeEntries && reloadedFake;
             });
 
             AddAssert("difficulty overrides applied to editor objects", () =>

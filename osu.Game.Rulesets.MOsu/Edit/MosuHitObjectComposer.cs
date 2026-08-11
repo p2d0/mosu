@@ -81,7 +81,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 sectionModel.Changed += editorDrawableRuleset.RefreshDrawables;
                 hitObjectModel.Changed += editorDrawableRuleset.RefreshDrawables;
-                osu.Framework.Logging.Logger.Log("[MOsu-Composer] wired model changes to drawable refresh");
             }
             else
                 osu.Framework.Logging.Logger.Log("[MOsu-Composer] editorDrawableRuleset null at wiring time");

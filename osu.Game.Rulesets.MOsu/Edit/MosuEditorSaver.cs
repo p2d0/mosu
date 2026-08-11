@@ -86,6 +86,8 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
                     set.Files.Add(new RealmNamedFileUsage(realmFile, filename));
 
+                    // Path is computed as BeatmapSet.Files.First(f => f.File.Hash == Hash),
+                    // so updating the hashes below re-points the beatmap at the new file.
                     live.MD5Hash = new MemoryStream(data).ComputeMD5Hash();
                     live.Hash = new MemoryStream(data).ComputeSHA2Hash();
                     live.LastLocalUpdate = DateTimeOffset.Now;

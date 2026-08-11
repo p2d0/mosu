@@ -53,31 +53,14 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 {
                 }
 
-                Logger.Log($"[MOsu-Editor] playable={Beatmap.GetType().Name} working={working?.GetType().Name} path={working?.BeatmapInfo.Path}");
-
                 MosuGimmickRuntime.EnsureApplied(Beatmap, working);
 
             }
 
-            {
-                var osuH = h;
-                var settings = MosuGimmickApplier.GetObjectSettings(Beatmap, (Beatmap as MosuBeatmap)?.Gimmicks ?? new Gimmicks.MosuGimmickData(), osuH);
-                if (settings?.EnableDifficultyOverrides == true && !float.IsNaN(settings.SectionCircleSize))
-                    Logger.Log($"[MOsu-Editor] drawable-creation: object@{osuH.StartTime} CS={settings.SectionCircleSize} Scale={osuH.Scale}");
-            }
-
             var drawable = MosuGimmickRuntime.CreateGimmickDrawableRepresentation(Beatmap, h);
-
-            if (drawable != null && !reportedGimmickDrawable)
-            {
-                reportedGimmickDrawable = true;
-                Logger.Log($"[MOsu-Editor] first gimmick drawable: {drawable.GetType().Name}");
-            }
 
             return drawable;
         }
-
-        private bool reportedGimmickDrawable;
 
         /// <summary>
         /// Re-creates the compose playfield drawables so fake/hidden type changes and
@@ -85,15 +68,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
         /// </summary>
         public void RefreshDrawables()
         {
-            Logger.Log($"[MOsu-Editor] refreshDrawables: {Beatmap.HitObjects.Count} objects");
-
             foreach (var h in Beatmap.HitObjects.ToList())
             {
                 RemoveHitObject(h);
                 AddHitObject(h);
             }
-
-            Logger.Log($"[MOsu-Editor] refreshDrawables done; fake objects now: {Beatmap.HitObjects.Count(o => MosuGimmickApplier.CreateFakeObject(Beatmap, ((MosuBeatmap)Beatmap).Gimmicks, o) != null)}");
         }
     }
 }

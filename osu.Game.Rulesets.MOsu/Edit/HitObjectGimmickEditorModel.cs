@@ -4,8 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Logging;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Gimmicks;
+using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
@@ -99,8 +101,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 return;
 
             int before = playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count;
-            playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.RemoveAll(e =>
-                e.StartTime == osuHitObject.StartTime && e.ComboIndexWithOffsets == osuHitObject.ComboIndexWithOffsets);
+
+            long objectId = MosuGimmickApplier.GetObjectId(osuHitObject);
+
+            playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.RemoveAll(e => e.ObjectId == objectId);
 
             if (playableBeatmap.Gimmicks.HitObjectGimmicks.Entries.Count != before)
             {
@@ -127,6 +131,18 @@ namespace osu.Game.Rulesets.MOsu.Edit
             }
         }
 
+        public bool IsSelectionForceNoApproachCircle
+            => getSelectionBoolState(s => s.ForceNoApproachCircle);
+
+        public bool IsSelectionAllowUnsafeDifficultyOverrideValues
+            => getSelectionBoolState(s => s.AllowUnsafeDifficultyOverrideValues);
+
+        public bool IsSelectionAllowUnsafeStackLeniencyOverrideValues
+            => getSelectionBoolState(s => s.AllowUnsafeStackLeniencyOverrideValues);
+
+        public bool IsSelectionAllowUnsafeTickRateOverrideValues
+            => getSelectionBoolState(s => s.AllowUnsafeTickRateOverrideValues);
+
         public bool IsSelectionEnableHPGimmick
             => getSelectionBoolState(s => s.EnableHPGimmick);
 
@@ -135,6 +151,18 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         public bool IsSelectionFakePunishAsMiss
             => getSelectionBoolState(s => s.FakePunishMode == FakePunishMode.Miss);
+
+        public bool IsSelectionFakePlayHitsound
+            => getSelectionBoolState(s => s.FakePlayHitsound);
+
+        public bool IsSelectionFakeAutoHitOnApproachClose
+            => getSelectionBoolState(s => s.FakeAutoHitOnApproachClose);
+
+        public bool IsSelectionFakeAutoHitPlayHitsound
+            => getSelectionBoolState(s => s.FakeAutoHitPlayHitsound);
+
+        public bool IsSelectionFakeRevealEnabled
+            => getSelectionBoolState(s => s.FakeRevealEnabled);
 
         public FakePunishMode SelectionFakePunishMode
         {
@@ -261,7 +289,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             foreach (var hitObject in selected)
             {
+                long objectId = MosuGimmickApplier.GetObjectId(hitObject);
+                var byId = updated.Entries.LastOrDefault(e => e.ObjectId == objectId);
+
                 var entry = getOrCreateEntry(updated, hitObject);
+                bool beforeFake = entry.Settings.IsFakeNote;
                 setter(entry.Settings, enabled);
                 cleanupEntryIfEmpty(updated, entry);
             }
@@ -395,6 +427,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
                         ObjectId = e.ObjectId,
                         StartTime = e.StartTime,
                         ComboIndexWithOffsets = e.ComboIndexWithOffsets,
+                        HitObjectIndex = e.HitObjectIndex,
                         Settings = new HitObjectGimmickSettings
                         {
                             IsFakeNote = settings.IsFakeNote,
@@ -494,23 +527,26 @@ namespace osu.Game.Rulesets.MOsu.Edit
             });
         }
 
-        private static HitObjectGimmickEntry getOrCreateEntry(BeatmapHitObjectGimmicks gimmicks, OsuHitObject hitObject)
+        private HitObjectGimmickEntry getOrCreateEntry(BeatmapHitObjectGimmicks gimmicks, OsuHitObject hitObject)
         {
-            // Last-wins so commit and the state-read dictionary agree; collapse any accumulated duplicates.
-            var existing = gimmicks.Entries.LastOrDefault(e =>
-                e.StartTime == hitObject.StartTime && e.ComboIndexWithOffsets == hitObject.ComboIndexWithOffsets);
+            // Per-object identity only: an object keeps its own entry even when another object
+            // shares the same (StartTime, ComboIndexWithOffsets) legacy key.
+            long objectId = MosuGimmickApplier.GetObjectId(hitObject);
 
-            if (existing != null)
+            var byId = gimmicks.Entries.LastOrDefault(e => e.ObjectId == objectId);
+
+            if (byId != null)
             {
-                gimmicks.Entries.RemoveAll(e => !ReferenceEquals(e, existing)
-                    && e.StartTime == existing.StartTime && e.ComboIndexWithOffsets == existing.ComboIndexWithOffsets);
-                return existing;
+                byId.HitObjectIndex = playableBeatmap.HitObjects.IndexOf(hitObject);
+                return byId;
             }
 
-            existing = new HitObjectGimmickEntry
+            var existing = new HitObjectGimmickEntry
             {
+                ObjectId = objectId,
                 StartTime = hitObject.StartTime,
                 ComboIndexWithOffsets = hitObject.ComboIndexWithOffsets,
+                HitObjectIndex = playableBeatmap.HitObjects.IndexOf(hitObject),
                 Settings = new HitObjectGimmickSettings(),
             };
 
@@ -569,16 +605,28 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 gimmicks.Entries.Remove(entry);
         }
 
-        private static Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings> createLookup(BeatmapHitObjectGimmicks gimmicks)
-            => HitObjectGimmickBindingUtils.CreateLookupByLegacyKey(gimmicks);
+        private static Dictionary<long, HitObjectGimmickSettings> createLookup(BeatmapHitObjectGimmicks gimmicks)
+        {
+            var dict = new Dictionary<long, HitObjectGimmickSettings>();
+
+            for (int i = gimmicks.Entries.Count - 1; i >= 0; i--)
+            {
+                var e = gimmicks.Entries[i];
+
+                if (e.ObjectId.HasValue)
+                    dict[e.ObjectId.Value] = e.Settings;
+            }
+
+            return dict;
+        }
 
         private static bool tryGetSettings(OsuHitObject hitObject,
-                                           Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings> legacyLookup,
+                                           Dictionary<long, HitObjectGimmickSettings> objectIdLookup,
                                            out HitObjectGimmickSettings settings)
-            => legacyLookup.TryGetValue((hitObject.StartTime, hitObject.ComboIndexWithOffsets), out settings!);
+            => objectIdLookup.TryGetValue(MosuGimmickApplier.GetObjectId(hitObject), out settings!);
 
         private static bool isNoApproachForced(OsuHitObject hitObject,
-                                               Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings> legacyLookup)
-            => tryGetSettings(hitObject, legacyLookup, out HitObjectGimmickSettings? settings) && settings.ForceNoApproachCircle;
+                                               Dictionary<long, HitObjectGimmickSettings> objectIdLookup)
+            => tryGetSettings(hitObject, objectIdLookup, out HitObjectGimmickSettings? settings) && settings.ForceNoApproachCircle;
     }
 }

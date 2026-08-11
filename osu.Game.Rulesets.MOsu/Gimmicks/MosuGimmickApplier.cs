@@ -28,12 +28,44 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         public const float PLAYFIELD_HEIGHT = 384;
 
         /// <summary>
-        /// Instance-stable binding of gimmick settings to hitobjects, resolved once per apply
-        /// by legacy key. Keeps settings bound to the same object even if another object is
-        /// moved to the same position/time afterwards.
+        /// Instance-stable binding of gimmick settings to hitobjects, resolved once per apply.
         /// </summary>
         private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings> object_settings_bindings =
             new System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings>();
+
+        private sealed class ObjectIdRef
+        {
+            public long Value;
+        }
+
+        /// <summary>
+        /// Per-object-instance identity, so two objects sharing a legacy key stay independent.
+        /// Persisted as the entry's ObjectId across save/load.
+        /// </summary>
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, ObjectIdRef> object_ids =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, ObjectIdRef>();
+
+        // Start far above any persisted (delta) object id so counter-assigned fresh ids can
+        // never collide with ids loaded from a .osu file's gimmick section.
+        private static long nextObjectId = 1_000_000_000;
+
+        private static long getId(osu.Game.Rulesets.Osu.Objects.OsuHitObject o)
+        {
+            if (object_ids.TryGetValue(o, out var r))
+                return r.Value;
+
+            r = new ObjectIdRef { Value = nextObjectId++ };
+            object_ids.Add(o, r);
+            return r.Value;
+        }
+
+        private static void setId(osu.Game.Rulesets.Osu.Objects.OsuHitObject o, long value)
+        {
+            if (object_ids.TryGetValue(o, out var r))
+                r.Value = value;
+            else
+                object_ids.Add(o, new ObjectIdRef { Value = value });
+        }
 
         /// <summary>
         /// Applies per-section/per-object difficulty overrides and forced mod flags.
@@ -68,34 +100,111 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
         /// <summary>
         /// Resolves the gimmick settings bound to an object, if any.
         /// </summary>
+        /// <summary>
+        /// Stable per-object-instance id used to bind gimmick entries to stock hitobjects.
+        /// </summary>
+        public static long GetObjectId(osu.Game.Rulesets.Osu.Objects.OsuHitObject hitObject)
+            => getId(hitObject);
+
         public static HitObjectGimmickSettings? GetObjectSettings(IBeatmap beatmap, MosuGimmickData data, HitObject hitObject)
         {
             if (hitObject is not osu.Game.Rulesets.Osu.Objects.OsuHitObject osuHitObject)
                 return null;
 
-            // Prefer the instance binding (stable across object moves); fall back to legacy-key resolution.
-            if (object_settings_bindings.TryGetValue(osuHitObject, out var bound))
-                return bound;
+            var entries = data.HitObjectGimmicks.Entries;
 
-            return getObjectSettings(hitObject, createObjectSettingsLookup(data.HitObjectGimmicks));
+            if (entries.Count == 0)
+                return null;
+
+            // Per-object identity wins: an id'd object resolves only to its own entry, so a circle
+            // moved onto a fake's slot stays independent. Legacy key is a last resort for objects
+            // not yet assigned an id (e.g. before the first apply).
+            long id = getId(osuHitObject);
+
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                if (entries[i].ObjectId == id)
+                    return entries[i].Settings;
+            }
+
+            // no entry for this object's id
+            return null;
         }
 
         /// <summary>
-        /// Binds each hitobject to its resolved gimmick settings by legacy key, once per apply.
+        /// Assigns per-object ids, matches entries to objects (id first, legacy fallback) and
+        /// binds each object to its resolved settings.
         /// </summary>
         private static void bindObjectSettings(IBeatmap beatmap, MosuGimmickData data)
         {
-            var lookup = createObjectSettingsLookup(data.HitObjectGimmicks);
+            var objects = beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().ToList();
+            var entries = data.HitObjectGimmicks.Entries;
 
-            foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>())
+            // assign ids to all objects so reads are id-based after the first apply
+            foreach (var o in objects)
+                getId(o);
+
+            // match entries to objects: by persisted id, then persisted index, then legacy key; newest wins.
+            var claimed = new HashSet<osu.Game.Rulesets.Osu.Objects.OsuHitObject>();
+
+            for (int i = entries.Count - 1; i >= 0; i--)
             {
-                var settings = getObjectSettings(o, lookup);
+                var entry = entries[i];
 
-                object_settings_bindings.Remove(o);
+                var byId = entry.ObjectId.HasValue
+                    ? objects.FirstOrDefault(o => !claimed.Contains(o) && getId(o) == entry.ObjectId.Value)
+                    : null;
 
-                if (settings != null)
-                    object_settings_bindings.Add(o, settings);
+                var byIndex = byId == null && entry.HitObjectIndex.HasValue && entry.HitObjectIndex.Value >= 0 && entry.HitObjectIndex.Value < objects.Count
+                    ? objects[entry.HitObjectIndex.Value]
+                    : null;
+
+                if (byIndex != null && (claimed.Contains(byIndex)
+                    || byIndex.StartTime != entry.StartTime || byIndex.ComboIndexWithOffsets != entry.ComboIndexWithOffsets))
+                    byIndex = null;
+
+                var matched = byId ?? byIndex
+                              ?? objects.FirstOrDefault(o => !claimed.Contains(o)
+                                  && o.StartTime == entry.StartTime && o.ComboIndexWithOffsets == entry.ComboIndexWithOffsets);
+
+                if (matched == null)
+                    continue;
+
+                claimed.Add(matched);
+
+                // align the object's id with the entry so reads and save/load stay consistent
+                if (entry.ObjectId.HasValue)
+                {
+                    bool taken = objects.Any(other => !ReferenceEquals(other, matched) && getId(other) == entry.ObjectId.Value);
+
+                    if (taken)
+                        entry.ObjectId = getId(matched);
+                    else
+                        setId(matched, entry.ObjectId.Value);
+                }
+                else
+                    entry.ObjectId = getId(matched);
+
+                // record the object's current list index so reloads can disambiguate shared keys
+                entry.HitObjectIndex = objects.IndexOf(matched);
             }
+
+            // persist matched ids back onto entries so saves write the object's real id
+            foreach (var o in objects)
+            {
+                long id = getId(o);
+
+                for (int i = entries.Count - 1; i >= 0; i--)
+                {
+                    if (entries[i].ObjectId == id)
+                    {
+                        object_settings_bindings.Remove(o);
+                        object_settings_bindings.Add(o, entries[i].Settings);
+                        break;
+                    }
+                }
+            }
+
         }
 
         /// <summary>
@@ -133,6 +242,10 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
                     };
 
                     copyCommonOsuValues(hitCircle, fakeCircle);
+
+                    // Selecting a fake note in the editor picks the drawable's HitObject (the
+                    // clone); give it the source's id so the toolbox resolves its settings.
+                    setId(fakeCircle, getId(source));
                     return fakeCircle;
                 }
 
@@ -164,6 +277,8 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
                     copyCommonOsuValues(slider, fakeSlider);
                     fakeSlider.NodeSamples = slider.NodeSamples.Select(samples => (IList<HitSampleInfo>)samples.Select(s => s.With()).ToList()).ToList();
+
+                    setId(fakeSlider, getId(source));
                     return fakeSlider;
                 }
 
