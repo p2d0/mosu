@@ -118,17 +118,39 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return fake is FakeHitCircle;
             });
 
-            AddAssert("editor drawable creation returns fake drawables", () =>
+            AddAssert("editor drawable creation returns fake and hidden drawables", () =>
             {
                 if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
                     return false;
 
-                var fake = mosuBeatmap.HitObjects.OfType<OsuHitObject>()
-                                       .Select(o => MosuGimmickRuntime.CreateGimmickDrawableRepresentation(mosuBeatmap, o))
-                                       .FirstOrDefault(d => d != null);
+                bool sawFake = false;
+                bool sawHidden = false;
+                OsuHitObject? fakeSource = null;
+                OsuHitObject? hiddenSource = null;
 
-                Logger.Log($"[TEST] editor drawable: {fake?.GetType().Name}");
-                return fake is DrawableFakeHitCircle;
+                foreach (var o in mosuBeatmap.HitObjects.OfType<OsuHitObject>())
+                {
+                    var d = MosuGimmickRuntime.CreateGimmickDrawableRepresentation(mosuBeatmap, o);
+
+                    switch (d)
+                    {
+                        case DrawableFakeHitCircle:
+                            sawFake = true;
+                            fakeSource = o;
+                            break;
+
+                        case MosuDrawableHitCircle:
+                            sawHidden = true;
+                            hiddenSource = o;
+                            break;
+                    }
+
+                    if (sawFake && sawHidden)
+                        break;
+                }
+
+                Logger.Log($"[TEST] editor drawables: fake={(sawFake ? $"yes @{fakeSource?.StartTime}" : "no")} hidden={(sawHidden ? $"yes @{hiddenSource?.StartTime}" : "no")}");
+                return sawFake && sawHidden;
             });
 
             AddAssert("difficulty overrides applied to editor objects", () =>
