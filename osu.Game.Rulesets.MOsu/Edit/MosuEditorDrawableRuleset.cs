@@ -9,12 +9,15 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
@@ -46,7 +49,61 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 Logger.Log($"[MOsu-Editor] Failed to apply gimmicks: {e}");
             }
 
+            // Hook File -> Create New Difficulty -> MOsu! once attached (Parent is null during
+            // CreateChildDependencies, so defer to the first Update).
+            try
+            {
+                var game = parent.Get<OsuGame>();
+                var realm = parent.Get<RealmAccess>();
+                scheduleDifficultyMenuHook(game, realm);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu-Editor] Failed to hook Create New Difficulty: {e}");
+            }
+
             return base.CreateChildDependencies(parent);
+        }
+
+        private bool difficultyMenuHookAttempted;
+
+        private void scheduleDifficultyMenuHook(OsuGame game, RealmAccess realm)
+        {
+            if (difficultyMenuHookAttempted)
+                return;
+
+            difficultyMenuHookAttempted = true;
+
+            ScheduleHookAttempt = () =>
+            {
+                for (Drawable? d = this; d != null; d = d.Parent)
+                {
+                    Logger.Log($"[MOsu-Editor] parent walk: {d.GetType().Name}");
+
+                    if (d is Editor editor)
+                    {
+                        Logger.Log($"[MOsu-Editor] found Editor, hooking menu");
+                        CreateMosuDifficultyInjector.Hook(editor, game, realm);
+                        return;
+                    }
+                }
+
+                Logger.Log($"[MOsu-Editor] no Editor in parent chain");
+            };
+        }
+
+        private System.Action? ScheduleHookAttempt;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (ScheduleHookAttempt != null)
+            {
+                var attempt = ScheduleHookAttempt;
+                ScheduleHookAttempt = null;
+                attempt();
+            }
         }
 
         public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h)

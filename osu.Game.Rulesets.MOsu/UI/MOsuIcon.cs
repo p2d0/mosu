@@ -183,6 +183,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             // Hook the song select context menu once the screen is active (repeats until it is).
             Scheduler.AddDelayed(() => ContextMenuMakeDeltaInjector.Hook(game, realm), 500, true);
+
         }
     }
 }
