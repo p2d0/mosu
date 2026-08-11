@@ -22,8 +22,10 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Configuration;
+using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Screens;
+using osu.Game.Rulesets.MOsu.Scoring;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Replays.Types;
@@ -44,9 +46,9 @@ namespace osu.Game.Rulesets.MOsu
 
         public override ScoreProcessor CreateScoreProcessor() => new OsuScoreProcessor();
 
-        public override HealthProcessor CreateHealthProcessor(double drainStartTime) => new OsuHealthProcessor(drainStartTime);
+        public override HealthProcessor CreateHealthProcessor(double drainStartTime) => new MosuSectionGimmickHealthProcessor(drainStartTime);
 
-        public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new OsuBeatmapConverter(beatmap, this);
+        public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new MosuBeatmapConverter(beatmap, this);
 
         public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
 

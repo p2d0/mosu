@@ -9,10 +9,15 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input;
+using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Input.Handlers;
 using osu.Game.Replays;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Gimmicks;
+using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.MOsu.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.MOsu.Mods;
@@ -304,7 +309,92 @@ namespace osu.Game.Rulesets.MOsu.UI
             return result.Total;
         }
 
-        public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h) => null;
+        public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h)
+        {
+            ensureGimmicksApplied();
+
+            if (playableBeatmap is MosuBeatmap mosuBeatmap
+                && MosuGimmickApplier.CreateFakeObject(playableBeatmap, mosuBeatmap.Gimmicks, h) is OsuHitObject fakeObject)
+            {
+                fakeObject.ApplyDefaults(playableBeatmap.ControlPointInfo, MosuGimmickApplier.ResolveDifficultyForObject(playableBeatmap, mosuBeatmap.Gimmicks, h));
+                MosuGimmickApplier.ApplyForcedModsToObject(playableBeatmap, mosuBeatmap.Gimmicks, fakeObject);
+
+                return fakeObject switch
+                {
+                    FakeHitCircle fakeCircle => new DrawableFakeHitCircle(fakeCircle),
+                    FakeSlider fakeSlider => new DrawableFakeSlider(fakeSlider),
+                    _ => null
+                };
+            }
+
+            return null;
+        }
+
+        private bool gimmicksApplied;
+
+        /// <summary>
+        /// Ensures the delta gimmick sections (skipped by the stock decoder) are parsed and applied
+        /// to the playable beatmap before any drawables are created. The .osu file is parsed once
+        /// per map (cached), not per play.
+        /// </summary>
+        private void ensureGimmicksApplied()
+        {
+            if (gimmicksApplied)
+                return;
+
+            gimmicksApplied = true;
+
+            try
+            {
+                if (playableBeatmap is not MosuBeatmap mosuBeatmap)
+                    return;
+
+                var data = mosuBeatmap.Gimmicks;
+
+                if (!data.Parsed)
+                {
+                    data.Parsed = true;
+
+                    string cacheKey = $"{mosuBeatmap.BeatmapInfo.OnlineID}:{mosuBeatmap.BeatmapInfo.MD5Hash}:{mosuBeatmap.BeatmapInfo.Path}";
+                    var cached = MosuGimmickCache.TryGet(cacheKey);
+
+                    if (cached != null)
+                    {
+                        data = mosuBeatmap.Gimmicks = cached;
+                    }
+                    else
+                    {
+                        var workingBeatmap = beatmap?.Value;
+                        var path = workingBeatmap?.BeatmapInfo.Path;
+
+                        if (workingBeatmap == null || string.IsNullOrEmpty(path))
+                            return;
+
+                        var storagePath = workingBeatmap.BeatmapInfo.BeatmapSet?.GetPathForFile(path);
+                        if (storagePath == null)
+                            return;
+
+                        using var stream = workingBeatmap.GetStream(storagePath);
+                        if (stream == null)
+                            return;
+
+                        using var reader = new StreamReader(stream);
+                        (data.Sections, data.HitObjectGimmicks) = MosuGimmickParser.Parse(reader);
+                        MosuGimmickCache.Set(cacheKey, data);
+                    }
+                }
+
+                if (data.Sections.Sections.Count == 0 && data.HitObjectGimmicks.Entries.Count == 0)
+                    return;
+
+                Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
+                MosuGimmickApplier.Apply(mosuBeatmap, data);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
+            }
+        }
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true; // always show the gameplay cursor
 
