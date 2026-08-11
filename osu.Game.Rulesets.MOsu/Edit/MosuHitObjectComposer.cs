@@ -2,6 +2,7 @@
 // playfield and adds the section/hitobject gimmick toolbox groups.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -22,7 +23,9 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.OSD;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Gimmicks;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -91,7 +94,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
             }
 
-            MosuGimmickRuntime.EnsureApplied(editorBeatmap.PlayableBeatmap, working, mutateList: false);
+            MosuGimmickRuntime.EnsureApplied(editorBeatmap.PlayableBeatmap, working, mutateList: true);
+
+            // The list now holds fake clones in place of their sources; re-key the editor's
+            // startTimeBindables so deleting a fake finds its bindable (RemoveAt keys by instance).
+            rekeyStartTimeBindables(editorBeatmap);
 
             var sectionModel = new MosuSectionGimmickEditorModel(editorBeatmap);
             var hitObjectModel = new HitObjectGimmickEditorModel(editorBeatmap);
@@ -180,6 +187,34 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 : base(InputSettingsStrings.EditorSection, value)
             {
                 ExtraText = beatmapDisplayName;
+            }
+        }
+
+        private static readonly System.Reflection.FieldInfo? start_time_bindables_field =
+            typeof(EditorBeatmap).GetField("startTimeBindables", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        private static void rekeyStartTimeBindables(EditorBeatmap editorBeatmap)
+        {
+            if (start_time_bindables_field?.GetValue(editorBeatmap) is not System.Collections.Generic.Dictionary<HitObject, Bindable<double>> dict)
+                return;
+
+            var fakes = new System.Collections.Generic.Dictionary<long, OsuHitObject>();
+
+            foreach (var h in editorBeatmap.PlayableBeatmap.HitObjects.OfType<OsuHitObject>())
+            {
+                if (h is FakeHitCircle or FakeSlider)
+                    fakes[MosuGimmickApplier.GetObjectId(h)] = h;
+            }
+
+            foreach (var (source, bindable) in dict.ToList())
+            {
+                if (source is OsuHitObject osuSource
+                    && fakes.TryGetValue(MosuGimmickApplier.GetObjectId(osuSource), out var fake)
+                    && !ReferenceEquals(source, fake))
+                {
+                    dict.Remove(source);
+                    dict[fake] = bindable;
+                }
             }
         }
 

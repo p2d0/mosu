@@ -39,7 +39,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
             try
             {
-                MosuGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value, mutateList: false);
+                MosuGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value, mutateList: true);
             }
             catch (Exception e)
             {
@@ -65,7 +65,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
                 {
                 }
 
-                MosuGimmickRuntime.EnsureApplied(Beatmap, working, mutateList: false);
+                MosuGimmickRuntime.EnsureApplied(Beatmap, working, mutateList: true);
 
             }
 

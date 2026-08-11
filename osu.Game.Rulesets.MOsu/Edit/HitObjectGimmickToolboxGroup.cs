@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using System.Globalization;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -421,6 +422,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
             try
             {
                 var state = model.GetSelectionState();
+
+                var selected = editorBeatmap.SelectedHitObjects.OfType<OsuHitObject>().ToList();
+                var inList = selected.Select(h => (h, inBeatmap: editorBeatmap.HitObjects.Contains(h), id: MosuGimmickApplier.GetObjectId(h))).ToList();
+                osu.Framework.Logging.Logger.Log($"[MOsu-Toolbox] selection: count={state.SelectionCount} hasSel={state.HasSelection} fake={state.IsFakeNote} hidden={state.ForceHidden} "
+                                                + string.Join(" | ", inList.Select(t => $"{t.h.GetType().Name}@{t.h.StartTime} id={t.id} inBeatmap={t.inBeatmap}")));
             bool hasSelection = state.HasSelection;
 
             selectionStatus.Text = hasSelection
