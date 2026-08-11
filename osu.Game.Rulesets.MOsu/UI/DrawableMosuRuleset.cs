@@ -366,14 +366,15 @@ namespace osu.Game.Rulesets.MOsu.UI
             var section = data.Sections.FindSectionAt(h.StartTime);
             bool hidden = section?.Settings.ForceHidden == true || objectSettings?.ForceHidden == true;
             bool noApproach = section?.Settings.ForceNoApproachCircle == true || objectSettings?.ForceNoApproachCircle == true;
+            bool traceable = section?.Settings.ForceTraceable == true || objectSettings?.ForceTraceable == true;
 
-            if (hidden || noApproach)
+            if (hidden || noApproach || traceable)
             {
                 return h switch
                 {
-                    HitCircle circle => new MosuDrawableHitCircle(circle, hidden, noApproach),
-                    Slider slider => new MosuDrawableSlider(slider, hidden, noApproach),
-                    Spinner spinner => new MosuDrawableSpinner(spinner, hidden, noApproach),
+                    HitCircle circle => new MosuDrawableHitCircle(circle, hidden, noApproach, traceable),
+                    Slider slider => new MosuDrawableSlider(slider, hidden, noApproach, traceable),
+                    Spinner spinner => new MosuDrawableSpinner(spinner, hidden, noApproach, traceable),
                     _ => null
                 };
             }
