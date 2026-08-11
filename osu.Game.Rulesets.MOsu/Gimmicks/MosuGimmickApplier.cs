@@ -89,11 +89,98 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             applySectionDifficultyOverrides(beatmap, data);
             applySectionForcedMods(beatmap, data);
 
+            // Delta-style: replace fake-note sources in the playable's HitObjects list in place.
+            // The max-combo autoplay simulation then judges the Fake* objects (IgnoreHit, no
+            // combo) and the drawable ruleset creates fake drawables for them directly.
+            replaceFakeObjects(beatmap, data);
+
             foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().Where(o => o is HitCircle || o is Slider))
             {
                 var s = getObjectSettings(o, createObjectSettingsLookup(data.HitObjectGimmicks));
                 if (s?.EnableDifficultyOverrides == true && !float.IsNaN(s.SectionCircleSize))
                     Logger.Log($"[MOsu] apply: object@{o.StartTime} CS={s.SectionCircleSize} Scale={o.Scale}");
+            }
+        }
+
+        /// <summary>
+        /// Replaces objects with fake-note settings in the playable's HitObjects list with
+        /// <see cref="FakeHitCircle"/> / <see cref="FakeSlider"/> instances, in place (same
+        /// index, same count) so any in-flight enumeration stays valid.
+        /// </summary>
+        private static void replaceFakeObjects(IBeatmap beatmap, MosuGimmickData data)
+        {
+            if (beatmap is not Beatmaps.MosuBeatmap mosuBeatmap)
+                return;
+
+            var list = (System.Collections.Generic.List<osu.Game.Rulesets.Osu.Objects.OsuHitObject>)mosuBeatmap.HitObjects;
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] is not osu.Game.Rulesets.Osu.Objects.OsuHitObject osuObject)
+                    continue;
+
+                var settings = GetObjectSettings(beatmap, data, osuObject);
+
+                // undo: a fake object whose flag was cleared becomes a normal object again
+                if (osuObject is FakeHitCircle or FakeSlider && settings?.IsFakeNote != true)
+                {
+                    var normal = createNormalObject(osuObject);
+                    if (normal == null)
+                        continue;
+
+                    normal.ApplyDefaults(beatmap.ControlPointInfo, ResolveDifficultyForObject(beatmap, data, osuObject));
+                    list[i] = normal;
+                    Logger.Log($"[MOsu] restored object@{osuObject.StartTime} to {normal.GetType().Name}");
+                    continue;
+                }
+
+                if (osuObject is FakeHitCircle or FakeSlider || settings?.IsFakeNote != true)
+                    continue;
+
+                var fake = CreateFakeObject(beatmap, data, osuObject);
+                if (fake == null)
+                    continue;
+
+                fake.ApplyDefaults(beatmap.ControlPointInfo, ResolveDifficultyForObject(beatmap, data, osuObject));
+                ApplyForcedModsToObject(beatmap, data, fake);
+
+                list[i] = fake;
+                Logger.Log($"[MOsu] replaced object@{osuObject.StartTime} with {fake.GetType().Name}");
+            }
+        }
+
+        private static osu.Game.Rulesets.Osu.Objects.OsuHitObject? createNormalObject(osu.Game.Rulesets.Osu.Objects.OsuHitObject fake)
+        {
+            switch (fake)
+            {
+                case FakeHitCircle fakeCircle:
+                    return new HitCircle
+                    {
+                        StartTime = fakeCircle.StartTime,
+                        Position = fakeCircle.Position,
+                        NewCombo = fakeCircle.NewCombo,
+                        ComboOffset = fakeCircle.ComboOffset,
+                        Samples = fakeCircle.Samples.ToList(),
+                    };
+
+                case FakeSlider fakeSlider:
+                    return new Slider
+                    {
+                        StartTime = fakeSlider.StartTime,
+                        Position = fakeSlider.Position,
+                        NewCombo = fakeSlider.NewCombo,
+                        ComboOffset = fakeSlider.ComboOffset,
+                        Samples = fakeSlider.Samples.ToList(),
+                        RepeatCount = fakeSlider.RepeatCount,
+                        Path = fakeSlider.Path,
+                        SliderVelocityMultiplier = fakeSlider.SliderVelocityMultiplier,
+                        GenerateTicks = fakeSlider.GenerateTicks,
+                        TickDistanceMultiplier = fakeSlider.TickDistanceMultiplier,
+                        ClassicSliderBehaviour = fakeSlider.ClassicSliderBehaviour,
+                    };
+
+                default:
+                    return null;
             }
         }
 

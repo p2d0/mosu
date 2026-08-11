@@ -2,6 +2,7 @@
 // parses gimmicks once per map (cached), applies them to the playable beatmap, and creates
 // gimmick drawable representations (fake notes, hidden/no-approach/traceable visuals).
 
+using System;
 using System.IO;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
@@ -15,6 +16,27 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 {
     public static class MosuGimmickRuntime
     {
+        /// <summary>
+        /// Applies gimmicks from the static cache when available, without needing the working
+        /// beatmap. Used by drawable-ruleset constructors so the fake replacements land in the
+        /// playable before the max-combo simulation and the drawable enumeration.
+        /// </summary>
+        public static void EnsureAppliedFromCache(IBeatmap playableBeatmap)
+        {
+            if (playableBeatmap is not Beatmaps.MosuBeatmap mosuBeatmap || mosuBeatmap.Gimmicks.Parsed)
+                return;
+
+            string cacheKey = $"{mosuBeatmap.BeatmapInfo.OnlineID}:{mosuBeatmap.BeatmapInfo.MD5Hash}:{mosuBeatmap.BeatmapInfo.Path}";
+            var cached = MosuGimmickCache.TryGet(cacheKey);
+
+            if (cached == null)
+                return;
+
+            mosuBeatmap.Gimmicks = cached;
+            cached.Applied = false;
+            MosuGimmickApplier.Apply(mosuBeatmap, cached);
+        }
+
         /// <summary>
         /// Parses the delta gimmick sections (skipped by the stock decoder) and applies them to the
         /// playable beatmap, if not already done. The .osu file is parsed once per map (cached).
@@ -102,6 +124,17 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
             if (data.HitObjectGimmicks.Entries.Count == 0 && data.Sections.Sections.Count == 0)
                 return null;
+
+            // The apply step replaced fake sources in the playable's HitObjects list; these
+            // objects are already fakes, so wrap them directly.
+            switch (h)
+            {
+                case FakeHitCircle fakeCircle:
+                    return new DrawableFakeHitCircle(fakeCircle);
+
+                case FakeSlider fakeSlider:
+                    return new DrawableFakeSlider(fakeSlider);
+            }
 
             var objectSettings = MosuGimmickApplier.GetObjectSettings(playableBeatmap, data, h);
 

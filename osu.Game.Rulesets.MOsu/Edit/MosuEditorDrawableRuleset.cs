@@ -27,6 +27,16 @@ namespace osu.Game.Rulesets.MOsu.Edit
         public MosuEditorDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             : base(ruleset, beatmap, mods)
         {
+            // Apply gimmicks from the cache before loadObjects enumerates the playable, so the
+            // in-place fake replacements never happen mid-enumeration.
+            try
+            {
+                MosuGimmickRuntime.EnsureAppliedFromCache(beatmap);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu-Editor] cache-apply failed: {e}");
+            }
         }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
@@ -34,6 +44,18 @@ namespace osu.Game.Rulesets.MOsu.Edit
             // [Resolved] fields come back null in the editor context, so capture the parent chain
             // and resolve dependencies manually (same pattern ComposeScreen uses).
             parentDependencies = parent;
+
+            // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
+            // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
+            try
+            {
+                MosuGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu-Editor] Failed to apply gimmicks: {e}");
+            }
+
             return base.CreateChildDependencies(parent);
         }
 

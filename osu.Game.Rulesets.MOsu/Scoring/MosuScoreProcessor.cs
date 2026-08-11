@@ -9,6 +9,7 @@
 // future osu version, the adjustment silently disables itself instead of crashing.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.MOsu.Objects;

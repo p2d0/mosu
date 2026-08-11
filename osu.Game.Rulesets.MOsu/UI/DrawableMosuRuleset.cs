@@ -48,6 +48,18 @@ namespace osu.Game.Rulesets.MOsu.UI
             : base(ruleset, beatmap, mods)
         {
             this.playableBeatmap = beatmap!;
+
+            // The max-combo simulation (ScoreProcessor.ApplyBeatmap) runs right after this
+            // constructor, before any drawable is created. Apply gimmicks from the cache now
+            // so the fake replacements are in the playable when the simulation runs.
+            try
+            {
+                MosuGimmickRuntime.EnsureAppliedFromCache(beatmap);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu] cache-apply failed: {e}");
+            }
         }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
@@ -55,6 +67,17 @@ namespace osu.Game.Rulesets.MOsu.UI
             // [Resolved] fields come back null in the ruleset context (gameplay and editor alike),
             // so capture the parent chain and resolve dependencies manually (same pattern the editor ruleset uses).
             parentDependencies = parent;
+
+            // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
+            // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
+            try
+            {
+                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
+            }
 
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
             var dependencies = base.CreateChildDependencies(parent);
