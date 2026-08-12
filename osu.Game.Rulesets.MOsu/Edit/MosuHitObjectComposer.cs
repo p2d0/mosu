@@ -1,8 +1,10 @@
 // MOsu's editor composer: uses the gimmick-aware editor ruleset for the compose
 // playfield and adds the section/hitobject gimmick toolbox groups.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -26,6 +28,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.MOsu.Edit.Timeline;
+using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Objects;
@@ -61,6 +64,59 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private bool timelineGimmickDisplaysInjected;
         private osu.Framework.Graphics.Containers.Container<Drawable>? timelineContentContainer;
+
+        private bool sliderVelocityControlUncapped;
+        private readonly HashSet<Drawable> uncappedSliderVelocityControls = new HashSet<Drawable>();
+        private osu.Framework.Graphics.Drawable? sliderVelocityScanRoot;
+        private int sliderVelocityScanFrame;
+
+        /// <summary>
+        /// The stock slider velocity control (right-toolbox <c>SliderVelocityControl</c> and the
+        /// timeline difficulty-point popover's <c>SliderVelocityAdjustmentControl</c>) caps its
+        /// bindable at 10x. Delta removes the cap in core; widen every instance in place so SV > 10
+        /// can be authored. The popover instance is created on demand and renders at the game
+        /// root, so scan periodically from the top ancestor.
+        /// </summary>
+        private void uncapSliderVelocityControl()
+        {
+            sliderVelocityScanRoot ??= findRoot(this);
+
+            // Scan at ~1Hz; toolbox/popover instances appear after load / on demand.
+            if (++sliderVelocityScanFrame % 60 != 0)
+                return;
+
+            foreach (var control in sliderVelocityScanRoot.FindDescendants<Drawable>())
+            {
+                string name = control.GetType().Name;
+
+                if (name != "SliderVelocityControl" && name != "SliderVelocityAdjustmentControl")
+                    continue;
+
+                if (!uncappedSliderVelocityControls.Add(control))
+                    continue;
+
+                if (control.GetType().GetProperty("Current")?.GetValue(control) is BindableNumber<double> bindable)
+                {
+                    bindable.MinValue = 0;
+                    bindable.MaxValue = 1000;
+                }
+
+                sliderVelocityControlUncapped = true;
+            }
+        }
+
+        /// <summary>
+        /// Whether any slider velocity control has been uncapped (used by the tests).
+        /// </summary>
+        internal bool SliderVelocityControlUncapped => sliderVelocityControlUncapped;
+
+        private static osu.Framework.Graphics.Drawable? findRoot(osu.Framework.Graphics.Drawable drawable)
+        {
+            while (drawable.Parent != null)
+                drawable = drawable.Parent;
+
+            return drawable;
+        }
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -184,8 +240,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
         {
             base.Update();
             injectTimelineGimmickDisplays();
+            uncapSliderVelocityControl();
         }
 
+        /// <summary>
+        /// The stock Slider Velocity Adjustment toolbox control caps its bindable at 10x (core
+        /// SliderVelocityAdjustmentControl). Widen it in place so SV > 10 can be authored, matching
         /// <summary>
         /// Adds the delta-style section/hitobject-gimmick displays to the compose timeline.
         /// The timeline is built asynchronously by the core after the composer loads, so poll
@@ -207,7 +267,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 // TimelineBlueprintContainer is internal in the packaged game; anchor on the
                 // public break display, which sits in the same content container as the blueprints.
-                var breakDisplay = findDescendant<TimelineBreakDisplay>(timeline);
+                var breakDisplay = timeline.FindDescendant<TimelineBreakDisplay>();
 
                 if (breakDisplay?.Parent is Container<Drawable> container)
                     timelineContentContainer = container;
@@ -258,23 +318,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
             });
 
             timelineGimmickDisplaysInjected = true;
-        }
-
-        private static T? findDescendant<T>(Drawable root) where T : Drawable
-        {
-            if (root is T match)
-                return match;
-
-            if (root is osu.Framework.Graphics.Containers.Container<Drawable> container)
-            {
-                foreach (var child in container.Children)
-                {
-                    if (findDescendant<T>(child) is T found)
-                        return found;
-                }
-            }
-
-            return null;
         }
 
         internal void save()

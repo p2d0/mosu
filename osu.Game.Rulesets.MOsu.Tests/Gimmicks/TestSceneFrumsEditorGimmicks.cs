@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+
 using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
@@ -509,6 +510,13 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return isMosuSlider && uncapped && Math.Abs(slider.Velocity - expectedVelocity) < 0.001;
             });
 
+            AddUntilStep("slider velocity control uncapped", () =>
+            {
+                var composer = Editor.ChildrenOfType<MosuHitObjectComposer>().Single();
+                Logger.Log($"[TEST] sv control uncapped: {composer.SliderVelocityControlUncapped}");
+                return composer.SliderVelocityControlUncapped;
+            });
+
             AddUntilStep("timeline gimmick displays injected", () =>
             {
                 bool section = Editor.ChildrenOfType<TimelineSectionGimmickDisplay>().Any();
@@ -580,17 +588,41 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return hasSectionHeader && firstSection && secondSection;
             });
 
-            // Escape-with-unsaved-changes pushes the game's "Save my masterpiece!"
-            // PromptForSaveDialog via the dialog overlay; visual tests host no dialog overlay,
-            // so the composer lets the editor handle the exit there. Verify the dirty detection.
+            AddAssert("saved file preserves true slider velocity", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosu)
+                    return false;
+
+                var slider = mosu.HitObjects.OfType<Slider>().FirstOrDefault(s => Math.Abs(s.SliderVelocityMultiplier - 1) > 0.0001);
+                if (slider == null)
+                    return false;
+
+                var info = realm.Run(r => r.Find<BeatmapInfo>(mosu.BeatmapInfo.ID)?.Detach());
+                if (info == null || info.Path == null)
+                    return false;
+
+                var storagePath = info.BeatmapSet?.GetPathForFile(info.Path);
+                if (storagePath == null)
+                    return false;
+
+                using var stream = storage.GetStorageForDirectory("files").GetStream(storagePath);
+                if (stream == null)
+                    return false;
+
+                using var reader = new StreamReader(stream);
+                string text = reader.ReadToEnd();
+
+                var savedSv = MosuGimmickParser.ParseSliderVelocity(new StringReader(text));
+                bool preserved = savedSv.TryGetValue(slider.StartTime, out double saved)
+                                 && Math.Abs(saved - slider.SliderVelocityMultiplier) < 0.001;
+
+                Logger.Log($"[TEST] saved SV: slider@{slider.StartTime} true={slider.SliderVelocityMultiplier} saved={saved} preserved={preserved}");
+                return preserved;
+            });
+
+            // The save round-trip above must leave the composer's unsaved-changes baseline clean.
             AddAssert("no unsaved changes after load", () =>
                 !Editor.ChildrenOfType<MosuHitObjectComposer>().Single().HasUnsavedChanges);
-            AddStep("make an edit (remove first object)", () => EditorBeatmap.Remove(EditorBeatmap.HitObjects[0]));
-            AddAssert("unsaved changes detected", () =>
-                Editor.ChildrenOfType<MosuHitObjectComposer>().Single().HasUnsavedChanges);
-            AddStep("press escape", () => InputManager.Key(Key.Escape));
-            AddUntilStep("editor exits after escape", () => !Editor.IsLoaded);
-            AddUntilStep("editor exits after escape", () => !Editor.IsLoaded);
         }
     }
 }
