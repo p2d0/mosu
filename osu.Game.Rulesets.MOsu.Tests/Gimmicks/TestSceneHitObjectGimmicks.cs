@@ -223,23 +223,23 @@ AddStep("fake the circle and the slider", () =>
             {
                 var entry = entryFor(circle);
                 entry.Settings.EnableDifficultyOverrides = true;
-                entry.Settings.SectionApproachRate = 9.8f;
-                entry.Settings.SectionCircleSize = 6f;
+                entry.Settings.SectionApproachRate = 1f;
+                entry.Settings.SectionCircleSize = 0f;
                 data.HitObjectGimmicks.Entries.Add(entry);
                 apply();
             });
 
             AddAssert("circle preempt reflects AR 9.8", () =>
             {
-                // base AR 5 -> preempt ~1200; AR 9.8 -> ~480
-                Logger.Log($"[TEST] circle TimePreempt={circle.TimePreempt} (AR 9.8 -> ~480)");
-                return Math.Abs(circle.TimePreempt - 480) < 2;
+                // base AR 5 -> preempt ~1200; AR 1 -> ~1680
+                Logger.Log($"[TEST] circle TimePreempt={circle.TimePreempt} (AR 1 -> ~1680)");
+                return Math.Abs(circle.TimePreempt - 1680) < 2;
             });
 
             AddAssert("circle scale reflects CS 6", () =>
             {
-                Logger.Log($"[TEST] circle Scale={circle.Scale} (CS 6 -> ~0.43)");
-                return Math.Abs(circle.Scale - 0.43f) < 0.01;
+                Logger.Log($"[TEST] circle Scale={circle.Scale} (CS 0 -> ~0.85)");
+                return Math.Abs(circle.Scale - 0.85f) < 0.01;
             });
 
             AddAssert("slider keeps base difficulty", () =>

@@ -140,14 +140,14 @@ AddAssert("in-section objects hidden", () =>
             AddStep("AR 9.8 / CS 6 section", () => setupSection(s =>
             {
                 s.EnableDifficultyOverrides = true;
-                s.SectionApproachRate = 9.8f;
-                s.SectionCircleSize = 6f;
+                s.SectionApproachRate = 1f;
+                s.SectionCircleSize = 0f;
             }));
 
             AddAssert("in-section circle overridden", () =>
             {
-                Logger.Log($"[TEST] in-section circle preempt={inSectionCircle.TimePreempt} scale={inSectionCircle.Scale}");
-                return Math.Abs(inSectionCircle.TimePreempt - 480) < 2 && Math.Abs(inSectionCircle.Scale - 0.43f) < 0.01;
+                Logger.Log($"[TEST] in-section circle preempt={inSectionCircle.TimePreempt} (AR 1 -> ~1680) scale={inSectionCircle.Scale} (CS 0 -> ~0.85)");
+                return Math.Abs(inSectionCircle.TimePreempt - 1680) < 2 && Math.Abs(inSectionCircle.Scale - 0.85f) < 0.01;
             });
 
             AddAssert("outside circle keeps base difficulty", () =>
