@@ -1,4 +1,4 @@
-
+[![Discord](https://discord.com/api/guilds/1537046465195548734/widget.png?style=shield)](https://discord.gg/aJ6JwG7H2w)
 # MOsu
 
 osu! practice ruleset with unique mods and local PP tracking.
