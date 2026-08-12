@@ -59,6 +59,51 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
             return (sections, hitObjectGimmicks);
         }
 
+        /// <summary>
+        /// Parses the raw slider velocity multipliers from <c>[TimingPoints]</c>, keyed by time.
+        /// The stock decoder clamps SV to 10x during decode, so the raw values are re-read here
+        /// and re-applied by the runtime (delta removes the 10x cap in core; mosu cannot).
+        /// </summary>
+        public static Dictionary<double, double> ParseSliderVelocity(TextReader reader)
+        {
+            var result = new Dictionary<double, double>();
+
+            bool inTimingPoints = false;
+            string? line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                line = line.Trim();
+
+                if (line.Length == 0 || line.StartsWith("//", StringComparison.Ordinal))
+                    continue;
+
+                if (line.StartsWith('[') && line.EndsWith(']'))
+                {
+                    inTimingPoints = line[1..^1] == "TimingPoints";
+                    continue;
+                }
+
+                if (!inTimingPoints)
+                    continue;
+
+                string[] split = line.Split(',');
+                if (split.Length < 2)
+                    continue;
+
+                if (!double.TryParse(split[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double time))
+                    continue;
+
+                if (!double.TryParse(split[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double beatLength))
+                    continue;
+
+                if (beatLength < 0)
+                    result[time] = 100.0 / -beatLength;
+            }
+
+            return result;
+        }
+
         private static void dedupeHitObjectEntries(BeatmapHitObjectGimmicks gimmicks)
         {
             var seen = new HashSet<(double StartTime, int ComboIndexWithOffsets)>();

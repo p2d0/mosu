@@ -362,6 +362,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 // delta-style: allow stacking — just add, don't replace same-time objects.
                 composer.EditorBeatmap.PlacementObject.Value = null;
+
+                // Core placement tools create stock Sliders with the 10x SV cap; widen the
+                // bindable so SV > 10 can be authored and round-trips through save/reload.
+                if (hitObject is Slider slider)
+                    MosuSlider.UncapVelocityBindable(slider);
+
                 composer.EditorBeatmap.Add(hitObject);
             }
 

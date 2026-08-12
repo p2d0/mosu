@@ -11,7 +11,7 @@ using osu.Game.Rulesets.MOsu.Judgements;
 
 namespace osu.Game.Rulesets.MOsu.Objects
 {
-    public class FakeSlider : Slider
+    public class FakeSlider : MosuSlider
     {
         public override Judgement CreateJudgement() => new FakeCircleJudgement();
 

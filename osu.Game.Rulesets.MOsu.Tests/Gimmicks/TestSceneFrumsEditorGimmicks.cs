@@ -97,7 +97,9 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
             // same step GetPlayableBeatmap performs), then wrap in a MosuBeatmap carrying the
             // pre-parsed gimmicks (the editor test's working beatmap has no file access, so the
             // runtime cannot parse it itself).
-            var converted = new OsuBeatmapConverter(source, new osu.Game.Rulesets.Osu.OsuRuleset()).Convert() as Beatmap<OsuHitObject>;
+            // Convert with the mosu converter so the playable carries MosuSlider instances
+            // (the real GetPlayableBeatmap path) and the uncapped-velocity assertions hold.
+            var converted = new MosuBeatmapConverter(source, new MosuRuleset()).Convert() as Beatmap<OsuHitObject>;
 
             // the converter alone leaves slider velocity/end-times unset; the editor's processor
             // would normally do this, so replicate it before wrapping
@@ -472,6 +474,39 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 var target = mosuBeatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault(o => o.StartTime == 15037);
                 Logger.Log($"[TEST] object@15037 TimePreempt={target?.TimePreempt} (base AR 9.2 -> ~570, override AR 9.8 -> ~480)");
                 return target != null && Math.Abs(target.TimePreempt - 480) < 2;
+            });
+
+            AddAssert("SV parser extracts raw timing point velocities", () =>
+            {
+                const string sample = "[TimingPoints]\n0,500,4,2,0,100,1,0\n1000,-6.6667,4,2,0,100,1,0\n";
+                var sv = MosuGimmickParser.ParseSliderVelocity(new StringReader(sample));
+                Logger.Log($"[TEST] sv parse: {sv.Count} points, sv@1000={(sv.TryGetValue(1000, out double parsed) ? parsed : -1)}");
+                return sv.TryGetValue(1000, out double v) && Math.Abs(v - 15) < 0.01;
+            });
+
+            AddAssert("mosu sliders use uncapped velocity formula", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosu)
+                    return false;
+
+                var slider = mosu.HitObjects.OfType<Slider>().FirstOrDefault();
+                if (slider == null)
+                    return false;
+
+                bool isMosuSlider = slider is MosuSlider;
+                bool uncapped = slider.SliderVelocityMultiplierBindable.MaxValue == 1000;
+
+                // The playable's velocity must match delta's uncapped formula
+                // (GetPrecisionAdjustedBeatLength lower bound 0.1 instead of 10).
+                var timingPoint = mosu.ControlPointInfo.TimingPointAt(slider.StartTime);
+                double sliderVelocityAsBeatLength = -100 / slider.SliderVelocityMultiplier;
+                double bpmMultiplier = sliderVelocityAsBeatLength < 0
+                    ? Math.Clamp((float)-sliderVelocityAsBeatLength, 0.1f, 1000) / 100.0
+                    : 1;
+                double expectedVelocity = 100 * mosu.Difficulty.SliderMultiplier / (timingPoint.BeatLength * bpmMultiplier);
+
+                Logger.Log($"[TEST] slider sv={slider.SliderVelocityMultiplier} velocity={slider.Velocity} expected={expectedVelocity} isMosu={isMosuSlider} uncapped={uncapped}");
+                return isMosuSlider && uncapped && Math.Abs(slider.Velocity - expectedVelocity) < 0.001;
             });
 
             AddUntilStep("timeline gimmick displays injected", () =>
