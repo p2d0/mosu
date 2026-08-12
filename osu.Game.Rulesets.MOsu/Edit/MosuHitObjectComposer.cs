@@ -33,6 +33,7 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit;using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Framework.Screens;
 
@@ -123,6 +124,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             dependencies.CacheAs(sectionModel);
             dependencies.CacheAs(hitObjectModel);
+
+            // delta-style placement: commit a plain add so objects can be placed on top of each
+            // other (the stock CommitPlacement removes same-time objects first).
+            dependencies.CacheAs<IPlacementHandler>(new MosuPlacementHandler(this));
 
             // DI in the editor context is unreliable for the drawable ruleset, so wire the
             // drawable refresh directly through the composer.
@@ -234,6 +239,29 @@ namespace osu.Game.Rulesets.MOsu.Edit
                     dict[fake] = bindable;
                 }
             }
+        }
+
+        private partial class MosuPlacementHandler : IPlacementHandler
+        {
+            private readonly MosuHitObjectComposer composer;
+
+            public MosuPlacementHandler(MosuHitObjectComposer composer)
+            {
+                this.composer = composer;
+            }
+
+            public void ShowPlacement(HitObject hitObject) => composer.EditorBeatmap.PlacementObject.Value = hitObject;
+
+            public void HidePlacement() => composer.EditorBeatmap.PlacementObject.Value = null;
+
+            public void CommitPlacement(HitObject hitObject)
+            {
+                // delta-style: allow stacking — just add, don't replace same-time objects.
+                composer.EditorBeatmap.PlacementObject.Value = null;
+                composer.EditorBeatmap.Add(hitObject);
+            }
+
+            public void Delete(HitObject hitObject) => composer.EditorBeatmap.Remove(hitObject);
         }
 
         private bool hasUnsavedChanges => savedStateHash != null && computeStateHash() != savedStateHash;
