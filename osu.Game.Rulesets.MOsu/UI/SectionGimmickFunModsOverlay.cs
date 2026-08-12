@@ -9,13 +9,20 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Effects;
+using osu.Framework.Graphics.Pooling;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Transforms;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Graphics;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
@@ -25,8 +32,10 @@ using osu.Game.Rulesets.Osu.UI.Cursor;
 using osu.Game.Rulesets.Osu.Utils;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Play;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -41,10 +50,19 @@ namespace osu.Game.Rulesets.MOsu.UI
         private readonly DrawableRuleset<OsuHitObject> drawableRuleset;
         private readonly IReadOnlyList<Mod> selectedMods;
 
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
+
         private readonly BindableDouble mutedVolumeAdjustment = new BindableDouble(1);
 
         private OsuModSynesthesia? synesthesiaMod;
-        private OsuModBubbles? bubblesMod;
+
+        private readonly Bindable<int> currentCombo = new BindableInt();
+        private float bubbleMaxSize;
+        private float bubbleSize;
+        private double bubbleFade;
+        private PlayfieldAdjustmentContainer bubbleContainer = null!;
+        private DrawablePool<BubbleDrawable> bubblePool = null!;
 
         private bool hasForcedMuted;
         private bool hasForcedBarrelRoll;
@@ -133,11 +151,26 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             if (hasForcedBubbles)
             {
-                bubblesMod = new OsuModBubbles();
-                bubblesMod.ApplyToDrawableRuleset(drawableRuleset);
+                OsuHitObject firstObject = drawableRuleset.Beatmap.HitObjects.OfType<OsuHitObject>().First();
+
+                // Multiplying by 2 results in an initial size that is too large, hence 1.90 has been chosen.
+                bubbleSize = (float)firstObject.Radius * 1.90f;
+                bubbleFade = firstObject.TimePreempt * 2;
+
+                // Judgements are obscured by the bubble drawables (layering).
+                drawableRuleset.Playfield.DisplayJudgements.Value = false;
+
+                bubbleContainer = drawableRuleset.CreatePlayfieldAdjustmentContainer();
+
+                drawableRuleset.Overlays.Add(bubbleContainer);
+                drawableRuleset.Overlays.Add(bubblePool = new DrawablePool<BubbleDrawable>(100));
 
                 if (scoreProcessor != null)
-                    bubblesMod.ApplyToScoreProcessor(scoreProcessor);
+                {
+                    currentCombo.BindTo(scoreProcessor.Combo);
+                    currentCombo.BindValueChanged(combo =>
+                        bubbleMaxSize = Math.Min(1.75f, (float)(1.25 + 0.005 * combo.NewValue)), true);
+                }
             }
 
             if (hasForcedMuted)
@@ -173,52 +206,183 @@ namespace osu.Game.Rulesets.MOsu.UI
                 if (!processedDrawables.Add(drawable))
                     continue;
 
-                SectionGimmickSettings? settings = resolveSettingsForHitObject(drawable.HitObject);
-                if (settings == null)
-                    continue;
+                // NOTE: drawables are pooled and reused for many objects, and ApplyCustomUpdateState
+                // subscriptions persist across pool reuse. Applying a mod to the pooled drawable would
+                // therefore leak its effect onto every later object (map-wide). All per-drawable mods
+                // below are applied through per-object guarded hooks which resolve the section for the
+                // object currently held by the drawable at fire time.
+                if (hasAnyForced(s => s.ForceTransform) && !selectedTransform)
+                    applySectionScopedVisibilityMod(new OsuModTransform(), drawable, s => s.ForceTransform, null);
 
-                if (settings.ForceTransform && !selectedTransform)
-                    applyModToDrawable(new OsuModTransform(), drawable);
+                if (hasAnyForced(s => s.ForceWiggle) && !selectedWiggle)
+                    applySectionScopedVisibilityMod(new OsuModWiggle(), drawable, s => s.ForceWiggle,
+                        (m, s) => m.Strength.Value = Math.Clamp(s.WiggleStrength, 0.1f, 2f));
 
-                if (settings.ForceWiggle && !selectedWiggle)
-                {
-                    var mod = new OsuModWiggle();
-                    mod.Strength.Value = Math.Clamp(settings.WiggleStrength, 0.1f, 2f);
-                    applyModToDrawable(mod, drawable);
-                }
+                if (hasAnyForced(s => s.ForceSpinIn) && !selectedSpinIn)
+                    applySectionScopedVisibilityMod(new OsuModSpinIn(), drawable, s => s.ForceSpinIn, null);
 
-                if (settings.ForceSpinIn && !selectedSpinIn)
-                    applyModToDrawable(new OsuModSpinIn(), drawable);
+                if (hasAnyForced(s => s.ForceGrow) && !selectedGrow)
+                    applySectionScopedVisibilityMod(new OsuModGrow(), drawable, s => s.ForceGrow,
+                        (m, s) => m.StartScale.Value = Math.Clamp(s.GrowStartScale, 0f, 0.99f));
 
-                if (settings.ForceGrow && !selectedGrow)
-                {
-                    var mod = new OsuModGrow();
-                    mod.StartScale.Value = Math.Clamp(settings.GrowStartScale, 0f, 0.99f);
-                    applyModToDrawable(mod, drawable);
-                }
+                if (hasAnyForced(s => s.ForceDeflate) && !selectedDeflate)
+                    applySectionScopedVisibilityMod(new OsuModDeflate(), drawable, s => s.ForceDeflate,
+                        (m, s) => m.StartScale.Value = Math.Clamp(s.DeflateStartScale, 1f, 25f));
 
-                if (settings.ForceDeflate && !selectedDeflate)
-                {
-                    var mod = new OsuModDeflate();
-                    mod.StartScale.Value = Math.Clamp(settings.DeflateStartScale, 1f, 25f);
-                    applyModToDrawable(mod, drawable);
-                }
+                if (hasAnyForced(s => s.ForceApproachDifferent) && !selectedApproachDifferent)
+                    applySectionScopedApproachDifferent(drawable);
 
-                if (settings.ForceApproachDifferent && !selectedApproachDifferent)
-                {
-                    var mod = new OsuModApproachDifferent();
-                    mod.Scale.Value = Math.Clamp(settings.ApproachDifferentScale, 1.5f, 10f);
-                    applyModToDrawable(mod, drawable);
-                }
+                if (hasAnyForced(s => s.ForceSynesthesia) && !selectedSynesthesia)
+                    applySectionScopedSynesthesia(drawable);
 
-                if (settings.ForceSynesthesia && synesthesiaMod != null)
-                    synesthesiaMod.ApplyToDrawableHitObject(drawable);
+                if (hasAnyForced(s => s.ForceBubbles) && !selectedBubbles)
+                    applySectionScopedBubbles(drawable);
 
-                if (settings.ForceBubbles && bubblesMod != null)
-                    bubblesMod.ApplyToDrawableHitObject(drawable);
-
-                if (settings.ForceFreezeFrame && !selectedFreezeFrame)
+                if (hasAnyForced(s => s.ForceFreezeFrame) && !selectedFreezeFrame)
                     applyCustomFreezeFrame(drawable);
+            }
+        }
+
+        /// <summary>
+        /// Applies a <see cref="ModWithVisibilityAdjustment"/> to a drawable such that its effect
+        /// is only applied to objects whose section forces the corresponding fun mod. The hook is
+        /// added once per (pooled) drawable but resolves the section per object at fire time, so
+        /// reused drawables do not leak the mod onto out-of-section objects.
+        /// </summary>
+        internal void applySectionScopedVisibilityMod<TMod>(TMod mod, DrawableHitObject drawable, Func<SectionGimmickSettings, bool> isForced, Action<TMod, SectionGimmickSettings>? configure)
+            where TMod : ModWithVisibilityAdjustment
+        {
+            drawable.ApplyCustomUpdateState += (o, state) =>
+            {
+                var settings = resolveSettingsForHitObject(o.HitObject);
+
+                if (settings == null || !isForced(settings))
+                    return;
+
+                configure?.Invoke(mod, settings);
+                apply_normal_visibility_state.Invoke(mod, new object[] { o, state });
+            };
+        }
+
+        private static readonly System.Reflection.MethodInfo apply_normal_visibility_state =
+            typeof(ModWithVisibilityAdjustment).GetMethod(
+                "ApplyNormalVisibilityState",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?? throw new MissingMemberException(nameof(ModWithVisibilityAdjustment), "ApplyNormalVisibilityState");
+
+        private void applySectionScopedApproachDifferent(DrawableHitObject drawable)
+        {
+            drawable.ApplyCustomUpdateState += (o, _) =>
+            {
+                if (o is not DrawableHitCircle drawableHitCircle)
+                    return;
+
+                var settings = resolveSettingsForHitObject(o.HitObject);
+                if (settings?.ForceApproachDifferent != true || selectedApproachDifferent)
+                    return;
+
+                var hitCircle = drawableHitCircle.HitObject;
+                float scale = Math.Clamp(settings.ApproachDifferentScale, 1.5f, 10f);
+
+                drawableHitCircle.ApproachCircle.ClearTransforms(targetMember: nameof(drawableHitCircle.ApproachCircle.Scale));
+
+                using (drawableHitCircle.BeginAbsoluteSequence(hitCircle.StartTime - hitCircle.TimePreempt))
+                    drawableHitCircle.ApproachCircle.ScaleTo(scale).ScaleTo(1f, hitCircle.TimePreempt);
+            };
+        }
+
+        private void applySectionScopedSynesthesia(DrawableHitObject drawable)
+        {
+            if (synesthesiaMod == null)
+                return;
+
+            Color4? timingBasedColour = null;
+
+            drawable.HitObjectApplied += _ =>
+            {
+                var settings = resolveSettingsForHitObject(drawable.HitObject);
+
+                if (settings?.ForceSynesthesia != true)
+                {
+                    timingBasedColour = null;
+                    return;
+                }
+
+                // Slider tails are an edge case: their start time is offset 36ms back (see LastTick),
+                // so use the parenting slider's end time instead to ensure proper snap.
+                double snapTime = drawable is DrawableSliderTail tail
+                    ? tail.Slider.GetEndTime()
+                    : drawable.HitObject.StartTime;
+
+                timingBasedColour = BindableBeatDivisor.GetColourFor(beatmap.ControlPointInfo.GetClosestBeatDivisor(snapTime), colours);
+            };
+
+            // Set every update so it isn't overwritten by DrawableHitObject.OnApply() -> UpdateComboColour().
+            drawable.OnUpdate += _ =>
+            {
+                if (timingBasedColour != null)
+                    drawable.AccentColour.Value = timingBasedColour.Value;
+            };
+        }
+
+        private void applySectionScopedBubbles(DrawableHitObject drawable)
+        {
+            drawable.OnNewResult += (d, _) =>
+            {
+                if (d is not DrawableOsuHitObject drawableOsuHitObject)
+                    return;
+
+                switch (drawableOsuHitObject.HitObject)
+                {
+                    case Slider:
+                    case SpinnerTick:
+                        break;
+
+                    default:
+                        if (resolveSettingsForHitObject(d.HitObject)?.ForceBubbles != true)
+                            break;
+
+                        BubbleDrawable bubble = bubblePool.Get();
+
+                        bubble.WasHit = d.IsHit;
+                        bubble.Position = getBubblePosition(drawableOsuHitObject);
+                        bubble.AccentColour = d.AccentColour.Value;
+                        bubble.InitialSize = new Vector2(bubbleSize);
+                        bubble.FadeTime = bubbleFade;
+                        bubble.MaxSize = bubbleMaxSize;
+
+                        bubbleContainer.Add(bubble);
+                        break;
+                }
+            };
+
+            drawable.OnRevertResult += (d, _) =>
+            {
+                if (d.HitObject is SpinnerTick or Slider)
+                    return;
+
+                if (resolveSettingsForHitObject(d.HitObject)?.ForceBubbles != true)
+                    return;
+
+                bubbleContainer.OfType<BubbleDrawable>().LastOrDefault()?.ClearTransforms();
+                bubbleContainer.OfType<BubbleDrawable>().LastOrDefault()?.Expire(true);
+            };
+        }
+
+        private static Vector2 getBubblePosition(DrawableOsuHitObject drawableObject)
+        {
+            switch (drawableObject)
+            {
+                // SliderHeads are derived from HitCircles, so they must be handled first.
+                case DrawableSliderHead:
+                    return drawableObject.HitObject.Position;
+
+                // HitObject position is wrong for HitCircle due to stack leniency.
+                case DrawableHitCircle:
+                    return drawableObject.Position;
+
+                default:
+                    return drawableObject.HitObject.Position;
             }
         }
 
@@ -548,6 +712,9 @@ namespace osu.Game.Rulesets.MOsu.UI
                 if (drawableObject is not DrawableHitCircle circle)
                     return;
 
+                if (resolveSettingsForHitObject(circle.HitObject)?.ForceFreezeFrame != true || selectedFreezeFrame)
+                    return;
+
                 var approachCircle = circle.ApproachCircle;
                 approachCircle.ClearTransforms(targetMember: nameof(approachCircle.Scale));
                 approachCircle.ScaleTo(4 * (float)(circle.HitObject.TimePreempt / originalPreempt));
@@ -557,10 +724,10 @@ namespace osu.Game.Rulesets.MOsu.UI
             };
         }
 
-        private SectionGimmickSettings? resolveSettingsAtTime(double time)
+        internal SectionGimmickSettings? resolveSettingsAtTime(double time)
             => gimmicks.FindSectionAt(time)?.Settings;
 
-        private SectionGimmickSettings? resolveSettingsForHitObject(osu.Game.Rulesets.Objects.HitObject hitObject)
+        internal SectionGimmickSettings? resolveSettingsForHitObject(osu.Game.Rulesets.Objects.HitObject hitObject)
         {
             if (hitObject is not OsuHitObject osuHitObject)
                 return null;
@@ -638,6 +805,78 @@ namespace osu.Game.Rulesets.MOsu.UI
                 || s.Settings.ForceSynesthesia
                 || s.Settings.ForceDepth
                 || s.Settings.ForceBloom);
+        }
+
+        /// <summary>
+        /// Section-scoped copy of OsuModBubbles' private bubble drawable (the original is a private
+        /// nested class and cannot be used from the ruleset).
+        /// </summary>
+        private partial class BubbleDrawable : osu.Framework.Graphics.Pooling.PoolableDrawable
+        {
+            public Vector2 InitialSize { get; set; }
+
+            public float MaxSize { get; set; }
+
+            public double FadeTime { get; set; }
+
+            public bool WasHit { get; set; }
+
+            public Color4 AccentColour { get; set; }
+
+            private readonly Box colourBox;
+            private readonly CircularContainer content;
+
+            public BubbleDrawable()
+            {
+                Origin = Anchor.Centre;
+                InternalChild = content = new CircularContainer
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    RelativeSizeAxes = Axes.Both,
+                    MaskingSmoothness = 2,
+                    BorderThickness = 0,
+                    BorderColour = Colour4.White,
+                    Masking = true,
+                    EdgeEffect = new EdgeEffectParameters
+                    {
+                        Type = EdgeEffectType.Shadow,
+                        Radius = 3,
+                        Colour = Colour4.Black.Opacity(0.05f),
+                    },
+                    Child = colourBox = new Box { RelativeSizeAxes = Axes.Both, }
+                };
+            }
+
+            protected override void PrepareForUse()
+            {
+                Colour = WasHit ? Colour4.White : Colour4.Black;
+                Scale = new Vector2(1);
+                Size = InitialSize;
+
+                Color4 colourDarker = AccentColour.Darken(0.1f);
+
+                double duration = 1700 + Math.Pow(FadeTime, 1.07f);
+
+                this.FadeTo(1)
+                    .ScaleTo(MaxSize, duration * 0.8f)
+                    .Then()
+                    .ScaleTo(MaxSize * 1.5f, duration * 0.2f, Easing.OutQuint)
+                    .FadeOut(duration * 0.2f, Easing.OutCirc).Expire();
+
+                if (!WasHit)
+                    return;
+
+                content.BorderThickness = InitialSize.X / 3.5f;
+                content.BorderColour = Colour4.White;
+
+                colourBox.FadeColour(colourDarker);
+
+                content.TransformTo(nameof(content.BorderColour), colourDarker, duration * 0.3f, Easing.OutQuint);
+                content.TransformTo(nameof(content.BorderThickness), 2f, duration * 0.3f, Easing.OutQuint)
+                       .Then()
+                       .TransformTo(nameof(content.BorderThickness), 0f);
+            }
         }
     }
 }
