@@ -21,10 +21,14 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
+using osu.Game.Rulesets.MOsu.Gimmicks;
+using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Overlays;
 using osu.Framework.Platform;
 using osu.Game.Extensions;
 using osu.Game.Models;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Utils;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components.Menus;
@@ -57,7 +61,23 @@ namespace osu.Game.Rulesets.MOsu.UI
                             if (!string.Equals(rulesetItem.Text.ToString(), mosu_ruleset_name, StringComparison.Ordinal))
                                 continue;
 
-                            rulesetItem.Action.Value = () => createMosuDifficulty(game, realm);
+                            rulesetItem.Action.Value = () =>
+                            {
+                                IDialogOverlay? dialogOverlay = null;
+
+                                try
+                                {
+                                    dialogOverlay = game.Dependencies.Get(typeof(IDialogOverlay)) as IDialogOverlay;
+                                }
+                                catch
+                                {
+                                }
+
+                                if (dialogOverlay != null)
+                                    dialogOverlay.Push(new CreateNewDifficultyDialog(createCopy => createMosuDifficulty(game, realm, createCopy)));
+                                else
+                                    createMosuDifficulty(game, realm, false);
+                            };
                             Logger.Log($"[MOsu] Hooked editor File -> Create New Difficulty -> {mosu_ruleset_name}");
                             return;
                         }
@@ -66,7 +86,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
         }
 
-        private static void createMosuDifficulty(OsuGame game, RealmAccess realm)
+        private static void createMosuDifficulty(OsuGame game, RealmAccess realm, bool createCopy)
         {
             var beatmapBindable = (IBindable<WorkingBeatmap>)game.Dependencies.Get(typeof(IBindable<WorkingBeatmap>));
             var referenceWorking = beatmapBindable.Value;
@@ -85,17 +105,9 @@ namespace osu.Game.Rulesets.MOsu.UI
                 DifficultyName = NamingUtils.GetNextBestName(set.Beatmaps.Select(b => b.DifficultyName), "New Difficulty")
             };
 
-            var newBeatmap = new Beatmap
-            {
-                BeatmapInfo = newInfo,
-                Bookmarks = referenceWorking.Beatmap.Bookmarks.ToArray(),
-            };
-
-            foreach (var timingPoint in referenceWorking.Beatmap.ControlPointInfo.TimingPoints)
-                newBeatmap.ControlPointInfo.Add(timingPoint.Time, timingPoint.DeepClone());
-
-            foreach (var effectPoint in referenceWorking.Beatmap.ControlPointInfo.EffectPoints)
-                newBeatmap.ControlPointInfo.Add(effectPoint.Time, effectPoint.DeepClone());
+            IBeatmap newBeatmap = createCopy
+                ? copyCurrentDifficulty(referenceWorking, newInfo)
+                : createEmptyDifficulty(referenceWorking, newInfo);
 
             string text;
 
@@ -106,6 +118,10 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                 using var writer = new StringWriter();
                 new LegacyBeatmapEncoder(newBeatmap, null, null).Encode(writer);
+
+                if (newBeatmap is MosuBeatmap mosu)
+                    writer.Write(MosuGimmickSerializer.Serialize(mosu.Gimmicks.Sections, mosu.Gimmicks.HitObjectGimmicks));
+
                 text = writer.ToString();
                 newInfo.Ruleset = originalRuleset;
             }
@@ -138,6 +154,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     newInfo.BeatmapSet = liveSet;
 
                     liveSet.Beatmaps.Add(newInfo);
+                    newInfo.UpdateStatisticsFromBeatmap(newBeatmap);
                 });
             }
             catch (Exception e)
@@ -176,6 +193,43 @@ namespace osu.Game.Rulesets.MOsu.UI
                 ((Bindable<RulesetInfo>)rulesetBindable).Value = rulesetInfo;
 
             ((Bindable<WorkingBeatmap>)beatmapBindable).Value = working;
+        }
+
+        private static IBeatmap createEmptyDifficulty(WorkingBeatmap reference, BeatmapInfo newInfo)
+        {
+            var beatmap = new Beatmap
+            {
+                BeatmapInfo = newInfo,
+                Bookmarks = reference.Beatmap.Bookmarks.ToArray(),
+            };
+
+            foreach (var timingPoint in reference.Beatmap.ControlPointInfo.TimingPoints)
+                beatmap.ControlPointInfo.Add(timingPoint.Time, timingPoint.DeepClone());
+
+            foreach (var effectPoint in reference.Beatmap.ControlPointInfo.EffectPoints)
+                beatmap.ControlPointInfo.Add(effectPoint.Time, effectPoint.DeepClone());
+
+            return beatmap;
+        }
+
+        private static IBeatmap copyCurrentDifficulty(WorkingBeatmap reference, BeatmapInfo newInfo)
+        {
+            var playable = reference.GetPlayableBeatmap(new MosuRuleset().RulesetInfo);
+            MosuGimmickRuntime.EnsureApplied(playable, reference, mutateList: false);
+
+            var copy = new MosuBeatmap
+            {
+                BeatmapInfo = newInfo,
+                Bookmarks = reference.Beatmap.Bookmarks.ToArray(),
+                Difficulty = reference.Beatmap.Difficulty,
+                ControlPointInfo = playable.ControlPointInfo,
+                Gimmicks = playable is MosuBeatmap source ? source.Gimmicks : new MosuGimmickData(),
+            };
+
+            foreach (var h in playable.HitObjects.OfType<OsuHitObject>())
+                copy.HitObjects.Add(h);
+
+            return copy;
         }
     }
 }
