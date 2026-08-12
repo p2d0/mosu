@@ -23,6 +23,7 @@ using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Beatmaps;
+using osu.Game.Rulesets.MOsu.Edit;
 using osu.Game.Overlays;
 using osu.Framework.Platform;
 using osu.Game.Extensions;
@@ -54,6 +55,17 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     foreach (var fileItem in topLevel.Items ?? Enumerable.Empty<MenuItem>())
                     {
+                        // File -> Save should use the mosu saver (the core save rejects non-legacy rulesets).
+                        var saveComposer = editor.ChildrenOfType<MosuHitObjectComposer>().FirstOrDefault();
+                        Logger.Log($"[MOsu-CreateDifficulty] file item '{fileItem.Text}' saveMatch={string.Equals(fileItem.Text.ToString(), "Save", StringComparison.Ordinal)} composer={(saveComposer != null)}");
+
+                        if (string.Equals(fileItem.Text.ToString(), "Save", StringComparison.Ordinal)
+                            && saveComposer is MosuHitObjectComposer composer)
+                        {
+                            fileItem.Action.Value = () => composer.save();
+                            Logger.Log("[MOsu] Hooked editor File -> Save to mosu saver");
+                        }
+
                         foreach (var rulesetItem in fileItem.Items ?? Enumerable.Empty<MenuItem>())
                         {
                             Logger.Log($"[MOsu-CreateDifficulty] ruleset item '{rulesetItem.Text}' vs '{mosu_ruleset_name}' match={string.Equals(rulesetItem.Text.ToString(), mosu_ruleset_name, StringComparison.Ordinal)}");
@@ -79,7 +91,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                                     createMosuDifficulty(game, realm, false);
                             };
                             Logger.Log($"[MOsu] Hooked editor File -> Create New Difficulty -> {mosu_ruleset_name}");
-                            return;
                         }
                     }
                 }

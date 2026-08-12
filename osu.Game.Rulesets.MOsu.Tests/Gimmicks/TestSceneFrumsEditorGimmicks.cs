@@ -13,6 +13,7 @@ using osu.Game.Database;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Edit;
+using osu.Game.Rulesets.MOsu.Edit.Timeline;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Objects.Drawables;
@@ -473,6 +474,77 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
                 return target != null && Math.Abs(target.TimePreempt - 480) < 2;
             });
 
+            AddUntilStep("timeline gimmick displays injected", () =>
+            {
+                bool section = Editor.ChildrenOfType<TimelineSectionGimmickDisplay>().Any();
+                bool boundary = Editor.ChildrenOfType<TimelineSectionGimmickBoundaryLineDisplay>().Any();
+                bool gimmick = Editor.ChildrenOfType<TimelineHitObjectGimmickLineDisplay>().Any();
+                Logger.Log($"[TEST] timeline displays: section={section} boundary={boundary} gimmick={gimmick}");
+                return section && boundary && gimmick;
+            });
+
+            AddStep("add sections at 22000 and 30000 via composer model", () =>
+            {
+                var composer = Editor.ChildrenOfType<MosuHitObjectComposer>().Single();
+                composer.SectionGimmickModel.AddSection(22000);
+                composer.SectionGimmickModel.AddSection(30000); // closes the 22000 section
+            });
+
+            AddUntilStep("section bar visible on timeline", () =>
+            {
+                var bar = Editor.ChildrenOfType<TimelineSectionGimmick>().FirstOrDefault(b => b.Section.StartTime == 22000);
+                Logger.Log($"[TEST] timeline bar after add: found={bar != null} end={bar?.Section.EndTime}");
+                return bar != null;
+            });
+
+            AddAssert("boundary lines drawn on timeline", () =>
+            {
+                var boundary = Editor.ChildrenOfType<TimelineSectionGimmickBoundaryLineDisplay>().SingleOrDefault();
+                Logger.Log($"[TEST] boundary line count: {boundary?.Children.Count ?? -1}");
+                return boundary != null && boundary.Children.Count >= 2;
+            });
+
+            AddAssert("section save round-trip survives reload", () =>
+            {
+                if (EditorBeatmap.PlayableBeatmap is not MosuBeatmap mosuBeatmap)
+                    return false;
+
+                // Use the composer's real save flow (updates its unsaved-changes baseline too).
+                var composer = Editor.ChildrenOfType<MosuHitObjectComposer>().Single();
+                composer.save();
+
+                if (composer.HasUnsavedChanges)
+                {
+                    Logger.Log("[TEST] section save round-trip: composer still dirty after save");
+                    return false;
+                }
+
+                var info = realm.Run(r => r.Find<BeatmapInfo>(mosuBeatmap.BeatmapInfo.ID)?.Detach());
+                if (info == null || info.Path == null)
+                    return false;
+
+                var storagePath = info.BeatmapSet?.GetPathForFile(info.Path);
+                if (storagePath == null)
+                    return false;
+
+                using var stream = storage.GetStorageForDirectory("files").GetStream(storagePath);
+                if (stream == null)
+                    return false;
+
+                using var reader = new StreamReader(stream);
+                string text = reader.ReadToEnd();
+
+                bool hasSectionHeader = text.Contains("[BeatmapSectionGimmicks]");
+
+                using var parseReader = new StringReader(text);
+                var reparsed = MosuGimmickParser.Parse(parseReader);
+                bool firstSection = reparsed.Sections.Sections.Any(s => s.StartTime == 22000);
+                bool secondSection = reparsed.Sections.Sections.Any(s => s.StartTime == 30000);
+
+                Logger.Log($"[TEST] section save round-trip: header={hasSectionHeader} s22000={firstSection} s30000={secondSection} count={reparsed.Sections.Sections.Count}");
+                return hasSectionHeader && firstSection && secondSection;
+            });
+
             // Escape-with-unsaved-changes pushes the game's "Save my masterpiece!"
             // PromptForSaveDialog via the dialog overlay; visual tests host no dialog overlay,
             // so the composer lets the editor handle the exit there. Verify the dirty detection.
@@ -482,6 +554,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Gimmicks
             AddAssert("unsaved changes detected", () =>
                 Editor.ChildrenOfType<MosuHitObjectComposer>().Single().HasUnsavedChanges);
             AddStep("press escape", () => InputManager.Key(Key.Escape));
+            AddUntilStep("editor exits after escape", () => !Editor.IsLoaded);
             AddUntilStep("editor exits after escape", () => !Editor.IsLoaded);
         }
     }

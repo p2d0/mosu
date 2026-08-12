@@ -25,6 +25,7 @@ using osu.Game.Overlays.OSD;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Beatmaps;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.MOsu.Edit.Timeline;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.Gimmicks;
 using osu.Game.Rulesets.Objects;
@@ -35,6 +36,7 @@ using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit;using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components;
+using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.Edit
@@ -44,12 +46,21 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private IReadOnlyDependencyContainer parentDependencies = null!;
         private DependencyContainer dependencies = null!;
 
-        private RoundedButton saveButton = null!;
         private RealmAccess realm = null!;
         private Storage storage = null!;
 
         private MosuEditorDrawableRuleset editorDrawableRuleset = null!;
         private MosuEditorChangeHandler? editorChangeHandler;
+
+        private MosuSectionGimmickEditorModel sectionModel = null!;
+        private HitObjectGimmickEditorModel hitObjectModel = null!;
+        private BeatmapHitObjectGimmicks hitObjectGimmicks = null!;
+
+        [Resolved]
+        private EditorScreenWithTimeline? screenWithTimeline { get; set; }
+
+        private bool timelineGimmickDisplaysInjected;
+        private osu.Framework.Graphics.Containers.Container<Drawable>? timelineContentContainer;
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -122,6 +133,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
             var sectionModel = new MosuSectionGimmickEditorModel(editorBeatmap);
             var hitObjectModel = new HitObjectGimmickEditorModel(editorBeatmap);
 
+            this.sectionModel = sectionModel;
+            this.hitObjectModel = hitObjectModel;
+            this.hitObjectGimmicks = (editorBeatmap.PlayableBeatmap as MosuBeatmap)?.Gimmicks?.HitObjectGimmicks ?? new BeatmapHitObjectGimmicks();
+
             dependencies.CacheAs(sectionModel);
             dependencies.CacheAs(hitObjectModel);
 
@@ -150,12 +165,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             RightToolbox.AddRange(new Drawable[]
             {
-                saveButton = new RoundedButton
-                {
-                    RelativeSizeAxes = Axes.X,
-                    Text = "Save beatmap",
-                    Action = save,
-                },
                 HitObjectGimmickToolboxGroup,
                 SectionGimmickToolboxGroup,
             });
@@ -171,12 +180,107 @@ namespace osu.Game.Rulesets.MOsu.Edit
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             => editorDrawableRuleset = new MosuEditorDrawableRuleset(ruleset, beatmap, mods);
 
-        private void save()
+        protected override void Update()
         {
-            if (realm == null || storage == null)
+            base.Update();
+            injectTimelineGimmickDisplays();
+        }
+
+        /// <summary>
+        /// Adds the delta-style section/hitobject-gimmick displays to the compose timeline.
+        /// The timeline is built asynchronously by the core after the composer loads, so poll
+        /// until it exists (same pattern mania uses to read timeline zoom).
+        /// Visible copies are inserted below the blueprint container (proxy + Depth), with
+        /// non-rendering originals on top for input, mirroring delta's ComposeScreen layering.
+        /// </summary>
+        private void injectTimelineGimmickDisplays()
+        {
+            if (timelineGimmickDisplaysInjected)
                 return;
 
-            if (!MosuEditorSaver.Save(EditorBeatmap, realm, storage))
+            var timeline = screenWithTimeline?.TimelineArea.Timeline;
+
+            if (timeline == null)
+                return;
+
+            if (timelineContentContainer == null)
+            {
+                // TimelineBlueprintContainer is internal in the packaged game; anchor on the
+                // public break display, which sits in the same content container as the blueprints.
+                var breakDisplay = findDescendant<TimelineBreakDisplay>(timeline);
+
+                if (breakDisplay?.Parent is Container<Drawable> container)
+                    timelineContentContainer = container;
+                else
+                    return;
+            }
+
+            var sectionDisplay = new TimelineSectionGimmickDisplay(sectionModel)
+            {
+                RelativeSizeAxes = Axes.Both,
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+                Height = 0.45f,
+            };
+
+            var boundaryDisplay = new TimelineSectionGimmickBoundaryLineDisplay(sectionModel)
+            {
+                RelativeSizeAxes = Axes.Both,
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+            };
+
+            var gimmickDisplay = new TimelineHitObjectGimmickLineDisplay(hitObjectGimmicks)
+            {
+                RelativeSizeAxes = Axes.Both,
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+            };
+
+            // Visible proxies render below the blueprints; the originals stop rendering once
+            // proxied, so they serve purely as the input layer on top.
+            var sectionProxy = sectionDisplay.CreateProxy();
+            var boundaryProxy = boundaryDisplay.CreateProxy();
+            var gimmickProxy = gimmickDisplay.CreateProxy();
+
+            sectionProxy.Depth = -1;
+            boundaryProxy.Depth = -1;
+            gimmickProxy.Depth = -1;
+
+            timelineContentContainer.AddRange(new Drawable[]
+            {
+                sectionProxy,
+                boundaryProxy,
+                gimmickProxy,
+                sectionDisplay,
+                boundaryDisplay,
+                gimmickDisplay,
+            });
+
+            timelineGimmickDisplaysInjected = true;
+        }
+
+        private static T? findDescendant<T>(Drawable root) where T : Drawable
+        {
+            if (root is T match)
+                return match;
+
+            if (root is osu.Framework.Graphics.Containers.Container<Drawable> container)
+            {
+                foreach (var child in container.Children)
+                {
+                    if (findDescendant<T>(child) is T found)
+                        return found;
+                }
+            }
+
+            return null;
+        }
+
+        internal void save()
+        {
+            if (realm == null || storage == null)
+                return;            if (!MosuEditorSaver.Save(EditorBeatmap, realm, storage))
                 return;
 
             savedStateHash = computeStateHash();
@@ -263,6 +367,11 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
             public void Delete(HitObject hitObject) => composer.EditorBeatmap.Remove(hitObject);
         }
+
+        /// <summary>
+        /// The editor session's section model (used by the timeline displays and the tests).
+        /// </summary>
+        internal MosuSectionGimmickEditorModel SectionGimmickModel => sectionModel;
 
         private bool hasUnsavedChanges => savedStateHash != null && computeStateHash() != savedStateHash;
 

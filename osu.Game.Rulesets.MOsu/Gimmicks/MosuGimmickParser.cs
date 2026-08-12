@@ -1,7 +1,7 @@
 // Parses the delta fork's custom .osu gimmick sections, which the stock
 // (NuGet) LegacyBeatmapDecoder does not understand and silently skips:
 //
-//   [SectionGimmicks]
+//   [BeatmapSectionGimmicks]
 //   id,startTime,endTime,Key=Value|Key=Value...
 //
 //   [BeatmapHitObjectGimmicks]
@@ -45,7 +45,7 @@ namespace osu.Game.Rulesets.MOsu.Gimmicks
 
                 switch (section)
                 {
-                    case "SectionGimmicks":
+                    case "BeatmapSectionGimmicks":
                         handleSectionGimmick(line, sections);
                         break;
 
