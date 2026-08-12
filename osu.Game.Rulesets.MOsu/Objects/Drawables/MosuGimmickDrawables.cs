@@ -1,6 +1,10 @@
 // Drawables applying per-object section gimmick visuals (forced hidden / no-approach-circle)
 // that the stock osu! drawables don't know about.
 // Visuals ported from delta fork (DrawableOsuHitObject + OsuModHidden).
+//
+// The hidden / no-approach / traceable effects are re-applied on every ApplyCustomUpdateState,
+// matching delta: the stock state-update flow clears and re-shows the approach circle / body
+// transforms at start time, so a one-shot apply in UpdateInitialTransforms would be overwritten.
 
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
@@ -27,14 +31,21 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (noApproachCircle)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this, onlyFadeApproachCircles: true);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable, onlyFadeApproachCircles: true);
 
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
 
             if (traceable)
-                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(this);
+                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
         }
     }
 
@@ -62,8 +73,15 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
         }
     }
 
@@ -83,11 +101,18 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
 
             if (traceable)
-                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(this);
+                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
         }
     }
 
@@ -107,11 +132,18 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
 
             if (traceable)
-                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(this);
+                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
         }
     }
 
@@ -153,14 +185,21 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (noApproachCircle)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this, onlyFadeApproachCircles: true);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable, onlyFadeApproachCircles: true);
 
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
 
             if (traceable)
-                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(this);
+                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
         }
     }
 
@@ -182,13 +221,21 @@ namespace osu.Game.Rulesets.MOsu.Objects.Drawables
         {
             base.UpdateInitialTransforms();
 
+            ApplyCustomUpdateState -= applySectionGimmickState;
+            ApplyCustomUpdateState += applySectionGimmickState;
+            applySectionGimmickState(this, State.Value);
+        }
+
+        private void applySectionGimmickState(DrawableHitObject drawable, ArmedState state)
+        {
             if (noApproachCircle)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this, onlyFadeApproachCircles: true);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable, onlyFadeApproachCircles: true);
 
             if (hidden)
-                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(this);
+                UI.SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
 
-            // traceable leaves spinners unchanged (matches osu TC mod behaviour).
+            if (traceable)
+                UI.SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
         }
     }
 }
