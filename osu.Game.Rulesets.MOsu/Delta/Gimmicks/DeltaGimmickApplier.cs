@@ -27,12 +27,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
     {
         public const float PLAYFIELD_HEIGHT = 384;
 
-        /// <summary>
-        /// Instance-stable binding of gimmick settings to hitobjects, resolved once per apply.
-        /// </summary>
-        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings> object_settings_bindings =
-            new System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, HitObjectGimmickSettings>();
-
         private sealed class ObjectIdRef
         {
             public long Value;
@@ -40,7 +34,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
 
         /// <summary>
         /// Per-object-instance identity, so two objects sharing a legacy key stay independent.
-        /// Persisted as the entry's ObjectId across save/load.
+        /// Persisted as the entry's ObjectId across save/load. Only used for stock hitobject
+        /// types; delta objects carry the id on <see cref="DeltaHitObject.GimmickObjectId"/>.
         /// </summary>
         private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, ObjectIdRef> object_ids =
             new System.Runtime.CompilerServices.ConditionalWeakTable<osu.Game.Rulesets.Osu.Objects.OsuHitObject, ObjectIdRef>();
@@ -51,6 +46,11 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
 
         private static long getId(osu.Game.Rulesets.Osu.Objects.OsuHitObject o)
         {
+            // Delta objects host their id on the object; the side table only serves stock
+            // circle/spinner types (which cannot carry delta state).
+            if (o is DeltaHitObject delta && delta.GimmickObjectId.HasValue)
+                return delta.GimmickObjectId.Value;
+
             if (object_ids.TryGetValue(o, out var r))
                 return r.Value;
 
@@ -61,6 +61,12 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
 
         private static void setId(osu.Game.Rulesets.Osu.Objects.OsuHitObject o, long value)
         {
+            if (o is DeltaHitObject delta)
+            {
+                delta.GimmickObjectId = value;
+                return;
+            }
+
             if (object_ids.TryGetValue(o, out var r))
                 r.Value = value;
             else
@@ -279,7 +285,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                 entry.HitObjectIndex = objects.IndexOf(matched);
             }
 
-            // persist matched ids back onto entries so saves write the object's real id
+            // persist matched ids back onto entries so saves write the object's real id, and
+            // bind the resolved settings onto delta objects (consumed by the health processor).
             foreach (var o in objects)
             {
                 long id = getId(o);
@@ -288,8 +295,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                 {
                     if (entries[i].ObjectId == id)
                     {
-                        object_settings_bindings.Remove(o);
-                        object_settings_bindings.Add(o, entries[i].Settings);
+                        if (o is DeltaHitObject delta)
+                            delta.HitObjectGimmicks = entries[i].Settings;
                         break;
                     }
                 }

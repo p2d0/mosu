@@ -22,12 +22,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
     public static class DeltaGimmickRuntime
     {
         /// <summary>
-        /// Fired after gimmicks have been parsed + applied to a playable beatmap, so a score
-        /// processor that simulated max stats before the parse can re-simulate.
-        /// </summary>
-        public static event Action? GimmicksApplied;
-
-        /// <summary>
         /// Single-line contact point for ruleset code: resolves the working beatmap from the
         /// dependency container and calls <see cref="EnsureApplied"/>, swallowing + logging
         /// failures (osu! API drift disables gimmicks gracefully instead of breaking gameplay).
@@ -75,11 +69,23 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
             {
                 data.Parsed = true;
 
-                var path = workingBeatmap?.BeatmapInfo.Path;
-
-                if (workingBeatmap == null || string.IsNullOrEmpty(path))
+                if (workingBeatmap == null)
                 {
-                    Logger.Log("[MOsu] gimmicks skipped: no working beatmap or path");
+                    Logger.Log("[MOsu] gimmicks skipped: no working beatmap");
+                    return;
+                }
+
+                // Imported maps expose the file via BeatmapInfo.Path (derived from the realm
+                // file); in-memory working beatmaps (tests, mods) may only carry the file in the
+                // beatmap set, so fall back to its first file's name.
+                var path = workingBeatmap.BeatmapInfo.Path;
+
+                if (string.IsNullOrEmpty(path))
+                    path = workingBeatmap.BeatmapInfo.BeatmapSet?.Files.FirstOrDefault()?.Filename;
+
+                if (string.IsNullOrEmpty(path))
+                {
+                    Logger.Log("[MOsu] gimmicks skipped: no beatmap file path");
                     return;
                 }
 
@@ -119,7 +125,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
 
             Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
             DeltaGimmickApplier.Apply(mosuBeatmap, data, mutateList);
-            GimmicksApplied?.Invoke();
         }
 
         /// <summary>

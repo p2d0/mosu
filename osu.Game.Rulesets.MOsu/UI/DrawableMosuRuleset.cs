@@ -18,6 +18,8 @@ using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
 using osu.Game.Rulesets.MOsu.Delta.Objects.Drawables;
+using osu.Game.Rulesets.MOsu.Delta.Scoring;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Configuration;
@@ -60,6 +62,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
             DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parent);
+            notifyScoreProcessorGimmicksApplied();
 
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
             var dependencies = base.CreateChildDependencies(parent);
@@ -360,6 +363,23 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             gimmicksApplied = true;
             DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parentDependencies);
+            notifyScoreProcessorGimmicksApplied();
+        }
+
+        /// <summary>
+        /// The score processor may have simulated max stats before the gimmicks were parsed
+        /// (fake sources still counted as normal objects); give it the chance to re-simulate.
+        /// </summary>
+        private void notifyScoreProcessorGimmicksApplied()
+        {
+            try
+            {
+                if (parentDependencies.Get<ScoreProcessor>() is DeltaScoreProcessor processor)
+                    processor.OnGimmicksApplied();
+            }
+            catch
+            {
+            }
         }
 
         private IReadOnlyDependencyContainer parentDependencies = null!;

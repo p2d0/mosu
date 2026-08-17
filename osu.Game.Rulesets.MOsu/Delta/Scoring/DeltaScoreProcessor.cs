@@ -14,7 +14,6 @@ using System.Reflection;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Judgements;
-using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
 using osu.Game.Rulesets.Scoring;
 
@@ -34,7 +33,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Scoring
         {
             NewJudgement += onNewJudgement;
             JudgementReverted += onJudgementReverted;
-            DeltaGimmickRuntime.GimmicksApplied += onGimmicksApplied;
         }
 
         public override void ApplyBeatmap(IBeatmap beatmap)
@@ -52,7 +50,11 @@ namespace osu.Game.Rulesets.MOsu.Delta.Scoring
             base.ApplyBeatmap(beatmap);
         }
 
-        private void onGimmicksApplied()
+        /// <summary>
+        /// Called by the drawable ruleset after gimmicks were applied, when this processor's
+        /// initial simulation ran before the parse (fake sources still counted as normal objects).
+        /// </summary>
+        public void OnGimmicksApplied()
         {
             if (!needsResim || appliedBeatmap == null)
                 return;

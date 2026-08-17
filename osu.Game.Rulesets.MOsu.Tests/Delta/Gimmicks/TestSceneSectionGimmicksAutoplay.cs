@@ -100,11 +100,13 @@ namespace osu.Game.Rulesets.MOsu.Tests.Delta.Gimmicks
             using var reader = new LineBufferedReader(new MemoryStream(Encoding.UTF8.GetBytes(osuText)));
             var decoded = osu.Game.Beatmaps.Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
 
-            // Give the beatmap a resolvable file path so the gimmick runtime can serve the raw
-            // text via GetStream (parsing is gated on BeatmapInfo.Path, which is file-derived).
-            var realmFile = new RealmFile { Hash = "gimmick-test" };
-            decoded.BeatmapInfo.BeatmapSet = new BeatmapSetInfo { Files = { new RealmNamedFileUsage(realmFile, "test.osu") } };
-            decoded.BeatmapInfo.Hash = "gimmick-test";
+            // Give the beatmap a beatmap-set file so the gimmick runtime can serve the raw text
+            // via GetStream (imported maps resolve it through BeatmapInfo.Path; the runtime
+            // falls back to the beatmap set's first file for in-memory maps).
+            decoded.BeatmapInfo.BeatmapSet = new BeatmapSetInfo
+            {
+                Files = { new RealmNamedFileUsage(new RealmFile { Hash = "gimmick-test" }, "test.osu") },
+            };
 
             return new GimmickTextWorkingBeatmap(decoded, osuText, Clock, Audio);
         }
