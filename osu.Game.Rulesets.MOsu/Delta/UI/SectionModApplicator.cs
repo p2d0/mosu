@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using osu.Framework.Graphics;
+using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
@@ -68,9 +69,11 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                 || s.ForceBloom);
 
         /// <summary>
-        /// Resolves the effective section settings for a hitobject: its per-object gimmick
-        /// settings when it has an entry (id-based, via the applier), else the section covering
-        /// its start time. Single resolution path for all drawable-level reads.
+        /// Resolves the effective section settings for a hitobject: the section covering its start
+        /// time, with the object's per-object gimmick flags OR'd in when it has an entry (matching
+        /// the applier / drawable-creation semantics — either can force a visibility flag). The
+        /// fun-mod flags (transform, wiggle, ...) are not expressible per-object, so the section's
+        /// values always remain effective. Single resolution path for all drawable-level reads.
         /// </summary>
         public static SectionGimmickSettings? ResolveSettingsForHitObject(IBeatmap beatmap, HitObject hitObject)
         {
@@ -81,11 +84,61 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             if (data == null)
                 return null;
 
-            var objectSettings = DeltaGimmickApplier.GetObjectSettings(beatmap, data, osuHitObject);
-            if (objectSettings != null)
-                return mapToSectionSettings(objectSettings);
+            var sectionSettings = data.Sections.FindSectionAt(osuHitObject.StartTime)?.Settings;
 
-            return data.Sections.FindSectionAt(osuHitObject.StartTime)?.Settings;
+            var objectSettings = DeltaGimmickApplier.GetObjectSettings(beatmap, data, osuHitObject);
+            if (objectSettings == null)
+                return sectionSettings;
+
+            var effective = new SectionGimmickSettings();
+
+            if (sectionSettings != null)
+            {
+                // carry over every fun-mod / visibility field the overlay reads
+                effective.ForceHidden = sectionSettings.ForceHidden;
+                effective.ForceNoApproachCircle = sectionSettings.ForceNoApproachCircle;
+                effective.ForceHardRock = sectionSettings.ForceHardRock;
+                effective.ForceFlashlight = sectionSettings.ForceFlashlight;
+                effective.ForceTraceable = sectionSettings.ForceTraceable;
+                effective.FlashlightRadius = sectionSettings.FlashlightRadius;
+
+                effective.ForceTransform = sectionSettings.ForceTransform;
+                effective.ForceWiggle = sectionSettings.ForceWiggle;
+                effective.WiggleStrength = sectionSettings.WiggleStrength;
+                effective.ForceSpinIn = sectionSettings.ForceSpinIn;
+                effective.ForceGrow = sectionSettings.ForceGrow;
+                effective.GrowStartScale = sectionSettings.GrowStartScale;
+                effective.ForceDeflate = sectionSettings.ForceDeflate;
+                effective.DeflateStartScale = sectionSettings.DeflateStartScale;
+                effective.ForceApproachDifferent = sectionSettings.ForceApproachDifferent;
+                effective.ApproachDifferentScale = sectionSettings.ApproachDifferentScale;
+                effective.ForceFreezeFrame = sectionSettings.ForceFreezeFrame;
+                effective.ForceSynesthesia = sectionSettings.ForceSynesthesia;
+                effective.ForceBubbles = sectionSettings.ForceBubbles;
+                effective.ForceMuted = sectionSettings.ForceMuted;
+                effective.MutedMuteComboCount = sectionSettings.MutedMuteComboCount;
+                effective.ForceNoScope = sectionSettings.ForceNoScope;
+                effective.NoScopeHiddenComboCount = sectionSettings.NoScopeHiddenComboCount;
+                effective.ForceBloom = sectionSettings.ForceBloom;
+                effective.BloomMaxCursorSize = sectionSettings.BloomMaxCursorSize;
+                effective.BloomMaxSizeComboCount = sectionSettings.BloomMaxSizeComboCount;
+                effective.ForceMagnetised = sectionSettings.ForceMagnetised;
+                effective.MagnetisedAttractionStrength = sectionSettings.MagnetisedAttractionStrength;
+                effective.ForceRepel = sectionSettings.ForceRepel;
+                effective.RepelRepulsionStrength = sectionSettings.RepelRepulsionStrength;
+                effective.ForceDepth = sectionSettings.ForceDepth;
+                effective.DepthMaxDepth = sectionSettings.DepthMaxDepth;
+                effective.ForceBarrelRoll = sectionSettings.ForceBarrelRoll;
+                effective.BarrelRollSpinSpeed = sectionSettings.BarrelRollSpinSpeed;
+            }
+
+            effective.ForceHidden = effective.ForceHidden || objectSettings.ForceHidden;
+            effective.ForceNoApproachCircle = effective.ForceNoApproachCircle || objectSettings.ForceNoApproachCircle;
+            effective.ForceHardRock = effective.ForceHardRock || objectSettings.ForceHardRock;
+            effective.ForceFlashlight = effective.ForceFlashlight || objectSettings.ForceFlashlight;
+            effective.ForceTraceable = effective.ForceTraceable || objectSettings.ForceTraceable;
+
+            return effective;
         }
 
         // ---- drawable state (collapsed from MosuGimmickDrawables) ----
@@ -175,6 +228,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
         /// </summary>
         public void HookSectionScopedMods(DrawableHitObject drawable)
         {
+            Logger.Log($"[MOsu-FunMods] hooking drawable {drawable.GetType().Name} (transform={hasForcedTransform} wiggle={hasForcedWiggle})");
+
             if (hasForcedTransform)
                 applySectionScopedVisibilityMod(new OsuModTransform(), drawable, s => s.ForceTransform, null);
 
@@ -217,12 +272,17 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             void fire(DrawableHitObject o, ArmedState state)
             {
                 var settings = ResolveSettingsForHitObject(beatmap, o.HitObject);
+                bool forced = settings != null && isForced(settings);
 
-                if (settings == null || !isForced(settings))
+                Logger.Log($"[MOsu-FunMods] {mod.Name} fire: drawable={o.GetType().Name} start={o.HitObject.StartTime:0} state={state} settings={settings != null} forced={forced}");
+
+                if (!forced)
                     return;
 
-                configure?.Invoke(mod, settings);
+                configure?.Invoke(mod, settings!);
                 apply_normal_visibility_state.Invoke(mod, new object[] { o, state });
+
+                Logger.Log($"[MOsu-FunMods] {mod.Name} applied: start={o.HitObject.StartTime:0} posTransforms={o.Transforms.Count(t => t.TargetMember == "Position")}");
             }
 
             drawable.ApplyCustomUpdateState += fire;
@@ -315,43 +375,5 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             fire(drawable, drawable.State.Value);
         }
 
-        private static SectionGimmickSettings mapToSectionSettings(HitObjectGimmickSettings source)
-            => new SectionGimmickSettings
-            {
-                EnableHPGimmick = source.EnableHPGimmick,
-                EnableNoMiss = source.EnableNoMiss,
-                EnableCountLimits = source.EnableCountLimits,
-                EnableGreatOffsetPenalty = source.EnableGreatOffsetPenalty,
-
-                Max300s = source.Max300s,
-                Max100s = source.Max100s,
-                Max50s = source.Max50s,
-                MaxMisses = source.MaxMisses,
-
-                HP300 = source.HP300,
-                HP100 = source.HP100,
-                HP50 = source.HP50,
-                HPMiss = source.HPMiss,
-
-                GreatOffsetThresholdMs = source.GreatOffsetThresholdMs,
-                GreatOffsetPenaltyHP = source.GreatOffsetPenaltyHP,
-
-                EnableDifficultyOverrides = source.EnableDifficultyOverrides,
-                AllowUnsafeDifficultyOverrideValues = source.AllowUnsafeDifficultyOverrideValues,
-                SectionCircleSize = source.SectionCircleSize,
-                SectionApproachRate = source.SectionApproachRate,
-                SectionOverallDifficulty = source.SectionOverallDifficulty,
-                AllowUnsafeStackLeniencyOverrideValues = source.AllowUnsafeStackLeniencyOverrideValues,
-                SectionStackLeniency = source.SectionStackLeniency,
-                AllowUnsafeTickRateOverrideValues = source.AllowUnsafeTickRateOverrideValues,
-                SectionTickRate = source.SectionTickRate,
-
-                ForceHidden = source.ForceHidden,
-                ForceNoApproachCircle = source.ForceNoApproachCircle,
-                ForceHardRock = source.ForceHardRock,
-                ForceFlashlight = source.ForceFlashlight,
-                ForceTraceable = source.ForceTraceable,
-                FlashlightRadius = source.FlashlightRadius,
-            };
     }
 }
