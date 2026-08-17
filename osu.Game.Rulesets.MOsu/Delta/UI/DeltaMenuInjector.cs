@@ -44,6 +44,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
     public static class DeltaMenuInjector
     {
         private static readonly string mosu_ruleset_name = new MosuRuleset().Description;
+        private static readonly string mosu_ruleset_short_name = new MosuRuleset().ShortName;
 
         private const string save_label = "Save";
         private const string make_map_delta_label = "Make map delta";
@@ -280,23 +281,30 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
         // ---- song select context menu ----
 
-        // Injects a "Make map delta" item into the song select beatmap right-click menu. The item
-        // flips the current beatmap's realm ruleset to mosu, so the map is treated as a mosu
-        // beatmap when played. Only the song select screen's own context menu container is hooked
-        // (it persists for the lifetime of the screen), never context menus elsewhere in the game.
+        // Injects a "Make map delta" item into the song select beatmap difficulty context menu
+        // (the menu opened by right-clicking a PanelBeatmap), and only while the mosu! ruleset is
+        // selected. The item flips the current beatmap's realm ruleset to mosu, so the map is
+        // treated as a mosu beatmap when played. Only the song select screen's own context menu
+        // container is hooked (it persists for the lifetime of the screen), never context menus
+        // elsewhere in the game.
         private static readonly FieldInfo? menu_field = typeof(ContextMenuContainer).GetField("menu", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        // ContextMenuContainer.menuTarget: the IHasContextMenu drawable the open menu belongs to.
+        // Read at Open time (set in OnMouseDown before menu.Open()).
+        private static readonly FieldInfo? menu_target_field = typeof(ContextMenuContainer).GetField("menuTarget", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static readonly HashSet<Menu> hooked_menus = new HashSet<Menu>();
 
         /// <summary>
-        /// Hooks the currently active song select screen's context menu so it gains a "Make map delta"
-        /// entry. Safe to call repeatedly (no double-hooking); no-op outside song select.
+        /// Hooks the currently active song select screen's context menu so a right-click on a
+        /// beatmap difficulty panel (PanelBeatmap) gains a "Make map delta" entry while the mosu!
+        /// ruleset is selected. Safe to call repeatedly (no double-hooking); no-op outside song select.
         /// </summary>
         public static void HookSongSelectContextMenu(OsuGame game, RealmAccess realm)
         {
-            if (menu_field == null)
+            if (menu_field == null || menu_target_field == null)
             {
-                logFeatureDisabled("song select context menu injection", new InvalidOperationException("ContextMenuContainer.menu field not found"));
+                logFeatureDisabled("song select context menu injection", new InvalidOperationException("ContextMenuContainer field not found"));
                 return;
             }
 
@@ -306,6 +314,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                     return;
 
                 var beatmap = resolveWorkingBeatmap(game);
+                var rulesetBindable = game.Dependencies.Get(typeof(IBindable<RulesetInfo>)) as IBindable<RulesetInfo>;
 
                 foreach (var container in songSelect.ChildrenOfType<OsuContextMenuContainer>())
                 {
@@ -321,6 +330,14 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                         if (state != MenuState.Open)
                             return;
 
+                        // Only the beatmap difficulty panel's own context menu, and only while the
+                        // mosu! ruleset is selected.
+                        if (rulesetBindable?.Value.ShortName != mosu_ruleset_short_name)
+                            return;
+
+                        if (menu_target_field.GetValue(container) is not PanelBeatmap)
+                            return;
+
                         if (menu.Items.Any(i => string.Equals(i.Text.ToString(), make_map_delta_label, StringComparison.Ordinal)))
                             return;
 
@@ -329,7 +346,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                         menu.Items = existing.ToArray();
                     };
 
-                    Logger.Log("[MOsu] Hooked song select context menu for Make map delta");
+                    Logger.Log("[MOsu] Hooked song select context menu for Make map delta (PanelBeatmap only, mosu active)");
                 }
             }
             catch (Exception e)
