@@ -205,12 +205,16 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
         /// <summary>
         /// Applies a <see cref="ModWithVisibilityAdjustment"/> to a drawable such that its effect
-        /// is only applied to objects whose section forces the corresponding fun mod.
+        /// is only applied to objects whose section forces the corresponding fun mod. The hook is
+        /// added once per (pooled) drawable but resolves the section per object at fire time, and
+        /// fired immediately for the current state — the drawable's initial Idle state application
+        /// already happened before the overlay could subscribe, and circles change state again only
+        /// on judgement, so a pure subscription would never fire in time.
         /// </summary>
         internal void applySectionScopedVisibilityMod<TMod>(TMod mod, DrawableHitObject drawable, Func<SectionGimmickSettings, bool> isForced, Action<TMod, SectionGimmickSettings>? configure)
             where TMod : ModWithVisibilityAdjustment
         {
-            drawable.ApplyCustomUpdateState += (o, state) =>
+            void fire(DrawableHitObject o, ArmedState state)
             {
                 var settings = ResolveSettingsForHitObject(beatmap, o.HitObject);
 
@@ -219,12 +223,15 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
                 configure?.Invoke(mod, settings);
                 apply_normal_visibility_state.Invoke(mod, new object[] { o, state });
-            };
+            }
+
+            drawable.ApplyCustomUpdateState += fire;
+            fire(drawable, drawable.State.Value);
         }
 
         private void applySectionScopedApproachDifferent(DrawableHitObject drawable)
         {
-            drawable.ApplyCustomUpdateState += (o, _) =>
+            void fire(DrawableHitObject o, ArmedState state)
             {
                 if (o is not DrawableHitCircle drawableHitCircle)
                     return;
@@ -240,7 +247,10 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
                 using (drawableHitCircle.BeginAbsoluteSequence(hitCircle.StartTime - hitCircle.TimePreempt))
                     drawableHitCircle.ApproachCircle.ScaleTo(scale).ScaleTo(1f, hitCircle.TimePreempt);
-            };
+            }
+
+            drawable.ApplyCustomUpdateState += fire;
+            fire(drawable, drawable.State.Value);
         }
 
         private void applySectionScopedSynesthesia(DrawableHitObject drawable)
@@ -285,9 +295,9 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             var hitCircle = drawableHitCircle.HitObject;
             float originalPreempt = (float)(beatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault()?.TimePreempt ?? hitCircle.TimePreempt);
 
-            drawable.ApplyCustomUpdateState += (drawableObject, _) =>
+            void fire(DrawableHitObject o, ArmedState state)
             {
-                if (drawableObject is not DrawableHitCircle circle)
+                if (o is not DrawableHitCircle circle)
                     return;
 
                 if (ResolveSettingsForHitObject(beatmap, circle.HitObject)?.ForceFreezeFrame != true)
@@ -299,7 +309,10 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
                 using (approachCircle.BeginAbsoluteSequence(circle.HitObject.StartTime - circle.HitObject.TimePreempt))
                     approachCircle.ScaleTo(1, circle.HitObject.TimePreempt).Then().Expire();
-            };
+            }
+
+            drawable.ApplyCustomUpdateState += fire;
+            fire(drawable, drawable.State.Value);
         }
 
         private static SectionGimmickSettings mapToSectionSettings(HitObjectGimmickSettings source)
