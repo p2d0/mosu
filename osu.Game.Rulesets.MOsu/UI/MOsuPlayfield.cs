@@ -202,15 +202,5 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             public void Add(Drawable proxy) => AddInternal(proxy);
         }
-
-        private class DeltaHitObjectLifetimeEntry : HitObjectLifetimeEntry
-        {
-            public DeltaHitObjectLifetimeEntry(HitObject hitObject) : base(hitObject)
-            {
-                LifetimeEnd = HitObject.GetEndTime() + HitObject.HitWindows.WindowFor(HitResult.Miss);
-            }
-
-            protected override double InitialLifetimeOffset => ((OsuHitObject)HitObject).TimePreempt;
-        }
     }
 }

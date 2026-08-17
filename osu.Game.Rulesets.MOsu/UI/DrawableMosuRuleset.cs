@@ -59,15 +59,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
-            try
-            {
-                DeltaGimmickRuntime.EnsureApplied(playableBeatmap!, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
-            }
-            catch (Exception e)
-            {
-                Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
-                Logger.Log("[MOsu] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
-            }
+            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parent);
 
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
             var dependencies = base.CreateChildDependencies(parent);
@@ -356,49 +348,18 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             ensureGimmicksApplied();
 
-            if (playableBeatmap is DeltaBeatmap mosuBeatmap)
-            {
-                var settings = DeltaGimmickApplier.GetObjectSettings(playableBeatmap, mosuBeatmap.Gimmicks, h);
-                if (settings?.EnableDifficultyOverrides == true && !float.IsNaN(settings.SectionCircleSize))
-                    Logger.Log($"[MOsu-Gameplay] drawable-creation: object@{h.StartTime} CS={settings.SectionCircleSize} Scale={h.Scale}");
-            }
-
             return DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
         }
 
         private bool gimmicksApplied;
 
-        /// <summary>
-        /// Ensures the delta gimmick sections (skipped by the stock decoder) are parsed and applied
-        /// to the playable beatmap before any drawables are created.
-        /// </summary>
         private void ensureGimmicksApplied()
         {
             if (gimmicksApplied)
                 return;
 
             gimmicksApplied = true;
-
-            try
-            {
-                WorkingBeatmap? working = null;
-
-                try
-                {
-                    working = parentDependencies.Get<IBindable<WorkingBeatmap>>()?.Value;
-                }
-                catch
-                {
-                }
-
-                Logger.Log($"[MOsu] gameplay ensure: working={working?.GetType().Name} path={working?.BeatmapInfo.Path}");
-                DeltaGimmickRuntime.EnsureApplied(playableBeatmap!, working);
-            }
-            catch (Exception e)
-            {
-                Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
-                Logger.Log("[MOsu] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
-            }
+            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parentDependencies);
         }
 
         private IReadOnlyDependencyContainer parentDependencies = null!;

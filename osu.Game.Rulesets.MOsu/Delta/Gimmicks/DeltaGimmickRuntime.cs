@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
@@ -24,6 +26,34 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// processor that simulated max stats before the parse can re-simulate.
         /// </summary>
         public static event Action? GimmicksApplied;
+
+        /// <summary>
+        /// Single-line contact point for ruleset code: resolves the working beatmap from the
+        /// dependency container and calls <see cref="EnsureApplied"/>, swallowing + logging
+        /// failures (osu! API drift disables gimmicks gracefully instead of breaking gameplay).
+        /// </summary>
+        public static void TryEnsureApplied(IBeatmap playableBeatmap, IReadOnlyDependencyContainer? dependencies, bool mutateList = true)
+        {
+            try
+            {
+                WorkingBeatmap? working = null;
+
+                try
+                {
+                    working = dependencies?.Get<IBindable<WorkingBeatmap>>()?.Value;
+                }
+                catch
+                {
+                }
+
+                EnsureApplied(playableBeatmap, working, mutateList);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
+                Logger.Log("[MOsu] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
+            }
+        }
 
         /// <summary>
         /// Parses the delta gimmick sections (skipped by the stock decoder) and applies them to the

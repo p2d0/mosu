@@ -41,15 +41,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
 
             // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
-            try
-            {
-                DeltaGimmickRuntime.EnsureApplied(Beatmap, parent.Get<IBindable<WorkingBeatmap>>()?.Value, mutateList: true);
-            }
-            catch (Exception e)
-            {
-                Logger.Log($"[MOsu-Editor] Failed to apply gimmicks: {e}");
-                Logger.Log("[MOsu-Editor] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
-            }
+            DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parent, mutateList: true);
 
             // Hook File -> Create New Difficulty -> MOsu! once attached (Parent is null during
             // CreateChildDependencies, so defer to the first Update).
@@ -92,19 +84,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             if (!gimmicksApplied)
             {
                 gimmicksApplied = true;
-
-                WorkingBeatmap? working = null;
-
-                try
-                {
-                    working = parentDependencies.Get<IBindable<WorkingBeatmap>>()?.Value;
-                }
-                catch
-                {
-                }
-
-                DeltaGimmickRuntime.EnsureApplied(Beatmap, working, mutateList: true);
-
+                DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parentDependencies, mutateList: true);
             }
 
             var drawable = DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(Beatmap, h);
