@@ -47,6 +47,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             catch (Exception e)
             {
                 Logger.Log($"[MOsu-Editor] Failed to apply gimmicks: {e}");
+                Logger.Log("[MOsu-Editor] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
             }
 
             // Hook File -> Create New Difficulty -> MOsu! once attached (Parent is null during
@@ -60,50 +61,29 @@ namespace osu.Game.Rulesets.MOsu.Edit
             catch (Exception e)
             {
                 Logger.Log($"[MOsu-Editor] Failed to hook Create New Difficulty: {e}");
+                Logger.Log("[MOsu-Editor] osu! api changed: Create New Difficulty injection will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
             }
 
             return base.CreateChildDependencies(parent);
         }
 
-        private bool difficultyMenuHookAttempted;
-
         private void scheduleDifficultyMenuHook(OsuGame game, RealmAccess realm)
         {
-            if (difficultyMenuHookAttempted)
-                return;
-
-            difficultyMenuHookAttempted = true;
-
-            ScheduleHookAttempt = () =>
+            // Parent is null during CreateChildDependencies, so defer until the drawable is
+            // attached (Schedule runs at the start of the first UpdateSubTree).
+            Schedule(() =>
             {
                 for (Drawable? d = this; d != null; d = d.Parent)
                 {
-                    Logger.Log($"[MOsu-Editor] parent walk: {d.GetType().Name}");
-
                     if (d is Editor editor)
                     {
-                        Logger.Log($"[MOsu-Editor] found Editor, hooking menu");
                         CreateMosuDifficultyInjector.Hook(editor, game, realm);
                         return;
                     }
                 }
 
                 Logger.Log($"[MOsu-Editor] no Editor in parent chain");
-            };
-        }
-
-        private System.Action? ScheduleHookAttempt;
-
-        protected override void Update()
-        {
-            base.Update();
-
-            if (ScheduleHookAttempt != null)
-            {
-                var attempt = ScheduleHookAttempt;
-                ScheduleHookAttempt = null;
-                attempt();
-            }
+            });
         }
 
         public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h)

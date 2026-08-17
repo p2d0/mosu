@@ -65,6 +65,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             catch (Exception e)
             {
                 Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
+                Logger.Log("[MOsu] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
             }
 
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
@@ -395,6 +396,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             catch (Exception e)
             {
                 Logger.Log($"[MOsu] Failed to apply gimmicks: {e}");
+                Logger.Log("[MOsu] osu! api changed: gimmicks will be disabled. Please update mosu! or report the issue on GitHub.", level: LogLevel.Important);
             }
         }
 
