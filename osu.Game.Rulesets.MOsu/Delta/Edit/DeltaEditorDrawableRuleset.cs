@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
                 {
                     if (d is Editor editor)
                     {
-                        CreateMosuDifficultyInjector.Hook(editor, game, realm);
+                        DeltaMenuInjector.HookEditorFileMenu(editor, game, realm);
                         return;
                     }
                 }
