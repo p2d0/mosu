@@ -180,7 +180,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 });
             }
 
-            if (SectionGimmickFunModsOverlay.HasAnyForcedFunMods(Beatmap))
+            if (SectionModApplicator.HasAnyForcedFunMods(Beatmap))
             {
                 Overlays.Add(new SectionGimmickFunModsOverlay(Beatmap, this, Mods)
                 {

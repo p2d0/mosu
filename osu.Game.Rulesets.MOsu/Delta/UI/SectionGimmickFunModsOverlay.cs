@@ -56,7 +56,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
         private readonly BindableDouble mutedVolumeAdjustment = new BindableDouble(1);
 
-        private OsuModSynesthesia? synesthesiaMod;
+        private SectionModApplicator sectionModApplicator = null!;
 
         private readonly Bindable<int> currentCombo = new BindableInt();
         private float bubbleMaxSize;
@@ -71,14 +71,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
         private bool hasForcedBloom;
         private bool hasForcedBubbles;
 
-        private bool selectedTransform;
-        private bool selectedWiggle;
-        private bool selectedSpinIn;
-        private bool selectedGrow;
-        private bool selectedDeflate;
-        private bool selectedApproachDifferent;
-        private bool selectedFreezeFrame;
-        private bool selectedSynesthesia;
         private bool selectedBubbles;
         private bool selectedMuted;
         private bool selectedBarrelRoll;
@@ -92,7 +84,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
 
         private bool initialDisplayJudgements;
         private readonly HashSet<DrawableHitObject> processedDrawables = new HashSet<DrawableHitObject>();
-        private readonly Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings> objectSettingsByLegacyKey = new Dictionary<(double StartTime, int ComboIndexWithOffsets), HitObjectGimmickSettings>();
 
         [Resolved(canBeNull: true)]
         private ScoreProcessor? scoreProcessor { get; set; }
@@ -106,11 +97,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             this.drawableRuleset = drawableRuleset;
             this.selectedMods = selectedMods;
 
-            var mosuGimmicks = (beatmap as DeltaBeatmap)?.Gimmicks;
-            gimmicks = mosuGimmicks?.Sections ?? new BeatmapSectionGimmicks();
-
-            if (mosuGimmicks != null)
-                objectSettingsByLegacyKey = HitObjectGimmickBindingUtils.CreateLookupByLegacyKey(mosuGimmicks.HitObjectGimmicks);
+            gimmicks = (beatmap as DeltaBeatmap)?.Gimmicks?.Sections ?? new BeatmapSectionGimmicks();
 
             RelativeSizeAxes = Axes.Both;
         }
@@ -118,14 +105,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
         [BackgroundDependencyLoader]
         private void load()
         {
-            selectedTransform = hasSelectedMod<OsuModTransform>();
-            selectedWiggle = hasSelectedMod<OsuModWiggle>();
-            selectedSpinIn = hasSelectedMod<OsuModSpinIn>();
-            selectedGrow = hasSelectedMod<OsuModGrow>();
-            selectedDeflate = hasSelectedMod<OsuModDeflate>();
-            selectedApproachDifferent = hasSelectedMod<OsuModApproachDifferent>();
-            selectedFreezeFrame = hasSelectedMod<OsuModFreezeFrame>();
-            selectedSynesthesia = hasSelectedMod<OsuModSynesthesia>();
             selectedBubbles = hasSelectedMod<OsuModBubbles>();
             selectedMuted = hasSelectedMod<OsuModMuted>();
             selectedBarrelRoll = hasSelectedMod<OsuModBarrelRoll>();
@@ -144,11 +123,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                                      || (hasAnyForced(s => s.ForceRepel) && !selectedRepel)
                                      || (hasAnyForced(s => s.ForceDepth) && !selectedDepth);
 
-            if (hasAnyForced(s => s.ForceSynesthesia) && !selectedSynesthesia)
-            {
-                synesthesiaMod = new OsuModSynesthesia();
-                synesthesiaMod.ApplyToBeatmap(beatmap);
-            }
+            sectionModApplicator = new SectionModApplicator(beatmap, selectedMods, colours);
 
             if (hasForcedBubbles)
             {
@@ -210,120 +185,13 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                 // NOTE: drawables are pooled and reused for many objects, and ApplyCustomUpdateState
                 // subscriptions persist across pool reuse. Applying a mod to the pooled drawable would
                 // therefore leak its effect onto every later object (map-wide). All per-drawable mods
-                // below are applied through per-object guarded hooks which resolve the section for the
-                // object currently held by the drawable at fire time.
-                if (hasAnyForced(s => s.ForceTransform) && !selectedTransform)
-                    applySectionScopedVisibilityMod(new OsuModTransform(), drawable, s => s.ForceTransform, null);
+                // are applied through SectionModApplicator's per-object guarded hooks which resolve the
+                // section for the object currently held by the drawable at fire time.
+                sectionModApplicator.HookSectionScopedMods(drawable);
 
-                if (hasAnyForced(s => s.ForceWiggle) && !selectedWiggle)
-                    applySectionScopedVisibilityMod(new OsuModWiggle(), drawable, s => s.ForceWiggle,
-                        (m, s) => m.Strength.Value = Math.Clamp(s.WiggleStrength, 0.1f, 2f));
-
-                if (hasAnyForced(s => s.ForceSpinIn) && !selectedSpinIn)
-                    applySectionScopedVisibilityMod(new OsuModSpinIn(), drawable, s => s.ForceSpinIn, null);
-
-                if (hasAnyForced(s => s.ForceGrow) && !selectedGrow)
-                    applySectionScopedVisibilityMod(new OsuModGrow(), drawable, s => s.ForceGrow,
-                        (m, s) => m.StartScale.Value = Math.Clamp(s.GrowStartScale, 0f, 0.99f));
-
-                if (hasAnyForced(s => s.ForceDeflate) && !selectedDeflate)
-                    applySectionScopedVisibilityMod(new OsuModDeflate(), drawable, s => s.ForceDeflate,
-                        (m, s) => m.StartScale.Value = Math.Clamp(s.DeflateStartScale, 1f, 25f));
-
-                if (hasAnyForced(s => s.ForceApproachDifferent) && !selectedApproachDifferent)
-                    applySectionScopedApproachDifferent(drawable);
-
-                if (hasAnyForced(s => s.ForceSynesthesia) && !selectedSynesthesia)
-                    applySectionScopedSynesthesia(drawable);
-
-                if (hasAnyForced(s => s.ForceBubbles) && !selectedBubbles)
+                if (hasForcedBubbles)
                     applySectionScopedBubbles(drawable);
-
-                if (hasAnyForced(s => s.ForceFreezeFrame) && !selectedFreezeFrame)
-                    applyCustomFreezeFrame(drawable);
             }
-        }
-
-        /// <summary>
-        /// Applies a <see cref="ModWithVisibilityAdjustment"/> to a drawable such that its effect
-        /// is only applied to objects whose section forces the corresponding fun mod. The hook is
-        /// added once per (pooled) drawable but resolves the section per object at fire time, so
-        /// reused drawables do not leak the mod onto out-of-section objects.
-        /// </summary>
-        internal void applySectionScopedVisibilityMod<TMod>(TMod mod, DrawableHitObject drawable, Func<SectionGimmickSettings, bool> isForced, Action<TMod, SectionGimmickSettings>? configure)
-            where TMod : ModWithVisibilityAdjustment
-        {
-            drawable.ApplyCustomUpdateState += (o, state) =>
-            {
-                var settings = resolveSettingsForHitObject(o.HitObject);
-
-                if (settings == null || !isForced(settings))
-                    return;
-
-                configure?.Invoke(mod, settings);
-                apply_normal_visibility_state.Invoke(mod, new object[] { o, state });
-            };
-        }
-
-        private static readonly System.Reflection.MethodInfo apply_normal_visibility_state =
-            typeof(ModWithVisibilityAdjustment).GetMethod(
-                "ApplyNormalVisibilityState",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?? throw new MissingMemberException(nameof(ModWithVisibilityAdjustment), "ApplyNormalVisibilityState");
-
-        private void applySectionScopedApproachDifferent(DrawableHitObject drawable)
-        {
-            drawable.ApplyCustomUpdateState += (o, _) =>
-            {
-                if (o is not DrawableHitCircle drawableHitCircle)
-                    return;
-
-                var settings = resolveSettingsForHitObject(o.HitObject);
-                if (settings?.ForceApproachDifferent != true || selectedApproachDifferent)
-                    return;
-
-                var hitCircle = drawableHitCircle.HitObject;
-                float scale = Math.Clamp(settings.ApproachDifferentScale, 1.5f, 10f);
-
-                drawableHitCircle.ApproachCircle.ClearTransforms(targetMember: nameof(drawableHitCircle.ApproachCircle.Scale));
-
-                using (drawableHitCircle.BeginAbsoluteSequence(hitCircle.StartTime - hitCircle.TimePreempt))
-                    drawableHitCircle.ApproachCircle.ScaleTo(scale).ScaleTo(1f, hitCircle.TimePreempt);
-            };
-        }
-
-        private void applySectionScopedSynesthesia(DrawableHitObject drawable)
-        {
-            if (synesthesiaMod == null)
-                return;
-
-            Color4? timingBasedColour = null;
-
-            drawable.HitObjectApplied += _ =>
-            {
-                var settings = resolveSettingsForHitObject(drawable.HitObject);
-
-                if (settings?.ForceSynesthesia != true)
-                {
-                    timingBasedColour = null;
-                    return;
-                }
-
-                // Slider tails are an edge case: their start time is offset 36ms back (see LastTick),
-                // so use the parenting slider's end time instead to ensure proper snap.
-                double snapTime = drawable is DrawableSliderTail tail
-                    ? tail.Slider.GetEndTime()
-                    : drawable.HitObject.StartTime;
-
-                timingBasedColour = BindableBeatDivisor.GetColourFor(beatmap.ControlPointInfo.GetClosestBeatDivisor(snapTime), colours);
-            };
-
-            // Set every update so it isn't overwritten by DrawableHitObject.OnApply() -> UpdateComboColour().
-            drawable.OnUpdate += _ =>
-            {
-                if (timingBasedColour != null)
-                    drawable.AccentColour.Value = timingBasedColour.Value;
-            };
         }
 
         private void applySectionScopedBubbles(DrawableHitObject drawable)
@@ -340,7 +208,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                         break;
 
                     default:
-                        if (resolveSettingsForHitObject(d.HitObject)?.ForceBubbles != true)
+                        if (SectionModApplicator.ResolveSettingsForHitObject(beatmap, d.HitObject)?.ForceBubbles != true)
                             break;
 
                         BubbleDrawable bubble = bubblePool.Get();
@@ -362,7 +230,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                 if (d.HitObject is SpinnerTick or Slider)
                     return;
 
-                if (resolveSettingsForHitObject(d.HitObject)?.ForceBubbles != true)
+                if (SectionModApplicator.ResolveSettingsForHitObject(beatmap, d.HitObject)?.ForceBubbles != true)
                     return;
 
                 bubbleContainer.OfType<BubbleDrawable>().LastOrDefault()?.ClearTransforms();
@@ -528,7 +396,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
             foreach (var entry in drawableRuleset.Playfield.HitObjectContainer.AliveEntries)
             {
                 DrawableHitObject drawable = entry.Value;
-                SectionGimmickSettings? settings = resolveSettingsForHitObject(drawable.HitObject);
+                SectionGimmickSettings? settings = SectionModApplicator.ResolveSettingsForHitObject(beatmap, drawable.HitObject);
                 if (settings == null)
                     continue;
 
@@ -700,83 +568,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
                 applicable.ApplyToDrawableHitObject(drawable);
         }
 
-        private void applyCustomFreezeFrame(DrawableHitObject drawable)
-        {
-            if (drawable is not DrawableHitCircle drawableHitCircle)
-                return;
-
-            var hitCircle = drawableHitCircle.HitObject;
-            float originalPreempt = (float)(beatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault()?.TimePreempt ?? hitCircle.TimePreempt);
-
-            drawable.ApplyCustomUpdateState += (drawableObject, _) =>
-            {
-                if (drawableObject is not DrawableHitCircle circle)
-                    return;
-
-                if (resolveSettingsForHitObject(circle.HitObject)?.ForceFreezeFrame != true || selectedFreezeFrame)
-                    return;
-
-                var approachCircle = circle.ApproachCircle;
-                approachCircle.ClearTransforms(targetMember: nameof(approachCircle.Scale));
-                approachCircle.ScaleTo(4 * (float)(circle.HitObject.TimePreempt / originalPreempt));
-
-                using (approachCircle.BeginAbsoluteSequence(circle.HitObject.StartTime - circle.HitObject.TimePreempt))
-                    approachCircle.ScaleTo(1, circle.HitObject.TimePreempt).Then().Expire();
-            };
-        }
-
         internal SectionGimmickSettings? resolveSettingsAtTime(double time)
             => gimmicks.FindSectionAt(time)?.Settings;
-
-        internal SectionGimmickSettings? resolveSettingsForHitObject(osu.Game.Rulesets.Objects.HitObject hitObject)
-        {
-            if (hitObject is not OsuHitObject osuHitObject)
-                return null;
-
-            if (objectSettingsByLegacyKey.TryGetValue((osuHitObject.StartTime, osuHitObject.ComboIndexWithOffsets), out var objectSettings))
-                return mapToSectionSettings(objectSettings);
-
-            return resolveSettingsAtTime(osuHitObject.StartTime);
-        }
-
-        private static SectionGimmickSettings mapToSectionSettings(HitObjectGimmickSettings source)
-            => new SectionGimmickSettings
-            {
-                EnableHPGimmick = source.EnableHPGimmick,
-                EnableNoMiss = source.EnableNoMiss,
-                EnableCountLimits = source.EnableCountLimits,
-                EnableGreatOffsetPenalty = source.EnableGreatOffsetPenalty,
-
-                Max300s = source.Max300s,
-                Max100s = source.Max100s,
-                Max50s = source.Max50s,
-                MaxMisses = source.MaxMisses,
-
-                HP300 = source.HP300,
-                HP100 = source.HP100,
-                HP50 = source.HP50,
-                HPMiss = source.HPMiss,
-
-                GreatOffsetThresholdMs = source.GreatOffsetThresholdMs,
-                GreatOffsetPenaltyHP = source.GreatOffsetPenaltyHP,
-
-                EnableDifficultyOverrides = source.EnableDifficultyOverrides,
-                AllowUnsafeDifficultyOverrideValues = source.AllowUnsafeDifficultyOverrideValues,
-                SectionCircleSize = source.SectionCircleSize,
-                SectionApproachRate = source.SectionApproachRate,
-                SectionOverallDifficulty = source.SectionOverallDifficulty,
-                AllowUnsafeStackLeniencyOverrideValues = source.AllowUnsafeStackLeniencyOverrideValues,
-                SectionStackLeniency = source.SectionStackLeniency,
-                AllowUnsafeTickRateOverrideValues = source.AllowUnsafeTickRateOverrideValues,
-                SectionTickRate = source.SectionTickRate,
-
-                ForceHidden = source.ForceHidden,
-                ForceNoApproachCircle = source.ForceNoApproachCircle,
-                ForceHardRock = source.ForceHardRock,
-                ForceFlashlight = source.ForceFlashlight,
-                ForceTraceable = source.ForceTraceable,
-                FlashlightRadius = source.FlashlightRadius,
-            };
 
         private bool hasAnyForced(Func<SectionGimmickSettings, bool> predicate)
             => gimmicks.Sections.Any(s => predicate(s.Settings));
@@ -784,29 +577,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.UI
         private bool hasSelectedMod<TMod>()
             where TMod : Mod
             => selectedMods.Any(m => m is TMod);
-
-        public static bool HasAnyForcedFunMods(IBeatmap beatmap)
-        {
-            var gimmicks = (beatmap as DeltaBeatmap)?.Gimmicks?.Sections;
-            return gimmicks != null && gimmicks.Sections.Any(s =>
-                s.Settings.ForceTransform
-                || s.Settings.ForceWiggle
-                || s.Settings.ForceSpinIn
-                || s.Settings.ForceGrow
-                || s.Settings.ForceDeflate
-                || s.Settings.ForceBarrelRoll
-                || s.Settings.ForceApproachDifferent
-                || s.Settings.ForceMuted
-                || s.Settings.ForceNoScope
-                || s.Settings.ForceTraceable
-                || s.Settings.ForceMagnetised
-                || s.Settings.ForceRepel
-                || s.Settings.ForceFreezeFrame
-                || s.Settings.ForceBubbles
-                || s.Settings.ForceSynesthesia
-                || s.Settings.ForceDepth
-                || s.Settings.ForceBloom);
-        }
 
         /// <summary>
         /// Section-scoped copy of OsuModBubbles' private bubble drawable (the original is a private

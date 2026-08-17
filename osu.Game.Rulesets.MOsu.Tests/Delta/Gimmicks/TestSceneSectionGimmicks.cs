@@ -190,7 +190,7 @@ AddAssert("in-section objects hidden", () =>
             AddStep("build beatmap", setupBeatmap);
             AddStep("wiggle section", () => setupSection(s => s.ForceWiggle = true));
 
-            AddAssert("fun mods overlay activates", () => SectionGimmickFunModsOverlay.HasAnyForcedFunMods(beatmap));
+            AddAssert("fun mods overlay activates", () => SectionModApplicator.HasAnyForcedFunMods(beatmap));
         }
     }
 }

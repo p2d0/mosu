@@ -25,6 +25,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Delta.Gimmicks
     public partial class TestSceneSectionFunMods : TestSceneMOsuBase
     {
         private SectionGimmickFunModsOverlay overlay = null!;
+        private SectionModApplicator applicator = null!;
         private DrawableHitCircle drawable = null!;
 
         [Test]
@@ -55,6 +56,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Delta.Gimmicks
                 beatmap.HitObjects.Add(new HitCircle { StartTime = 1500, Position = new Vector2(256, 192) });
 
                 overlay = new SectionGimmickFunModsOverlay(beatmap, null!, Array.Empty<Mod>());
+                applicator = new SectionModApplicator(beatmap, Array.Empty<Mod>(), null!);
                 drawable = new DrawableHitCircle(createCircle(1500));
                 Add(drawable);
             });
@@ -62,7 +64,7 @@ namespace osu.Game.Rulesets.MOsu.Tests.Delta.Gimmicks
             AddUntilStep("drawable loaded", () => drawable.IsLoaded);
 
             AddStep("apply guarded wiggle hook once", () =>
-                overlay.applySectionScopedVisibilityMod(new OsuModWiggle(), drawable, s => s.ForceWiggle,
+                applicator.applySectionScopedVisibilityMod(new OsuModWiggle(), drawable, s => s.ForceWiggle,
                     (m, s) => m.Strength.Value = Math.Clamp(s.WiggleStrength, 0.1f, 2f)));
 
             AddAssert("in-section object wiggles", () =>

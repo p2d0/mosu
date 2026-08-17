@@ -1,0 +1,344 @@
+// One module owning per-object section-scoped fun-mod application for delta gimmicks.
+//
+// Consolidates what used to live in three places:
+//  - the hidden / no-approach / traceable drawable-state re-application that every
+//    MosuDrawable* in MosuGimmickDrawables reimplemented (6 near-identical copies),
+//  - the per-object visibility-mod / approach / synesthesia / freeze-frame hooks that
+//    SectionGimmickFunModsOverlay registered on each alive drawable,
+//  - the per-object settings resolution (the overlay kept a duplicate legacy-key lookup;
+//    this module uses the applier's single id-based path).
+//
+// All per-object hooks resolve the section for the object held by the drawable at fire time,
+// so pooled drawables (reused across many objects) never leak a mod onto out-of-section
+// objects.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using osu.Framework.Graphics;
+using osu.Game.Beatmaps;
+using osu.Game.Graphics;
+using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
+using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Screens.Edit;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
+
+using osuTK;
+using osuTK.Graphics;
+
+namespace osu.Game.Rulesets.MOsu.Delta.UI
+{
+    public partial class SectionModApplicator
+    {
+        // ---- shared queries ----
+
+        /// <summary>
+        /// Whether any section forces the given fun mod flag.
+        /// </summary>
+        public static bool HasAnyForced(IBeatmap beatmap, Func<SectionGimmickSettings, bool> predicate)
+            => (beatmap as DeltaBeatmap)?.Gimmicks?.Sections.Sections.Any(s => predicate(s.Settings)) == true;
+
+        /// <summary>
+        /// Whether the beatmap forces any fun mod at all (used to skip creating the overlay).
+        /// </summary>
+        public static bool HasAnyForcedFunMods(IBeatmap beatmap)
+            => HasAnyForced(beatmap, s =>
+                s.ForceTransform
+                || s.ForceWiggle
+                || s.ForceSpinIn
+                || s.ForceGrow
+                || s.ForceDeflate
+                || s.ForceBarrelRoll
+                || s.ForceApproachDifferent
+                || s.ForceMuted
+                || s.ForceNoScope
+                || s.ForceTraceable
+                || s.ForceMagnetised
+                || s.ForceRepel
+                || s.ForceFreezeFrame
+                || s.ForceBubbles
+                || s.ForceSynesthesia
+                || s.ForceDepth
+                || s.ForceBloom);
+
+        /// <summary>
+        /// Resolves the effective section settings for a hitobject: its per-object gimmick
+        /// settings when it has an entry (id-based, via the applier), else the section covering
+        /// its start time. Single resolution path for all drawable-level reads.
+        /// </summary>
+        public static SectionGimmickSettings? ResolveSettingsForHitObject(IBeatmap beatmap, HitObject hitObject)
+        {
+            if (hitObject is not OsuHitObject osuHitObject)
+                return null;
+
+            var data = (beatmap as DeltaBeatmap)?.Gimmicks;
+            if (data == null)
+                return null;
+
+            var objectSettings = DeltaGimmickApplier.GetObjectSettings(beatmap, data, osuHitObject);
+            if (objectSettings != null)
+                return mapToSectionSettings(objectSettings);
+
+            return data.Sections.FindSectionAt(osuHitObject.StartTime)?.Settings;
+        }
+
+        // ---- drawable state (collapsed from MosuGimmickDrawables) ----
+
+        /// <summary>
+        /// (Re)subscribes the hidden / no-approach-circle / traceable state application for a
+        /// drawable and applies it immediately. The stock state-update flow clears and re-shows
+        /// the approach circle / body transforms at start time, so a one-shot apply would be
+        /// overwritten — matching delta, the effect is re-applied on every state update.
+        /// </summary>
+        public static void HookSectionScopedDrawableState(DrawableHitObject drawable, bool hidden, bool noApproachCircle, bool traceable)
+        {
+            drawable.ApplyCustomUpdateState -= applySectionScopedDrawableState;
+            drawable.ApplyCustomUpdateState += applySectionScopedDrawableState;
+            applySectionScopedDrawableState(drawable, drawable.State.Value);
+
+            void applySectionScopedDrawableState(DrawableHitObject d, ArmedState state)
+                => ApplySectionScopedDrawableState(d, hidden, noApproachCircle, traceable);
+        }
+
+        public static void ApplySectionScopedDrawableState(DrawableHitObject drawable, bool hidden, bool noApproachCircle, bool traceable)
+        {
+            if (noApproachCircle)
+                SectionGimmickHiddenVisuals.ApplyHiddenState(drawable, onlyFadeApproachCircles: true);
+
+            if (hidden)
+                SectionGimmickHiddenVisuals.ApplyHiddenState(drawable);
+
+            if (traceable)
+                SectionGimmickTraceableVisuals.ApplyTraceableState(drawable);
+        }
+
+        // ---- per-object fun-mod hooks (moved from SectionGimmickFunModsOverlay) ----
+
+        private static readonly MethodInfo apply_normal_visibility_state =
+            typeof(ModWithVisibilityAdjustment).GetMethod(
+                "ApplyNormalVisibilityState",
+                BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new MissingMemberException(nameof(ModWithVisibilityAdjustment), "ApplyNormalVisibilityState");
+
+        private readonly IBeatmap beatmap;
+        private readonly IReadOnlyList<Mod> selectedMods;
+        private readonly OsuColour colours;
+        private readonly OsuModSynesthesia? synesthesiaMod;
+
+        private readonly bool hasForcedTransform;
+        private readonly bool hasForcedWiggle;
+        private readonly bool hasForcedSpinIn;
+        private readonly bool hasForcedGrow;
+        private readonly bool hasForcedDeflate;
+        private readonly bool hasForcedApproachDifferent;
+        private readonly bool hasForcedSynesthesia;
+        private readonly bool hasForcedFreezeFrame;
+
+        public SectionModApplicator(IBeatmap beatmap, IReadOnlyList<Mod> selectedMods, OsuColour colours)
+        {
+            this.beatmap = beatmap;
+            this.selectedMods = selectedMods;
+            this.colours = colours;
+
+            hasForcedTransform = forced(s => s.ForceTransform) && !selected<OsuModTransform>();
+            hasForcedWiggle = forced(s => s.ForceWiggle) && !selected<OsuModWiggle>();
+            hasForcedSpinIn = forced(s => s.ForceSpinIn) && !selected<OsuModSpinIn>();
+            hasForcedGrow = forced(s => s.ForceGrow) && !selected<OsuModGrow>();
+            hasForcedDeflate = forced(s => s.ForceDeflate) && !selected<OsuModDeflate>();
+            hasForcedApproachDifferent = forced(s => s.ForceApproachDifferent) && !selected<OsuModApproachDifferent>();
+            hasForcedSynesthesia = forced(s => s.ForceSynesthesia) && !selected<OsuModSynesthesia>();
+            hasForcedFreezeFrame = forced(s => s.ForceFreezeFrame) && !selected<OsuModFreezeFrame>();
+
+            if (forced(s => s.ForceSynesthesia) && !selected<OsuModSynesthesia>())
+            {
+                synesthesiaMod = new OsuModSynesthesia();
+                synesthesiaMod.ApplyToBeatmap(beatmap);
+            }
+        }
+
+        private bool selected<TMod>()
+            where TMod : Mod
+            => selectedMods.Any(m => m is TMod);
+
+        private bool forced(Func<SectionGimmickSettings, bool> predicate) => HasAnyForced(beatmap, predicate);
+
+        /// <summary>
+        /// Registers all per-object section-scoped mod effects on a (possibly pooled) drawable.
+        /// Called once per drawable instance; each hook resolves the section for the object the
+        /// drawable currently holds at fire time.
+        /// </summary>
+        public void HookSectionScopedMods(DrawableHitObject drawable)
+        {
+            if (hasForcedTransform)
+                applySectionScopedVisibilityMod(new OsuModTransform(), drawable, s => s.ForceTransform, null);
+
+            if (hasForcedWiggle)
+                applySectionScopedVisibilityMod(new OsuModWiggle(), drawable, s => s.ForceWiggle,
+                    (m, s) => m.Strength.Value = Math.Clamp(s.WiggleStrength, 0.1f, 2f));
+
+            if (hasForcedSpinIn)
+                applySectionScopedVisibilityMod(new OsuModSpinIn(), drawable, s => s.ForceSpinIn, null);
+
+            if (hasForcedGrow)
+                applySectionScopedVisibilityMod(new OsuModGrow(), drawable, s => s.ForceGrow,
+                    (m, s) => m.StartScale.Value = Math.Clamp(s.GrowStartScale, 0f, 0.99f));
+
+            if (hasForcedDeflate)
+                applySectionScopedVisibilityMod(new OsuModDeflate(), drawable, s => s.ForceDeflate,
+                    (m, s) => m.StartScale.Value = Math.Clamp(s.DeflateStartScale, 1f, 25f));
+
+            if (hasForcedApproachDifferent)
+                applySectionScopedApproachDifferent(drawable);
+
+            if (hasForcedSynesthesia)
+                applySectionScopedSynesthesia(drawable);
+
+            if (hasForcedFreezeFrame)
+                applyCustomFreezeFrame(drawable);
+        }
+
+        /// <summary>
+        /// Applies a <see cref="ModWithVisibilityAdjustment"/> to a drawable such that its effect
+        /// is only applied to objects whose section forces the corresponding fun mod.
+        /// </summary>
+        internal void applySectionScopedVisibilityMod<TMod>(TMod mod, DrawableHitObject drawable, Func<SectionGimmickSettings, bool> isForced, Action<TMod, SectionGimmickSettings>? configure)
+            where TMod : ModWithVisibilityAdjustment
+        {
+            drawable.ApplyCustomUpdateState += (o, state) =>
+            {
+                var settings = ResolveSettingsForHitObject(beatmap, o.HitObject);
+
+                if (settings == null || !isForced(settings))
+                    return;
+
+                configure?.Invoke(mod, settings);
+                apply_normal_visibility_state.Invoke(mod, new object[] { o, state });
+            };
+        }
+
+        private void applySectionScopedApproachDifferent(DrawableHitObject drawable)
+        {
+            drawable.ApplyCustomUpdateState += (o, _) =>
+            {
+                if (o is not DrawableHitCircle drawableHitCircle)
+                    return;
+
+                var settings = ResolveSettingsForHitObject(beatmap, o.HitObject);
+                if (settings?.ForceApproachDifferent != true)
+                    return;
+
+                var hitCircle = drawableHitCircle.HitObject;
+                float scale = Math.Clamp(settings.ApproachDifferentScale, 1.5f, 10f);
+
+                drawableHitCircle.ApproachCircle.ClearTransforms(targetMember: nameof(drawableHitCircle.ApproachCircle.Scale));
+
+                using (drawableHitCircle.BeginAbsoluteSequence(hitCircle.StartTime - hitCircle.TimePreempt))
+                    drawableHitCircle.ApproachCircle.ScaleTo(scale).ScaleTo(1f, hitCircle.TimePreempt);
+            };
+        }
+
+        private void applySectionScopedSynesthesia(DrawableHitObject drawable)
+        {
+            if (synesthesiaMod == null)
+                return;
+
+            Color4? timingBasedColour = null;
+
+            drawable.HitObjectApplied += _ =>
+            {
+                var settings = ResolveSettingsForHitObject(beatmap, drawable.HitObject);
+
+                if (settings?.ForceSynesthesia != true)
+                {
+                    timingBasedColour = null;
+                    return;
+                }
+
+                // Slider tails are an edge case: their start time is offset 36ms back (see LastTick),
+                // so use the parenting slider's end time instead to ensure proper snap.
+                double snapTime = drawable is DrawableSliderTail tail
+                    ? tail.Slider.GetEndTime()
+                    : drawable.HitObject.StartTime;
+
+                timingBasedColour = BindableBeatDivisor.GetColourFor(beatmap.ControlPointInfo.GetClosestBeatDivisor(snapTime), colours);
+            };
+
+            // Set every update so it isn't overwritten by DrawableHitObject.OnApply() -> UpdateComboColour().
+            drawable.OnUpdate += _ =>
+            {
+                if (timingBasedColour != null)
+                    drawable.AccentColour.Value = timingBasedColour.Value;
+            };
+        }
+
+        private void applyCustomFreezeFrame(DrawableHitObject drawable)
+        {
+            if (drawable is not DrawableHitCircle drawableHitCircle)
+                return;
+
+            var hitCircle = drawableHitCircle.HitObject;
+            float originalPreempt = (float)(beatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault()?.TimePreempt ?? hitCircle.TimePreempt);
+
+            drawable.ApplyCustomUpdateState += (drawableObject, _) =>
+            {
+                if (drawableObject is not DrawableHitCircle circle)
+                    return;
+
+                if (ResolveSettingsForHitObject(beatmap, circle.HitObject)?.ForceFreezeFrame != true)
+                    return;
+
+                var approachCircle = circle.ApproachCircle;
+                approachCircle.ClearTransforms(targetMember: nameof(approachCircle.Scale));
+                approachCircle.ScaleTo(4 * (float)(circle.HitObject.TimePreempt / originalPreempt));
+
+                using (approachCircle.BeginAbsoluteSequence(circle.HitObject.StartTime - circle.HitObject.TimePreempt))
+                    approachCircle.ScaleTo(1, circle.HitObject.TimePreempt).Then().Expire();
+            };
+        }
+
+        private static SectionGimmickSettings mapToSectionSettings(HitObjectGimmickSettings source)
+            => new SectionGimmickSettings
+            {
+                EnableHPGimmick = source.EnableHPGimmick,
+                EnableNoMiss = source.EnableNoMiss,
+                EnableCountLimits = source.EnableCountLimits,
+                EnableGreatOffsetPenalty = source.EnableGreatOffsetPenalty,
+
+                Max300s = source.Max300s,
+                Max100s = source.Max100s,
+                Max50s = source.Max50s,
+                MaxMisses = source.MaxMisses,
+
+                HP300 = source.HP300,
+                HP100 = source.HP100,
+                HP50 = source.HP50,
+                HPMiss = source.HPMiss,
+
+                GreatOffsetThresholdMs = source.GreatOffsetThresholdMs,
+                GreatOffsetPenaltyHP = source.GreatOffsetPenaltyHP,
+
+                EnableDifficultyOverrides = source.EnableDifficultyOverrides,
+                AllowUnsafeDifficultyOverrideValues = source.AllowUnsafeDifficultyOverrideValues,
+                SectionCircleSize = source.SectionCircleSize,
+                SectionApproachRate = source.SectionApproachRate,
+                SectionOverallDifficulty = source.SectionOverallDifficulty,
+                AllowUnsafeStackLeniencyOverrideValues = source.AllowUnsafeStackLeniencyOverrideValues,
+                SectionStackLeniency = source.SectionStackLeniency,
+                AllowUnsafeTickRateOverrideValues = source.AllowUnsafeTickRateOverrideValues,
+                SectionTickRate = source.SectionTickRate,
+
+                ForceHidden = source.ForceHidden,
+                ForceNoApproachCircle = source.ForceNoApproachCircle,
+                ForceHardRock = source.ForceHardRock,
+                ForceFlashlight = source.ForceFlashlight,
+                ForceTraceable = source.ForceTraceable,
+                FlashlightRadius = source.FlashlightRadius,
+            };
+    }
+}
