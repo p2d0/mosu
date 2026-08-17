@@ -14,14 +14,15 @@ using osu.Game.Beatmaps;
 using osu.Game.Input.Handlers;
 using osu.Game.Replays;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.MOsu.Beatmaps;
-using osu.Game.Rulesets.MOsu.Gimmicks;
-using osu.Game.Rulesets.MOsu.Objects;
-using osu.Game.Rulesets.MOsu.Objects.Drawables;
+using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
+using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
+using osu.Game.Rulesets.MOsu.Delta.Objects;
+using osu.Game.Rulesets.MOsu.Delta.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.MOsu.Mods;
+using osu.Game.Rulesets.MOsu.Delta.UI;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play;
@@ -60,7 +61,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
             try
             {
-                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
+                DeltaGimmickRuntime.EnsureApplied(playableBeatmap!, parent.Get<IBindable<WorkingBeatmap>>()?.Value);
             }
             catch (Exception e)
             {
@@ -355,14 +356,14 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             ensureGimmicksApplied();
 
-            if (playableBeatmap is MosuBeatmap mosuBeatmap)
+            if (playableBeatmap is DeltaBeatmap mosuBeatmap)
             {
-                var settings = MosuGimmickApplier.GetObjectSettings(playableBeatmap, mosuBeatmap.Gimmicks, h);
+                var settings = DeltaGimmickApplier.GetObjectSettings(playableBeatmap, mosuBeatmap.Gimmicks, h);
                 if (settings?.EnableDifficultyOverrides == true && !float.IsNaN(settings.SectionCircleSize))
                     Logger.Log($"[MOsu-Gameplay] drawable-creation: object@{h.StartTime} CS={settings.SectionCircleSize} Scale={h.Scale}");
             }
 
-            return MosuGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
+            return DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
         }
 
         private bool gimmicksApplied;
@@ -391,7 +392,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 }
 
                 Logger.Log($"[MOsu] gameplay ensure: working={working?.GetType().Name} path={working?.BeatmapInfo.Path}");
-                MosuGimmickRuntime.EnsureApplied(playableBeatmap!, working);
+                DeltaGimmickRuntime.EnsureApplied(playableBeatmap!, working);
             }
             catch (Exception e)
             {

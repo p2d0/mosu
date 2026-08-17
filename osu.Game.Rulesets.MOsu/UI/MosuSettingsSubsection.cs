@@ -30,6 +30,7 @@ using osu.Game.Screens; // Required for IPerformFromScreenRunner
 using System.Threading.Tasks;
 using osu.Game.Online.API;
 using osu.Game.Rulesets.MOsu.Database;
+using osu.Game.Rulesets.MOsu.Delta.UI;
 using osu.Game.Collections;
 using osu.Game.Scoring;
 using osu.Game.Beatmaps;

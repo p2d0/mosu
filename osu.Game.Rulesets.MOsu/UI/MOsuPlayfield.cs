@@ -15,6 +15,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Objects.Drawables.Connections;
+using osu.Game.Rulesets.MOsu.Delta.UI;
 using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
@@ -62,7 +63,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 approachCircles = new ProxyContainer { RelativeSizeAxes = Axes.Both },
             };
 
-            HitPolicy = new MosuStartTimeOrderedHitPolicy();
+            HitPolicy = new DeltaStartTimeOrderedHitPolicy();
 
             AddInternal(judgementPooler = new JudgementPooler<DrawableOsuJudgement>(new[]
             {
@@ -158,7 +159,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             borderContainer.Padding = new MarginPadding(OsuHitObject.OBJECT_RADIUS * -LegacyRulesetExtensions.CalculateScaleFromCircleSize(beatmap.Difficulty.CircleSize, true));
         }
 
-        protected override HitObjectLifetimeEntry CreateLifetimeEntry(HitObject hitObject) => new MosuHitObjectLifetimeEntry(hitObject);
+        protected override HitObjectLifetimeEntry CreateLifetimeEntry(HitObject hitObject) => new DeltaHitObjectLifetimeEntry(hitObject);
 
         protected override void OnHitObjectAdded(HitObject hitObject)
         {
@@ -202,9 +203,9 @@ namespace osu.Game.Rulesets.MOsu.UI
             public void Add(Drawable proxy) => AddInternal(proxy);
         }
 
-        private class MosuHitObjectLifetimeEntry : HitObjectLifetimeEntry
+        private class DeltaHitObjectLifetimeEntry : HitObjectLifetimeEntry
         {
-            public MosuHitObjectLifetimeEntry(HitObject hitObject) : base(hitObject)
+            public DeltaHitObjectLifetimeEntry(HitObject hitObject) : base(hitObject)
             {
                 LifetimeEnd = HitObject.GetEndTime() + HitObject.HitWindows.WindowFor(HitResult.Miss);
             }

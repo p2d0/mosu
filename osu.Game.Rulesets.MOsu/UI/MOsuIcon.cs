@@ -15,6 +15,7 @@ using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Chat;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
+using osu.Game.Rulesets.MOsu.Delta.UI;
 using osuTK;
 using osuTK.Graphics;
 using System.Linq;

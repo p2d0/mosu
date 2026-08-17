@@ -22,11 +22,11 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.MOsu.Configuration;
-using osu.Game.Rulesets.MOsu.Beatmaps;
-using osu.Game.Rulesets.MOsu.Edit;
+using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
+using osu.Game.Rulesets.MOsu.Delta.Edit;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Screens;
-using osu.Game.Rulesets.MOsu.Scoring;
+using osu.Game.Rulesets.MOsu.Delta.Scoring;
 using osu.Game.Rulesets.MOsu.Skinning.Argon;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Replays.Types;
@@ -45,11 +45,11 @@ namespace osu.Game.Rulesets.MOsu
     {
         public override DrawableRuleset CreateDrawableRulesetWith(IBeatmap beatmap, IReadOnlyList<Mod>? mods = null) => new DrawableMosuRuleset(this, beatmap, mods);
 
-        public override ScoreProcessor CreateScoreProcessor() => new MosuScoreProcessor();
+        public override ScoreProcessor CreateScoreProcessor() => new DeltaScoreProcessor();
 
-        public override HealthProcessor CreateHealthProcessor(double drainStartTime) => new MosuSectionGimmickHealthProcessor(drainStartTime);
+        public override HealthProcessor CreateHealthProcessor(double drainStartTime) => new DeltaSectionGimmickHealthProcessor(drainStartTime);
 
-        public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new MosuBeatmapConverter(beatmap, this);
+        public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) => new DeltaBeatmapConverter(beatmap, this);
 
         public override IBeatmapProcessor CreateBeatmapProcessor(IBeatmap beatmap) => new OsuBeatmapProcessor(beatmap);
 
@@ -233,7 +233,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public override PerformanceCalculator CreatePerformanceCalculator() => new OsuPerformanceCalculator();
 
-        public override HitObjectComposer CreateHitObjectComposer() => new MosuHitObjectComposer(this);
+        public override HitObjectComposer CreateHitObjectComposer() => new DeltaHitObjectComposer(this);
 
         public override IBeatmapVerifier CreateBeatmapVerifier() => new OsuBeatmapVerifier();
 
