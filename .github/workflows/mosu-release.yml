@@ -46,7 +46,7 @@ jobs:
 
           if [[ "$tag_name" == *tachyon* ]]; then
             {
-              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version) — ONLY INSTALL THIS IF YOU'RE ON the $osu_version"
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version) — ONLY INSTALL THIS IF YOU'RE ON the $osu_version or newer if you're on a lazer stable version install latest without -tachyon."
             } > /tmp/changelog.md
           else
             {
@@ -76,7 +76,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "MOsu ${{ github.ref_name || github.event.inputs.tag }}"
+          name: "${{ github.ref_name || github.event.inputs.tag }}"
           tag_name: ${{ github.ref_name || github.event.inputs.tag }}
           body_path: /tmp/changelog.md
           files: osu.Game.Rulesets.MOsu/bin/Release/net8.0/osu.Game.Rulesets.MOsu.dll
