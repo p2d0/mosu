@@ -324,20 +324,30 @@ namespace osu.Game.Rulesets.MOsu
                     Padding = new MarginPadding(25)
                 },
             };
-            children.Add(new SuggestedSongsPanel(score));
 
             if (timedHitEvents.Count > 0)
             {
-                // ponytail: previously gated on requiresHitEvents; now gated inline on event count.
-                children.Add(new HitEventTimingDistributionGraph(timedHitEvents)
+                children.Add(new FillFlowContainer
                 {
                     RelativeSizeAxes = Axes.X,
-                    Height = 250,
-                });
-                children.Add(new AccuracyHeatmap(score, playableBeatmap)
-                {
-                    RelativeSizeAxes = Axes.X,
-                    Height = 250,
+                    AutoSizeAxes = Axes.Y,
+                    Spacing = new Vector2(15),
+                    Direction = FillDirection.Horizontal,
+                    Children = new Drawable[]
+                    {
+                        new HitEventTimingDistributionGraph(timedHitEvents)
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Width = 0.5f,
+                            Height = 150
+                        },
+                        new AccuracyHeatmap(score, playableBeatmap)
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Width = 0.5f,
+                            Height = 150
+                        }
+                    }
                 });
                 children.Add(new SimpleStatisticTable(2, new SimpleStatisticItem[]
                 {
@@ -345,15 +355,15 @@ namespace osu.Game.Rulesets.MOsu
                     new UnstableRate(timedHitEvents),
                 }));
             }
-
+            children.Add(new SuggestedSongsPanel(score));
 
             return new[]
             {
-                new StatisticItem("Performance", () => new OsuScrollContainer(Direction.Vertical)
+                new StatisticItem("Performance", () => new OsuScrollContainer
                 {
                     RelativeSizeAxes = Axes.X,
                     Height = 500,
-                    ScrollbarOverlapsContent = true,
+                    ScrollbarOverlapsContent = false,
                     Child = new FillFlowContainer
                     {
                         RelativeSizeAxes = Axes.X,
