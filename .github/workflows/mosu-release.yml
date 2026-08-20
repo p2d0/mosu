@@ -46,7 +46,8 @@ jobs:
 
           if [[ "$tag_name" == *tachyon* ]]; then
             {
-              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version) — ONLY INSTALL THIS IF YOU'RE ON the $osu_version or newer if you're on a lazer stable version install latest without -tachyon."
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version)"
+              echo "**ONLY INSTALL THIS IF YOU'RE ON the $osu_version or newer** if you're on a lazer stable version install latest without -tachyon."
             } > /tmp/changelog.md
           else
             {
