@@ -41,7 +41,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
 
             // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
-            DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parent, mutateList: true);
+            DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parent, mutateList: true, mods: Mods);
 
             // Hook File -> Create New Difficulty -> MOsu! once attached (Parent is null during
             // CreateChildDependencies, so defer to the first Update).
@@ -84,10 +84,10 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             if (!gimmicksApplied)
             {
                 gimmicksApplied = true;
-                DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parentDependencies, mutateList: true);
+                DeltaGimmickRuntime.TryEnsureApplied(Beatmap, parentDependencies, mutateList: true, mods: Mods);
             }
 
-            var drawable = DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(Beatmap, h);
+            var drawable = DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(Beatmap, h, Mods);
 
             return drawable;
         }

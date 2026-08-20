@@ -61,7 +61,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             // Apply gimmicks (including the in-place fake-object replacement) before loadObjects
             // enumerates the playable's HitObjects: mutating the list mid-enumeration throws.
-            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parent);
+            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parent, mods: Mods);
             notifyScoreProcessorGimmicksApplied();
 
             var osuConfig = (OsuRulesetConfigManager?)parent.Get<IRulesetConfigCache>().GetConfigFor(new osu.Game.Rulesets.Osu.OsuRuleset());
@@ -351,7 +351,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             ensureGimmicksApplied();
 
-            return DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h);
+            return DeltaGimmickRuntime.CreateGimmickDrawableRepresentation(playableBeatmap!, h, Mods);
         }
 
         private bool gimmicksApplied;
@@ -362,7 +362,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 return;
 
             gimmicksApplied = true;
-            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parentDependencies);
+            DeltaGimmickRuntime.TryEnsureApplied(playableBeatmap!, parentDependencies, mods: Mods);
             notifyScoreProcessorGimmicksApplied();
         }
 

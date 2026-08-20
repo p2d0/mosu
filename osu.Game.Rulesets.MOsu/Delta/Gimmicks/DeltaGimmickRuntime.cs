@@ -15,6 +15,8 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
 using osu.Game.Rulesets.MOsu.Delta.Objects.Drawables;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
@@ -26,7 +28,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// dependency container and calls <see cref="EnsureApplied"/>, swallowing + logging
         /// failures (osu! API drift disables gimmicks gracefully instead of breaking gameplay).
         /// </summary>
-        public static void TryEnsureApplied(IBeatmap playableBeatmap, IReadOnlyDependencyContainer? dependencies, bool mutateList = true)
+        public static void TryEnsureApplied(IBeatmap playableBeatmap, IReadOnlyDependencyContainer? dependencies, bool mutateList = true, IReadOnlyList<Mod>? mods = null)
         {
             try
             {
@@ -40,7 +42,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                 {
                 }
 
-                EnsureApplied(playableBeatmap, working, mutateList);
+                EnsureApplied(playableBeatmap, working, mutateList, mods);
             }
             catch (Exception e)
             {
@@ -53,7 +55,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// Parses the delta gimmick sections (skipped by the stock decoder) and applies them to the
         /// playable beatmap, if not already done. The .osu file is parsed once per map (cached).
         /// </summary>
-        public static void EnsureApplied(IBeatmap playableBeatmap, WorkingBeatmap? workingBeatmap, bool mutateList = true)
+        public static void EnsureApplied(IBeatmap playableBeatmap, WorkingBeatmap? workingBeatmap, bool mutateList = true, IReadOnlyList<Mod>? mods = null)
         {
             if (playableBeatmap is not Beatmaps.DeltaBeatmap mosuBeatmap)
             {
@@ -124,7 +126,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
             }
 
             Logger.Log($"[MOsu] Applying {data.Sections.Sections.Count} section gimmicks and {data.HitObjectGimmicks.Entries.Count} hitobject gimmicks");
-            DeltaGimmickApplier.Apply(mosuBeatmap, data, mutateList);
+            DeltaGimmickApplier.Apply(mosuBeatmap, data, mutateList, mods);
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// forced hidden / no-approach-circle / traceable), or null for a stock drawable.
         /// Must be called after <see cref="EnsureApplied"/>.
         /// </summary>
-        public static DrawableHitObject<OsuHitObject>? CreateGimmickDrawableRepresentation(IBeatmap playableBeatmap, OsuHitObject h)
+        public static DrawableHitObject<OsuHitObject>? CreateGimmickDrawableRepresentation(IBeatmap playableBeatmap, OsuHitObject h, IReadOnlyList<Mod>? mods = null)
         {
             if (playableBeatmap is not Beatmaps.DeltaBeatmap mosuBeatmap)
                 return null;
@@ -220,6 +222,11 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                 && DeltaGimmickApplier.CreateFakeObject(playableBeatmap, data, h) is OsuHitObject fakeObject)
             {
                 fakeObject.ApplyDefaults(playableBeatmap.ControlPointInfo, DeltaGimmickApplier.ResolveDifficultyForObject(playableBeatmap, data, h));
+
+                // The hidden mod's fade-in ratio is re-applied post-ApplyDefaults (it resets TimeFadeIn).
+                if (mods?.OfType<OsuModHidden>().Any() == true)
+                    DeltaGimmickApplier.ApplyHiddenFadeInAdjustment(fakeObject);
+
                 DeltaGimmickApplier.ApplyForcedModsToObject(playableBeatmap, data, fakeObject);
 
                 return fakeObject switch

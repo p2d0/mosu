@@ -5,6 +5,7 @@
 // transforms.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -13,6 +14,7 @@ using osu.Framework.Logging;
 using osu.Framework.Timing;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.MOsu.Delta.Beatmaps;using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.MOsu.Delta.Scoring;
@@ -37,6 +39,76 @@ namespace osu.Game.Rulesets.MOsu.Tests.Delta.Gimmicks
 
         [Test]
         public void TestTransformSectionAppliesToCircles() => testSectionModAppliesInGameplay(ForceMod.Transform, true);
+
+        [Test]
+        public void TestHiddenFadeInPreservedAcrossAROverride()
+        {
+            AddAssert("hidden mod preserves fade-in ratio across AR override", () =>
+            {
+                var (circleWithHidden, _) = buildArOverrideMap(applyHidden: true);
+                var (circleWithoutHidden, _) = buildArOverrideMap(applyHidden: false);
+
+                // the AR override must have landed (AR 10 -> preempt ~450, well below the base 1200)
+                bool arApplied = circleWithHidden.TimePreempt < 1000
+                                 && Math.Abs(circleWithHidden.TimePreempt - circleWithoutHidden.TimePreempt) < 1;
+
+                // hidden: fade-in stays at 40% of the overridden preempt
+                bool hiddenPreserved = Math.Abs(circleWithHidden.TimeFadeIn - circleWithHidden.TimePreempt * 0.4) < 1;
+
+                // no hidden mod: the default fade-in (400 * min(1, preempt/450)) is untouched
+                bool defaultIntact = Math.Abs(circleWithoutHidden.TimeFadeIn - 400 * Math.Min(1, circleWithoutHidden.TimePreempt / 450.0)) < 1;
+
+                Logger.Log($"[TEST] hidden: preempt={circleWithHidden.TimePreempt:0} fadeIn={circleWithHidden.TimeFadeIn:0} ratio={circleWithHidden.TimeFadeIn / circleWithHidden.TimePreempt:0.###} "
+                           + $"| no-hidden: preempt={circleWithoutHidden.TimePreempt:0} fadeIn={circleWithoutHidden.TimeFadeIn:0}");
+
+                return arApplied && hiddenPreserved && defaultIntact;
+            });
+        }
+
+        private static (HitCircle circle, double preempt) buildArOverrideMap(bool applyHidden)
+        {
+            var settings = new SectionGimmickSettings
+            {
+                EnableDifficultyOverrides = true,
+                DifficultyOverrideStartWithBeatmapValues = true,
+                SectionApproachRate = 10f,
+            };
+
+            var beatmap = new DeltaBeatmap
+            {
+                BeatmapInfo = new BeatmapInfo { Ruleset = new MosuRuleset().RulesetInfo },
+                Gimmicks = new DeltaGimmickData
+                {
+                    Parsed = true,
+                    Sections = new BeatmapSectionGimmicks
+                    {
+                        Sections =
+                        {
+                            new SectionGimmickSection
+                            {
+                                Id = 0,
+                                StartTime = 0,
+                                EndTime = -1,
+                                Settings = settings,
+                            },
+                        },
+                    },
+                },
+            };
+
+            var circle = new HitCircle
+            {
+                StartTime = 1000,
+                Position = new Vector2(256, 192),
+            };
+            circle.ApplyDefaults(new ControlPointInfo(), new BeatmapDifficulty());
+            beatmap.HitObjects.Add(circle);
+
+            IReadOnlyList<Mod>? mods = applyHidden ? new Mod[] { new OsuModHidden() } : null;
+            DeltaGimmickApplier.Apply(beatmap, beatmap.Gimmicks, mutateList: false, mods: mods);
+
+            return (circle, circle.TimePreempt);
+        }
 
         private enum ForceMod
         {

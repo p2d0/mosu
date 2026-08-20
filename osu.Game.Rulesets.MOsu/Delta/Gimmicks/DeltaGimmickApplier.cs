@@ -18,6 +18,8 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 
@@ -79,7 +81,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// Only mutates object properties in place - never the hitobject list (the drawable
         /// ruleset enumerates it while creating drawables).
         /// </summary>
-        public static void Apply(IBeatmap beatmap, DeltaGimmickData data, bool mutateList = true)
+        public static void Apply(IBeatmap beatmap, DeltaGimmickData data, bool mutateList = true, IReadOnlyList<Mod>? mods = null)
         {
             if (data.Applied)
             {
@@ -92,7 +94,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
 
             synchroniseEntriesWithHitObjects(beatmap, data);
             bindObjectSettings(beatmap, data);
-            applySectionDifficultyOverrides(beatmap, data);
+            applySectionDifficultyOverrides(beatmap, data, mods);
             applySectionForcedMods(beatmap, data);
 
             // Delta-style: replace fake-note sources in the playable's HitObjects list in place.
@@ -101,7 +103,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
             // Skipped in the editor, where the playable must keep the original object instances
             // (EditorBeatmap keys its internal dictionaries by them).
             if (mutateList)
-                replaceFakeObjects(beatmap, data);
+                replaceFakeObjects(beatmap, data, mods);
 
             foreach (var o in beatmap.HitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>().Where(o => o is HitCircle || o is Slider))
             {
@@ -116,7 +118,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
         /// <see cref="FakeHitCircle"/> / <see cref="FakeSlider"/> instances, in place (same
         /// index, same count) so any in-flight enumeration stays valid.
         /// </summary>
-        private static void replaceFakeObjects(IBeatmap beatmap, DeltaGimmickData data)
+        private static void replaceFakeObjects(IBeatmap beatmap, DeltaGimmickData data, IReadOnlyList<Mod>? mods)
         {
             if (beatmap is not Beatmaps.DeltaBeatmap mosuBeatmap)
                 return;
@@ -138,6 +140,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                         continue;
 
                     normal.ApplyDefaults(beatmap.ControlPointInfo, ResolveDifficultyForObject(beatmap, data, osuObject));
+                    applyHiddenFadeInAdjustmentIfNeeded(normal, mods);
                     list[i] = normal;
                     Logger.Log($"[MOsu] restored object@{osuObject.StartTime} to {normal.GetType().Name}");
                     continue;
@@ -151,6 +154,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
                     continue;
 
                 fake.ApplyDefaults(beatmap.ControlPointInfo, ResolveDifficultyForObject(beatmap, data, osuObject));
+                applyHiddenFadeInAdjustmentIfNeeded(fake, mods);
                 ApplyForcedModsToObject(beatmap, data, fake);
 
                 list[i] = fake;
@@ -484,7 +488,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
             return flipped;
         }
 
-        private static void applySectionDifficultyOverrides(IBeatmap beatmap, DeltaGimmickData data)
+        private static void applySectionDifficultyOverrides(IBeatmap beatmap, DeltaGimmickData data, IReadOnlyList<Mod>? mods)
         {
             var orderedSections = data.Sections.Sections.OrderBy(s => s.StartTime).ToList();
             var baseDifficulty = beatmap.Difficulty;
@@ -497,7 +501,40 @@ namespace osu.Game.Rulesets.MOsu.Delta.Gimmicks
             {
                 var difficulty = ResolveDifficultyForObject(beatmap, data, hitObject, sectionGradualBaselines);
                 hitObject.ApplyDefaults(beatmap.ControlPointInfo, difficulty);
+                applyHiddenFadeInAdjustmentIfNeeded(hitObject, mods);
             }
+        }
+
+        /// <summary>
+        /// Re-applies the Hidden mod's fade-in adjustment after a runtime <see cref="HitObject.ApplyDefaults"/>
+        /// pass, which resets <see cref="OsuHitObject.TimeFadeIn"/> and would otherwise leave notes
+        /// fully visible until the hit (no early fade-out). Mirrors <see cref="OsuModHidden.ApplyToBeatmap"/>:
+        /// non-slider OsuHitObjects (and their nested objects) fade in at a fraction of the (possibly
+        /// section-AR-overridden) preempt. Only the real mod (or section ForceHidden, applied later in
+        /// the pass) should influence this, so the adjustment is keyed to the selected mods.
+        /// </summary>
+        private static void applyHiddenFadeInAdjustmentIfNeeded(osu.Game.Rulesets.Osu.Objects.OsuHitObject osuObject, IReadOnlyList<Mod>? mods)
+        {
+            if (mods?.OfType<OsuModHidden>().Any() != true)
+                return;
+
+            ApplyHiddenFadeInAdjustment(osuObject);
+        }
+
+        /// <summary>
+        /// Mirrors <see cref="OsuModHidden.ApplyToBeatmap"/>: re-applies the hidden fade-in ratio
+        /// (non-slider OsuHitObjects and their nested objects fade in at a fraction of the preempt)
+        /// after a runtime <see cref="HitObject.ApplyDefaults"/> pass, which resets
+        /// <see cref="OsuHitObject.TimeFadeIn"/> and would otherwise leave notes fully visible
+        /// until the hit (no early fade-out).
+        /// </summary>
+        public static void ApplyHiddenFadeInAdjustment(osu.Game.Rulesets.Osu.Objects.OsuHitObject osuObject)
+        {
+            if (osuObject is not Slider)
+                osuObject.TimeFadeIn = osuObject.TimePreempt * OsuModHidden.FADE_IN_DURATION_MULTIPLIER;
+
+            foreach (var nested in osuObject.NestedHitObjects.OfType<osu.Game.Rulesets.Osu.Objects.OsuHitObject>())
+                ApplyHiddenFadeInAdjustment(nested);
         }
 
         /// <summary>
