@@ -42,8 +42,6 @@ namespace osu.Game.Rulesets.MOsu.UI
     {
         private Ruleset ruleset;
 
-        protected override LocalisableString Header => "mosu!";
-
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
