@@ -53,7 +53,7 @@ namespace osu.Game.Rulesets.MOsu
 
         public const string SHORT_NAME = "mosu";
 
-        public override string RulesetAPIVersionSupported => "2026.818.0";
+        public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
 
         public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0) => new osu.Game.Rulesets.Osu.OsuRuleset().GetDefaultKeyBindings(variant);
 
