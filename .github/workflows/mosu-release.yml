@@ -46,13 +46,11 @@ jobs:
 
           if [[ "$tag_name" == *tachyon* ]]; then
             {
-              echo "Builds against osu! **$osu_version**."
-              echo
-              echo "**ONLY INSTALL THIS IF YOU'RE ON the $osu_version**"
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version) — ONLY INSTALL THIS IF YOU'RE ON the $osu_version"
             } > /tmp/changelog.md
           else
             {
-              echo "Build for: $osu_version"
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version)"
               echo
               echo "[How to install](https://rulesets.info/install/rulesets)"
               echo
