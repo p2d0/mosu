@@ -37,10 +37,11 @@ using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.UI;
-using osu.Game.Screens.Edit;using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
+using osu.Game.Screens.Edit.Timing;
 using osu.Framework.Screens;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Edit
@@ -67,57 +68,39 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
         private osu.Framework.Graphics.Containers.Container<Drawable>? timelineContentContainer;
 
         private bool sliderVelocityControlUncapped;
-        private readonly HashSet<Drawable> uncappedSliderVelocityControls = new HashSet<Drawable>();
-        private osu.Framework.Graphics.Drawable? sliderVelocityScanRoot;
-        private int sliderVelocityScanFrame;
+        private readonly HashSet<SliderVelocityAdjustmentControl> uncappedSliderVelocityControls = new HashSet<SliderVelocityAdjustmentControl>();
 
         /// <summary>
-        /// The stock slider velocity control (right-toolbox <c>SliderVelocityControl</c> and the
-        /// timeline difficulty-point popover's <c>SliderVelocityAdjustmentControl</c>) caps its
-        /// bindable at 10x. Delta removes the cap in core; widen every instance in place so SV > 10
-        /// can be authored. The popover instance is created on demand and renders at the game
-        /// root, so scan periodically from the top ancestor.
+        /// The right-toolbox slider velocity control caps its bindable at 10x while Delta removes
+        /// the cap in core; widen it once at load so SV > 10 can be authored. The base composer's
+        /// load runs first and adds the toolbox group to <see cref="RightToolbox"/>, so the control
+        /// is already in the tree here. The transient difficulty-point popover instance is left
+        /// stock (capped at 10x), matching the delta fork.
         /// </summary>
-        private void uncapSliderVelocityControl()
+        private void uncapSliderVelocityControls()
         {
-            sliderVelocityScanRoot ??= findRoot(this);
+            foreach (var control in RightToolbox.FindDescendants<SliderVelocityAdjustmentControl>())
+                widenSliderVelocityControl(control);
+        }
 
-            // Scan at ~1Hz; toolbox/popover instances appear after load / on demand.
-            if (++sliderVelocityScanFrame % 60 != 0)
+        private void widenSliderVelocityControl(SliderVelocityAdjustmentControl control)
+        {
+            if (!uncappedSliderVelocityControls.Add(control))
                 return;
 
-            foreach (var control in sliderVelocityScanRoot.FindDescendants<Drawable>())
+            if (control.Current is BindableNumber<double> number)
             {
-                string name = control.GetType().Name;
-
-                if (name != "SliderVelocityControl" && name != "SliderVelocityAdjustmentControl")
-                    continue;
-
-                if (!uncappedSliderVelocityControls.Add(control))
-                    continue;
-
-                if (control.GetType().GetProperty("Current")?.GetValue(control) is BindableNumber<double> bindable)
-                {
-                    bindable.MinValue = 0;
-                    bindable.MaxValue = 1000;
-                }
-
-                sliderVelocityControlUncapped = true;
+                number.MinValue = 0;
+                number.MaxValue = 1000;
             }
+
+            sliderVelocityControlUncapped = true;
         }
 
         /// <summary>
         /// Whether any slider velocity control has been uncapped (used by the tests).
         /// </summary>
         internal bool SliderVelocityControlUncapped => sliderVelocityControlUncapped;
-
-        private static osu.Framework.Graphics.Drawable? findRoot(osu.Framework.Graphics.Drawable drawable)
-        {
-            while (drawable.Parent != null)
-                drawable = drawable.Parent;
-
-            return drawable;
-        }
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -229,6 +212,47 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             // baseline: the state as loaded (after the initial gimmick application), so only
             // real user edits count as unsaved changes.
             savedStateHash = computeStateHash();
+
+            // Everything below is event-driven; nothing polls from Update.
+            uncapSliderVelocityControls();
+            scheduleTimelineGimmickInjection();
+        }
+
+        /// <summary>
+        /// Injects the gimmick displays into the compose timeline once it exists. The core loads
+        /// the timeline asynchronously (LoadComponentAsync in EditorScreenWithTimeline), so hook
+        /// its LoadComplete rather than polling every frame.
+        /// </summary>
+        private void scheduleTimelineGimmickInjection()
+        {
+            // [Resolved] comes back null in test harnesses; find the screen through the parent chain
+            // instead (same pattern as the editor file-menu hook).
+            EditorScreenWithTimeline? screen = null;
+
+            for (Drawable? d = this; d != null; d = d.Parent)
+            {
+                if (d is EditorScreenWithTimeline timelineScreen)
+                {
+                    screen = timelineScreen;
+                    break;
+                }
+            }
+
+            if (screen == null)
+            {
+                // composer not attached to the screen yet; retry once attached.
+                Schedule(scheduleTimelineGimmickInjection);
+                return;
+            }
+
+            if (screen.TimelineArea.Timeline != null)
+            {
+                injectTimelineGimmickDisplays();
+                return;
+            }
+
+            // Fires once, after the timeline subtree (incl. TimelineBreakDisplay) finished loading.
+            screen.TimelineArea.OnLoadComplete += _ => Schedule(injectTimelineGimmickDisplays);
         }
 
         protected override ComposeBlueprintContainer CreateBlueprintContainer()
@@ -236,13 +260,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
 
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             => editorDrawableRuleset = new DeltaEditorDrawableRuleset(ruleset, beatmap, mods);
-
-        protected override void Update()
-        {
-            base.Update();
-            injectTimelineGimmickDisplays();
-            uncapSliderVelocityControl();
-        }
 
         /// <summary>
         /// The stock Slider Velocity Adjustment toolbox control caps its bindable at 10x (core
@@ -259,7 +276,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             if (timelineGimmickDisplaysInjected)
                 return;
 
-            var timeline = screenWithTimeline?.TimelineArea.Timeline;
+            var timeline = screenWithTimeline?.TimelineArea.Timeline ?? findTimelineArea()?.TimelineArea.Timeline;
 
             if (timeline == null)
                 return;
@@ -298,6 +315,9 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
                 Origin = Anchor.CentreLeft,
             };
 
+            // Rebuild the no-approach lines when entries change (rides the model's Changed; no per-frame work).
+            hitObjectModel.Changed += gimmickDisplay.Refresh;
+
             // Visible proxies render below the blueprints; the originals stop rendering once
             // proxied, so they serve purely as the input layer on top.
             var sectionProxy = sectionDisplay.CreateProxy();
@@ -319,6 +339,21 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             });
 
             timelineGimmickDisplaysInjected = true;
+        }
+
+        /// <summary>
+        /// Locates the composer's timeline area via the parent chain (the [Resolved] field can be
+        /// null in test harnesses).
+        /// </summary>
+        private EditorScreenWithTimeline? findTimelineArea()
+        {
+            for (Drawable? d = this; d != null; d = d.Parent)
+            {
+                if (d is EditorScreenWithTimeline timelineScreen)
+                    return timelineScreen;
+            }
+
+            return null;
         }
 
         internal void save()

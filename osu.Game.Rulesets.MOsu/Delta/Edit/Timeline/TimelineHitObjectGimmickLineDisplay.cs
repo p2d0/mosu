@@ -21,8 +21,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
     {
         private readonly BeatmapHitObjectGimmicks gimmicks;
 
-        private string? lastSignature;
-
         [Resolved]
         private OsuColour colours { get; set; } = null!;
 
@@ -31,19 +29,16 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
             this.gimmicks = gimmicks;
         }
 
-        protected override void Update()
+        protected override void LoadComplete()
         {
-            base.Update();
-
-            string signature = buildSignature();
-
-            if (signature != lastSignature)
-                recreate();
-
-            lastSignature = signature;
+            base.LoadComplete();
+            Refresh();
         }
 
-        private void recreate()
+        /// <summary>
+        /// Rebuilds the no-approach lines from the current entries (fired when the entries change).
+        /// </summary>
+        public void Refresh()
         {
             Clear();
 
@@ -57,19 +52,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
 
             foreach (var entry in entries)
                 addLine(entry.StartTime, colours.Blue2, 2f, 0.95f);
-        }
-
-        private string buildSignature()
-        {
-            var entries = gimmicks.Entries.Where(e => e.Settings?.ForceNoApproachCircle == true)
-                                        .OrderBy(e => e.StartTime)
-                                        .ThenBy(e => e.ComboIndexWithOffsets)
-                                        .ToList();
-
-            if (entries.Count == 0)
-                return string.Empty;
-
-            return string.Join("|", entries.Select(e => $"{e.ObjectId?.ToString() ?? "legacy"}:{e.StartTime:F3}:{e.ComboIndexWithOffsets}"));
         }
 
         private void addLine(double time, Color4 colour, float width, float alpha)
