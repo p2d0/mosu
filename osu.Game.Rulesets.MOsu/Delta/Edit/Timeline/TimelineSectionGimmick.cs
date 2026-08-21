@@ -97,8 +97,8 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
             if (background == null)
                 return;
 
-            background.FadeColour(isSelected ? baseColour.Lighten(0.5f) : baseColour, 200, Easing.OutQuint);
-            background.FadeTo(isSelected ? 0.9f : 0.45f, 200, Easing.OutQuint);
+            background.FadeColour(isSelected ? baseColour.Lighten(0.2f) : baseColour, 200, Easing.OutQuint);
+            background.FadeTo(isSelected ? 0.6f : 0.45f, 200, Easing.OutQuint);
         }
     }
 }
