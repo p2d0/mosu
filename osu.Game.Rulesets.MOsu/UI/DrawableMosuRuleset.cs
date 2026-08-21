@@ -27,6 +27,7 @@ using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.MOsu.Delta.UI;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
+using osu.Game.Scoring.Legacy;
 using osu.Game.Screens.Play;
 using osuTK;
 using osu.Framework.Threading;
@@ -156,6 +157,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                 private ScoreManager scoreManager = null!;
                 private LocalUserManager? localUserManager;
+                private IDisposable? replayFileSubscription;
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager? localUserManager, ScoreManager? scoreManager)
@@ -188,9 +190,9 @@ namespace osu.Game.Rulesets.MOsu.UI
                 });
             }
 
-            // Attach dummy replay file to mosu scores that have no files,
-            // so the delete button appears in the leaderboard context menu.
-            // Custom rulesets don't get replay files from Player.PrepareScoreForResultsAsync (legacy-only).
+            // Attach the recorded replay file to every mosu score that gets saved — pass, the save-on-fail
+            // button, or any other import path. Custom rulesets never get replay files from Player.ImportScore
+            // (legacy-only), so watching or exporting a replay later would otherwise be impossible.
             if (scoreManager != null && player != null)
             {
                 // Count the play exactly like the main game counts one (pass / fail / quit, gated on hits).
@@ -212,22 +214,52 @@ namespace osu.Game.Rulesets.MOsu.UI
                     localUserManager?.IncrementPlayCount(profileName);
                 }
 
+                void attachReplayFile(Guid scoreId)
+                {
+                    if (player.Score.Replay.Frames.Count == 0)
+                        return;
+
+                    using var stream = new MemoryStream();
+
+                    // LegacyScoreEncoder refuses non-legacy rulesets. The ruleset byte it writes is only used
+                    // when the replay is parsed back (databased scores use the stored ScoreInfo, not the file's),
+                    // so encode under the osu! ruleset identity to get standard OsuReplayFrame playback.
+                    var encodeScore = player.Score.DeepClone();
+                    encodeScore.ScoreInfo.Ruleset = new osu.Game.Rulesets.Osu.OsuRuleset().RulesetInfo;
+                    new LegacyScoreEncoder(encodeScore, playableBeatmap).Encode(stream, leaveOpen: true);
+
+                    stream.Position = 0;
+                    realm.Write(r =>
+                    {
+                        var managed = r.Find<ScoreInfo>(scoreId);
+                        if (managed != null && managed.Files.Count == 0)
+                            scoreManager.AddFile(managed, stream, "replay.osr", r);
+                    });
+                }
+
+                // Fire whenever the score row lands in the database — pass (auto-import before results) and
+                // the save-on-fail button (forced import) both pass through here; Sticks uses the same trigger.
+                //
+                // Also mirror SticksReplayStore.EnsureLocalIdentity: imports of scores with no files keep the
+                // pre-set hash, and ScoreDownloadTracker (drives the results screen replay button) only matches
+                // rows with a non-empty ScoreInfo.Hash, keyed on the score's stable ID here.
+                if (string.IsNullOrEmpty(player.Score.ScoreInfo.Hash))
+                    player.Score.ScoreInfo.Hash = $"mosu-replay-{player.Score.ScoreInfo.ID:N}";
+
+                replayFileSubscription = realm.RegisterForNotifications(
+                    r => r.All<ScoreInfo>().Where(s => s.ID == player.Score.ScoreInfo.ID && !s.DeletePending),
+                    (scores, _) =>
+                    {
+                        if (!scores.Any() || IsDisposed)
+                            return;
+
+                        Schedule(() => attachReplayFile(player.Score.ScoreInfo.ID));
+                    });
+
                 // Pass: the score has been recorded and results are being shown.
                 player.OnShowingResults += () =>
                 {
                     countPlay();
-
-                    var scoreInfo = player.Score.ScoreInfo;
-                    if (scoreInfo.Ruleset.ShortName == Ruleset.RulesetInfo.ShortName && scoreInfo.Files.Count == 0)
-                    {
-                        var stream = new MemoryStream(Array.Empty<byte>());
-                        realm.Write(r =>
-                        {
-                            var managed = r.Find<ScoreInfo>(scoreInfo.ID);
-                            if (managed != null)
-                                scoreManager.AddFile(managed, stream, $"replay-{scoreInfo.ID}.osr", r);
-                        });
-                    }
                 };
 
                 // Fail: mirrors upstream's submitFromFailOrQuit on fail.
@@ -391,7 +423,6 @@ namespace osu.Game.Rulesets.MOsu.UI
         protected override PassThroughInputManager CreateInputManager() => new MosuInputManager(Ruleset.RulesetInfo);
 
         public override PlayfieldAdjustmentContainer CreatePlayfieldAdjustmentContainer() => new OsuPlayfieldAdjustmentContainer { AlignWithStoryboard = true };
-
         protected override ResumeOverlay CreateResumeOverlay()
         {
             if (Mods.Any(m => m is OsuModAutopilot or OsuModTouchDevice))
@@ -403,6 +434,12 @@ namespace osu.Game.Rulesets.MOsu.UI
         protected override ReplayInputHandler CreateReplayInputHandler(Replay replay) => new OsuFramedReplayInputHandler(replay);
 
         protected override ReplayRecorder CreateReplayRecorder(Score score) => new OsuReplayRecorder(score);
+
+        protected override void Dispose(bool isDisposing)
+        {
+            replayFileSubscription?.Dispose();
+            base.Dispose(isDisposing);
+        }
 
         public override double GameplayStartTime
         {

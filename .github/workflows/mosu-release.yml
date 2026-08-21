@@ -22,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       - name: Install .NET 8.0.x
         uses: actions/setup-dotnet@v4
@@ -35,36 +36,52 @@ jobs:
         run: |
           tag_name="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
           prev_tag=$(git tag --sort=-creatordate | grep -v "^$tag_name$" | head -1)
+          osu_version=$(git -C osu describe --tags --abbrev=0)
+
+          if [ -n "$prev_tag" ]; then
+            changes=$(git log "$prev_tag..$tag_name" --oneline --no-merges)
+          else
+            changes=$(git log --oneline --no-merges)
+          fi
+
+          if [[ "$tag_name" == *tachyon* ]]; then
+            {
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version)"
+              echo "**ONLY INSTALL THIS IF YOU'RE ON the $osu_version or newer** if you're on a lazer stable version install latest without -tachyon."
+            } > /tmp/changelog.md
+          else
+            {
+              echo "Builds on the osu! version: [$osu_version](https://github.com/ppy/osu/releases/tag/$osu_version)"
+              echo
+              echo "[How to install](https://rulesets.info/install/rulesets)"
+              echo
+              echo "## Install"
+              echo "### 1. Navigate to osu! data directory"
+              echo 'In osu!lazer, open Settings → General → **Open osu! folder**.'
+              echo "On Windows the default rulesets path is ``%AppData%/osu!/rulesets``."
+              echo "On macOS the default location is inside the application itself."
+              echo "### 2. Install the ruleset"
+              echo "Copy the downloaded **.dll** file into the **rulesets** directory."
+              echo "Overwrite any duplicate copies of the ruleset if prompted."
+              echo "### 3. Have fun!"
+              echo "Restart osu!lazer if it is already open. The ruleset appears alongside the standard rulesets."
+            } > /tmp/changelog.md
+          fi
+
           {
-            echo "[How to install](https://rulesets.info/install/rulesets)"
-            echo
-            echo "## Install"
-            echo "### 1. Navigate to osu! data directory"
-            echo 'In osu!lazer, open Settings → General → **Open osu! folder**.'
-            echo "On Windows the default rulesets path is ``%AppData%/osu!/rulesets``."
-            echo "On macOS the default location is inside the application itself."
-            echo "### 2. Install the ruleset"
-            echo "Copy the downloaded **.dll** file into the **rulesets** directory."
-            echo "Overwrite any duplicate copies of the ruleset if prompted."
-            echo "### 3. Have fun!"
-            echo "Restart osu!lazer if it is already open. The ruleset appears alongside the standard rulesets."
             echo
             echo "## Changes"
-            if [ -n "$prev_tag" ]; then
-              git log "$prev_tag..$tag_name" --oneline --no-merges
-            else
-              git log --oneline --no-merges
-            fi
-          } > /tmp/changelog.md
+            echo "$changes"
+          } >> /tmp/changelog.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "MOsu ${{ github.ref_name || github.event.inputs.tag }}"
+          name: "${{ github.ref_name || github.event.inputs.tag }}"
           tag_name: ${{ github.ref_name || github.event.inputs.tag }}
           body_path: /tmp/changelog.md
           files: osu.Game.Rulesets.MOsu/bin/Release/net8.0/osu.Game.Rulesets.MOsu.dll
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name || github.event.inputs.tag, 'tachyon') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

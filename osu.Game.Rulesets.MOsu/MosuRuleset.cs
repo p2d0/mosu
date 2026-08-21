@@ -14,6 +14,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Legacy;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Settings;
 using osu.Game.Rulesets.Configuration;
@@ -59,7 +60,8 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0) => new osu.Game.Rulesets.Osu.OsuRuleset().GetDefaultKeyBindings(variant);
 
-        public override IEnumerable<int> AvailableVariants => Array.Empty<int>();
+        // No keybinding rows for MOsu in settings.
+        public override IEnumerable<int> GameplayVariants => Array.Empty<int>();
 
         public override IEnumerable<Mod> ConvertFromLegacyMods(LegacyMods mods)
         {
@@ -312,32 +314,70 @@ namespace osu.Game.Rulesets.MOsu
         {
             var timedHitEvents = score.HitEvents.Where(e => e.HitObject is HitCircle && !(e.HitObject is SliderTailCircle)).ToList();
 
-            var items = new List<StatisticItem>
+            // osu! no longer makes the result screen statistics panel scrollable, so wheel input falls
+            // through to gameplay volume adjustment. Wrap every MOsu statistic in one scroll container
+            // (single StatisticItem, since osu renders each item as its own card) so the whole set
+            // scrolls and swallows the wheel instead of changing volume.
+            var children = new List<Drawable>
             {
-                new StatisticItem("Suggested Songs", () => new SuggestedSongsPanel(score)),
-                new StatisticItem("Performance Breakdown", () => new PerformanceBreakdownChart(score, playableBeatmap)
+                new PerformanceBreakdownChart(score)
                 {
                     RelativeSizeAxes = Axes.X,
-                    AutoSizeAxes = Axes.Y
-                }),
-                new StatisticItem("Timing Distribution", () => new HitEventTimingDistributionGraph(timedHitEvents)
-                {
-                    RelativeSizeAxes = Axes.X,
-                    Height = 250
-                }, true),
-                new StatisticItem("Accuracy Heatmap", () => new AccuracyHeatmap(score, playableBeatmap)
-                {
-                    RelativeSizeAxes = Axes.X,
-                    Height = 250
-                }, true),
-                new StatisticItem("Statistics", () => new SimpleStatisticTable(2, new SimpleStatisticItem[]
-                {
-                    new AverageHitError(timedHitEvents),
-                    new UnstableRate(timedHitEvents)
-                }), true)
+                    AutoSizeAxes = Axes.Y,
+                    Padding = new MarginPadding(25)
+                },
             };
 
-            return items.ToArray();
+            if (timedHitEvents.Count > 0)
+            {
+                children.Add(new FillFlowContainer
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Spacing = new Vector2(15),
+                    Direction = FillDirection.Horizontal,
+                    Children = new Drawable[]
+                    {
+                        new HitEventTimingDistributionGraph(timedHitEvents)
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Width = 0.5f,
+                            Height = 150
+                        },
+                        new AccuracyHeatmap(score, playableBeatmap)
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Width = 0.5f,
+                            Height = 150
+                        }
+                    }
+                });
+                children.Add(new SimpleStatisticTable(2, new SimpleStatisticItem[]
+                {
+                    new AverageHitError(timedHitEvents),
+                    new UnstableRate(timedHitEvents),
+                }));
+            }
+            children.Add(new SuggestedSongsPanel(score));
+
+            return new[]
+            {
+                new StatisticItem("Performance", () => new OsuScrollContainer
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Height = 500,
+                    ScrollbarOverlapsContent = false,
+                    Child = new FillFlowContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Direction = FillDirection.Vertical,
+                        Spacing = new Vector2(10),
+                        Padding = new MarginPadding { Bottom = 500 },
+                        Children = children,
+                    },
+                }),
+            };
         }
 
         public override IEnumerable<Drawable> CreateEditorSetupSections() =>

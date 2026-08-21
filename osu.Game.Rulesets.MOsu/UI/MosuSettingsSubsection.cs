@@ -43,8 +43,6 @@ namespace osu.Game.Rulesets.MOsu.UI
     {
         private Ruleset ruleset;
 
-        protected override LocalisableString Header => "mosu!";
-
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
@@ -90,6 +88,15 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Action = () =>
                     {
                         performer?.PerformFromScreen(screen => screen.Push(new JsonImportScreen()));
+                    }
+                },
+                new SettingsButtonV2
+                {
+                    Text = "Import replay",
+                    TooltipText = "Import a .osr replay exported from MOsu",
+                    Action = () =>
+                    {
+                        performer?.PerformFromScreen(screen => screen.Push(new ReplayImportScreen()));
                     }
                 },
                 new ImportFromClipboardButton(),

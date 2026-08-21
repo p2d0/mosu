@@ -155,7 +155,6 @@ namespace osu.Game.Rulesets.MOsu.Screens
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Full,
                             Spacing = new Vector2(6),
-                            Padding = new MarginPadding { Bottom = 200 },
                             Alpha = 0,
                         },
                     },
