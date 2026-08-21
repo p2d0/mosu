@@ -245,6 +245,13 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
                 return;
             }
 
+            if (screen.TimelineArea == null)
+            {
+                // screen found but its async timeline area isn't created yet.
+                Schedule(scheduleTimelineGimmickInjection);
+                return;
+            }
+
             if (screen.TimelineArea.Timeline != null)
             {
                 injectTimelineGimmickDisplays();
@@ -271,15 +278,21 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
         /// Visible copies are inserted below the blueprint container (proxy + Depth), with
         /// non-rendering originals on top for input, mirroring delta's ComposeScreen layering.
         /// </summary>
+        private int timelineGimmickInjectionRetries;
+        private bool timelineGimmickInjectionAbandoned;
+
         private void injectTimelineGimmickDisplays()
         {
-            if (timelineGimmickDisplaysInjected)
+            if (timelineGimmickDisplaysInjected || timelineGimmickInjectionAbandoned)
                 return;
 
             var timeline = screenWithTimeline?.TimelineArea.Timeline ?? findTimelineArea()?.TimelineArea.Timeline;
 
             if (timeline == null)
+            {
+                retryTimelineGimmickInjection();
                 return;
+            }
 
             if (timelineContentContainer == null)
             {
@@ -290,7 +303,10 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
                 if (breakDisplay?.Parent is Container<Drawable> container)
                     timelineContentContainer = container;
                 else
+                {
+                    retryTimelineGimmickInjection();
                     return;
+                }
             }
 
             var sectionDisplay = new TimelineSectionGimmickDisplay(sectionModel)
@@ -318,8 +334,9 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             // Rebuild the no-approach lines when entries change (rides the model's Changed; no per-frame work).
             hitObjectModel.Changed += gimmickDisplay.Refresh;
 
-            // Visible proxies render below the blueprints; the originals stop rendering once
-            // proxied, so they serve purely as the input layer on top.
+            // Visible proxies render (proxies are input-inert); originals are parked behind the
+            // blueprints so they never grab clicks ahead of a note blueprint (click selects the
+            // hitobject). Kept in-tree for reflection/tests.
             var sectionProxy = sectionDisplay.CreateProxy();
             var boundaryProxy = boundaryDisplay.CreateProxy();
             var gimmickProxy = gimmickDisplay.CreateProxy();
@@ -327,6 +344,10 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             sectionProxy.Depth = -1;
             boundaryProxy.Depth = -1;
             gimmickProxy.Depth = -1;
+
+            sectionDisplay.Depth = 1;
+            boundaryDisplay.Depth = 1;
+            gimmickDisplay.Depth = 1;
 
             timelineContentContainer.AddRange(new Drawable[]
             {
@@ -339,6 +360,21 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
             });
 
             timelineGimmickDisplaysInjected = true;
+        }
+
+        private void retryTimelineGimmickInjection()
+        {
+            // Bounded safety net: the timeline pieces normally exist by the OnLoadComplete fast
+            // path; give up after a few seconds rather than polling forever (tests without a
+            // compose timeline must not spin).
+            if (++timelineGimmickInjectionRetries > 300)
+            {
+                timelineGimmickInjectionAbandoned = true;
+                Logger.Log("[MOsu-Composer] gave up waiting for the compose timeline; gimmick timeline displays disabled");
+                return;
+            }
+
+            Schedule(injectTimelineGimmickDisplays);
         }
 
         /// <summary>

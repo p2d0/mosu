@@ -9,7 +9,6 @@ using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Input.Events;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
@@ -20,8 +19,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
     public partial class TimelineSectionGimmick : CompositeDrawable
     {
         public SectionGimmickSection Section { get; }
-
-        public Action<int>? OnSelected { get; init; }
 
         private Box background = null!;
         private OsuSpriteText label = null!;
@@ -69,12 +66,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
             };
 
             updateSelectedState();
-        }
-
-        protected override bool OnClick(ClickEvent e)
-        {
-            OnSelected?.Invoke(Section.Id);
-            return true;
         }
 
         protected override void Update()

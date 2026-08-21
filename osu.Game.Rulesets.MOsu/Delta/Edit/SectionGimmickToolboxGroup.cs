@@ -196,7 +196,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
         private OsuSpriteText validationStatus = null!;
 
         private bool updatingControls;
-        private readonly BindableList<HitObject> selectedHitObjects = new BindableList<HitObject>();
         private readonly ScheduledDelegate[] fadeSchedules = new ScheduledDelegate[15];
 
         public SectionGimmickToolboxGroup()
@@ -1112,20 +1111,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
 
         private void bindModelEvents()
         {
-            selectedHitObjects.BindTo(editorBeatmap.SelectedHitObjects);
-            selectedHitObjects.BindCollectionChanged((_, e) =>
-            {
-                if (e.NewItems != null && e.NewItems.Count > 0)
-                {
-                    if (e.NewItems[e.NewItems.Count - 1] is HitObject mostRecent)
-                        trySelectSectionForHitObject(mostRecent);
-                }
-                else
-                {
-                    trySelectSectionFromCurrentObjectSelection();
-                }
-            }, true);
-
             model.Sections.BindCollectionChanged((_, _) =>
             {
                 updateSectionDropdown();
@@ -1599,37 +1584,6 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit
                 validationStatus.Text = $"Validation: {e.Message}";
                 validationStatus.Colour = Color4.IndianRed;
             }
-        }
-
-        private void trySelectSectionFromCurrentObjectSelection()
-        {
-            if (updatingControls)
-                return;
-
-            if (!selectedHitObjects.Any())
-                return;
-
-            var latestSelected = selectedHitObjects.LastOrDefault();
-            if (latestSelected == null)
-                return;
-
-            trySelectSectionForHitObject(latestSelected);
-        }
-
-        private void trySelectSectionForHitObject(HitObject hitObject)
-        {
-            if (updatingControls)
-                return;
-
-            var section = (editorBeatmap.PlayableBeatmap as Beatmaps.DeltaBeatmap)?.Gimmicks.Sections.FindSectionAt(hitObject.StartTime);
-            if (section == null)
-                return;
-
-            if (selectedSectionId.Value == section.Id)
-                return;
-
-            selectedSectionId.Value = section.Id;
-            clock.SeekSmoothlyTo(section.StartTime);
         }
 
         private void updateFloatSetting(FormNumberBox box, Action<SectionGimmickSettings, float> mutation)

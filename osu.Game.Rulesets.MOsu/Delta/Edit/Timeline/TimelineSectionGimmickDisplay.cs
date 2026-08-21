@@ -66,10 +66,7 @@ namespace osu.Game.Rulesets.MOsu.Delta.Edit.Timeline
                 if (section.EndTime < 0)
                     continue;
 
-                Add(new TimelineSectionGimmick(section)
-                {
-                    OnSelected = id => editorModel.SelectedSectionId.Value = id,
-                });
+                Add(new TimelineSectionGimmick(section));
             }
 
             updateSelectionState();
