@@ -86,7 +86,9 @@ namespace osu.Game.Rulesets.MOsu.UI
             foreach (var (bindable, handler) in boundHandlers)
             {
                 var eventInfo = bindable.GetType().GetEvent("ValueChanged");
-                eventInfo?.RemoveEventHandler(bindable, handler);
+                // EventInfo.RemoveEventHandler is unimplemented on Android's Mono runtime and throws MissingMethodException.
+                // Invoke the remove accessor directly instead, which works on both desktop and Android.
+                eventInfo?.RemoveMethod?.Invoke(bindable, new[] { handler });
             }
             boundHandlers.Clear();
 
