@@ -2,7 +2,7 @@ name: MOsu Release
 on:
   push:
     tags:
-      - '*'
+      - '*.*.*'
   workflow_dispatch:
     inputs:
       tag:
@@ -35,7 +35,9 @@ jobs:
       - name: Generate changelog
         run: |
           tag_name="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
-          prev_tag=$(git tag --sort=-creatordate | grep -v "^$tag_name$" | head -1)
+          # previous tag on THIS lineage only (git describe walks ancestors),
+          # so changing it never re-lists commits already released on other branches/series
+          prev_tag=$(git describe --tags --abbrev=0 "$tag_name"^ 2>/dev/null || true)
           osu_version=$(git -C osu describe --tags --abbrev=0)
 
           if [ -n "$prev_tag" ]; then
