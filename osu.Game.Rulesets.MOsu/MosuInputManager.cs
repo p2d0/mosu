@@ -3,9 +3,11 @@
 
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics;
 using osu.Framework.Input.Bindings;
 using osu.Game.Database;
 using osu.Game.Input.Bindings;
+using osu.Game.Rulesets.MOsu.UI;
 
 namespace osu.Game.Rulesets.MOsu
 {
@@ -18,6 +20,22 @@ namespace osu.Game.Rulesets.MOsu
 
         protected override KeyBindingContainer<OsuAction> CreateKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
             => new MosuKeyBindingContainer(ruleset, variant, unique);
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // Upstream's mapper casts KeyBindingContainer to its private OsuKeyBindingContainer, which fails for
+            // mosu's MosuKeyBindingContainer (InvalidCastException on touch). Swap it for the mosu-safe mapper.
+            //
+            // Note: RulesetInputManager forwards Children/Add/Remove to an inner Content container (parented
+            // inside the KeyBindingContainer), so RemoveInternal must not be used here.
+            var upstreamMapper = Children.OfType<osu.Game.Rulesets.Osu.UI.OsuTouchInputMapper>().FirstOrDefault();
+            if (upstreamMapper != null)
+                Remove(upstreamMapper, true);
+
+            Add(new MosuTouchInputMapper(this) { RelativeSizeAxes = Axes.Both });
+        }
 
         public new bool AllowGameplayInputs
         {

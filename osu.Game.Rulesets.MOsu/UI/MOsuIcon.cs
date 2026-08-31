@@ -28,6 +28,9 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private readonly MosuRuleset ruleset;
 
+        [Resolved]
+        private OsuGame game { get; set; } = null!;
+
         public MOsuIcon(MosuRuleset ruleset)
         {
             this.ruleset = ruleset;
@@ -65,11 +68,14 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void LoadInjection()
         {
-            AddRangeInternal(new Drawable[]
-            {
-                new MOsuSystemManager(ruleset),
-                new ChatOverlayInjector()
-            });
+            // Attach to the game, not the icon: icon instances are created/disposed repeatedly as the
+            // ruleset selector re-renders (esp. on Android), which would kill a child-injected system
+            // manager mid-poll. The game lives for the whole session.
+            var manager = new MOsuSystemManager(ruleset);
+            var chatInjector = new ChatOverlayInjector();
+
+            game.Add(manager);
+            game.Add(chatInjector);
         }
     }
 
@@ -103,10 +109,10 @@ namespace osu.Game.Rulesets.MOsu.UI
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            Task.Run(InitializeAsync);
+            Task.Run(Initialize);
         }
 
-        private async Task InitializeAsync()
+        private void Initialize()
         {
             // Heavy work off the game thread.
             var userManager = host.Dependencies.Get<LocalUserManager>();
@@ -116,8 +122,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                 userManager = new LocalUserManager(ruleset, realm, config, api);
                 host.Dependencies.Cache(userManager);
             }
-
-            await Task.Yield();
 
             Schedule(StepUI);
         }
