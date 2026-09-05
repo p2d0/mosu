@@ -318,21 +318,31 @@ namespace osu.Game.Rulesets.MOsu.UI
             }
 
             // beatmap.Value.Beatmap.Br
-            if (GameplayClockContainer != null && frameStablePlaybackProperty != null)
+            if (GameplayClockContainer != null && frameStablePlaybackProperty != null && player != null)
             {
-                SkipOverlay skipOverlay;
+                // Added to the player's BreakOverlay (outside the ruleset input manager), like the intro skip
+                // overlay — touch-sourced mouse clicks are suppressed inside gameplay, so an overlay under
+                // DrawableRuleset would never receive taps. BreakOverlay is only present during breaks, so this
+                // also removes the need for the overlay's own presence logic.
+                //
+                // BreakOverlay is assigned near the end of Player.load, which may run after this ruleset load —
+                // poll until it exists.
+                Schedule(() => {
                 BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
-                Overlays.Add(skipOverlay = new SkipOverlay {
+                    var skipOverlay = new SkipOverlay
+                    {
                         Clock = FrameStableClock,
                         ProcessCustomClock = false,
                         BreakTracker = breakTracker,
-                        Depth = float.NegativeInfinity
-                    });
-
-                skipOverlay.RequestSkip = () => {
+                    };
+                    skipOverlay.RequestSkip = () =>
+                    {
                     if(breakTracker.CurrentPeriod.Value.HasValue)
                         SafeSeek(breakTracker.CurrentPeriod.Value.Value.End);
                 };
+
+                    player.BreakOverlay.Add(skipOverlay);
+                });
             }
 
 

@@ -161,19 +161,30 @@ namespace osu.Game.Rulesets.MOsu.Database
             {
                 try
                 {
+                    // Use SendAsync(HttpRequestMessage) rather than GetAsync(string): the convenience
+                    // string overload gets pruned by Android trimming/AOT (MissingMethodException).
                     var response = new HttpClient
                     {
                         Timeout = TimeSpan.FromSeconds(60)
-                    }.GetAsync($"https://beatconnect.io/b/{setId}/").Result;
+                    }.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"https://beatconnect.io/b/{setId}/")).Result;
 
                     string filename = $"beatconnect_{setId}.osz";
                     string path = Path.Combine(Path.GetTempPath(), filename);
 
-                    byte[] data = response.Content.ReadAsByteArrayAsync().Result;
-                    Logger.Log($"Beatconnect mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={data.Length} bytes");
                     if (!response.IsSuccessStatusCode)
                         throw new Exception($"Beatconnect mirror returned {response.StatusCode}");
-                    File.WriteAllBytes(path, data);
+
+                    // Convenience string/byte[] APIs (File.WriteAllBytes, ReadAsByteArrayAsync, GetAsync(string),
+                    // FileInfo.Length) are pruned by Android trimming since nothing outside mosu uses them —
+                    // stick to primitives the rest of the app exercises (FileStream, ReadAsStreamAsync, SendAsync).
+                    long fileSize;
+                    using (var contentStream = response.Content.ReadAsStreamAsync().Result)
+                    using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write))
+                    {
+                        contentStream.CopyTo(fileStream);
+                        fileSize = fileStream.Length;
+                    }
+                    Logger.Log($"Beatconnect mirror response: status={response.StatusCode}, content-type={response.Content.Headers.ContentType?.MediaType}, size={fileSize} bytes");
 
                     schedule(() =>
                     {
@@ -181,7 +192,9 @@ namespace osu.Game.Rulesets.MOsu.Database
                         var importNotification = new ProgressNotification();
                         Task.Run(async () =>
                         {
-                            long fileSize = new FileInfo(path).Length;
+                            long fileSize;
+                            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                                fileSize = fileStream.Length;
                             var result = await beatmapManager.Import(importNotification, new[] { new ImportTask(path) });
                             File.Delete(path);
                             schedule(() =>
