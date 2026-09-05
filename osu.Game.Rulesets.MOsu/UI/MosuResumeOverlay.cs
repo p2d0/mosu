@@ -10,6 +10,8 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.UI.Cursor;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
 using osuTK.Graphics;

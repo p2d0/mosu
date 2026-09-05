@@ -8,6 +8,7 @@ using osu.Framework.Input.Bindings;
 using osu.Game.Database;
 using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.MOsu.UI;
+using osu.Game.Rulesets.Osu;
 
 namespace osu.Game.Rulesets.MOsu
 {

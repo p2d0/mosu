@@ -3,7 +3,10 @@
 
 using System.Linq;
 using osu.Framework.Graphics;
+using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.HUD;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Skinning.Argon;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Skinning;

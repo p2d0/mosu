@@ -15,6 +15,11 @@ using osu.Game.Replays;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Configuration;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Replays;
+using osu.Game.Rulesets.Osu.UI;
+using InputBlockingMod = osu.Game.Rulesets.MOsu.Mods.InputBlockingMod;
+using OsuModAutopilot = osu.Game.Rulesets.MOsu.Mods.OsuModAutopilot;
 using osu.Game.Rulesets.MOsu.Mods;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
@@ -26,6 +31,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using osu.Game.Database;
 using osu.Framework.Screens;
+using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {

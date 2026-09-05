@@ -9,6 +9,7 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets.MOsu.Configuration;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.Models;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Framework.Allocation;

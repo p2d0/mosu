@@ -8,6 +8,11 @@ using System.Linq;
 using osu.Framework.Localisation;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Replays;
 
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.UI;
