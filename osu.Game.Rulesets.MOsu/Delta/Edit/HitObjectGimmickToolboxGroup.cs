@@ -18,6 +18,7 @@ using osu.Game.Rulesets.MOsu.Delta.Graphics.UserInterfaceV2;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
+using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 using osuTK.Graphics;
 

@@ -16,6 +16,7 @@ using System;
 using System.Reflection;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Objects
 {

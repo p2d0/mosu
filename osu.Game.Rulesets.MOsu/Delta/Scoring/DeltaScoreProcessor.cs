@@ -15,6 +15,7 @@ using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
+using osu.Game.Rulesets.Osu.Scoring;
 using osu.Game.Rulesets.Scoring;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Scoring

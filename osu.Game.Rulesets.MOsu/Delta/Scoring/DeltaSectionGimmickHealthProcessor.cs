@@ -13,6 +13,7 @@ using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.MOsu.Delta.Objects;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Scoring;
 using osu.Game.Rulesets.Scoring;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Scoring

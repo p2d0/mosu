@@ -8,6 +8,7 @@
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.MOsu.Delta.Judgements;
+using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Objects
 {

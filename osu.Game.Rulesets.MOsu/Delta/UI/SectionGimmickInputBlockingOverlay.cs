@@ -10,6 +10,7 @@ using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.MOsu.Delta.Beatmaps;
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
+using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.UI;

@@ -11,6 +11,7 @@
 
 using osu.Game.Rulesets.MOsu.Delta.Gimmicks;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Delta.Objects
