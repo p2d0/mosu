@@ -6,6 +6,7 @@ using System.Linq;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
+using osu.Game.Rulesets.Osu;
 
 namespace osu.Game.Rulesets.MOsu.Mods
 {

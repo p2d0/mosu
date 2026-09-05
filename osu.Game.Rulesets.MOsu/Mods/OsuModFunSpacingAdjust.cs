@@ -9,6 +9,8 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Osu.Beatmaps;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.MOsu.Utils;
 
 namespace osu.Game.Rulesets.MOsu.Mods

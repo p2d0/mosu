@@ -10,6 +10,9 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.UI;
+using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Replays;
 using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.MOsu.Mods

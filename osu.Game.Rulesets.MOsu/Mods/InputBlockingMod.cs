@@ -11,6 +11,8 @@ using osu.Game.Beatmaps.Timing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
