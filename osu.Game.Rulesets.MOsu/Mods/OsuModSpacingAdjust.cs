@@ -7,6 +7,7 @@ using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.MOsu.Utils;
 
 namespace osu.Game.Rulesets.MOsu.Mods

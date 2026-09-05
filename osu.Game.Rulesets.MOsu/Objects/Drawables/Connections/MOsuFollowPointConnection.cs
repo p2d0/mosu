@@ -7,6 +7,8 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Pooling;
+using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Objects.Drawables.Connections;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Objects.Drawables.Connections
